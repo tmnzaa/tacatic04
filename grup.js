@@ -428,32 +428,32 @@ if (text.startsWith('.addbrat ')) {
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
 
-    // Font utama dan font kecil
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    // Font besar dan kecil
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const image = new Jimp(512, 512, '#FFFFFF');
+    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
 
-    // Fungsi pembungkus teks otomatis
-    const wrapText = (text, maxLength = 25) => {
-      const words = text.split(' ');
+    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
+    const wrapAnomaliStyle = (text) => {
+      const words = text.trim().split(' ');
       const lines = [];
-      let line = '';
+      let line = [];
 
-      for (const word of words) {
-        if ((line + word).length <= maxLength) {
-          line += word + ' ';
-        } else {
-          lines.push(line.trim());
-          line = word + ' ';
+      for (let i = 0; i < words.length; i++) {
+        line.push(words[i]);
+
+        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
+        if (line.length === 2 || i === words.length - 1) {
+          lines.push(line.join('     ')); // spasi antar kata
+          line = [];
         }
       }
-      if (line) lines.push(line.trim());
       return lines.join('\n');
     };
 
-    const wrappedText = wrapText(teks);
+    const wrappedText = wrapAnomaliStyle(teks);
 
-    // Cetak teks utama di tengah
+    // Cetak teks di tengah
     image.print(
       font,
       0,
@@ -467,13 +467,13 @@ if (text.startsWith('.addbrat ')) {
       512
     );
 
-    // Tambahkan author kecil di bawah
+    // Tambahkan watermark/brat kecil di bawah
     image.print(
       fontSmall,
       0,
-      480, // atas bawah margin
+      480,
       {
-        text: 'brat [TacaBot]', // Ganti sesuai tag kamu
+        text: 'brat [TacaBot]',
         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
         alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
       },
@@ -510,6 +510,7 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
+
 
   // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
