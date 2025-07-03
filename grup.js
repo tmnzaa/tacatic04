@@ -368,37 +368,30 @@ if (text === '.stiker') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    const timestamp = Date.now();
-    const inputPath = `./${timestamp}.jpg`;
-    const webpPath = `./${timestamp}.webp`;
-    const finalWebpPath = `./${timestamp}_final.webp`;
+    const filename = `./${Date.now()}`;
+    const inputPath = `${filename}.jpg`;
+    const outputPath = `${filename}.webp`;
 
     fs.writeFileSync(inputPath, buffer);
 
-    // Convert ke webp dengan ukuran dan kualitas bagus
+    // Resize dengan kualitas tinggi & center 512x512
     await new Promise((resolve, reject) => {
-      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-      exec(cmd, (err) => (err ? reject(err) : resolve()));
+      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
     });
 
-    // Tambahkan EXIF metadata biar bisa diklik/disimpan
-    await new Promise((resolve, reject) => {
-      const cmd = `webpmux -set exif metadata.exif "${webpPath}" -o "${finalWebpPath}"`;
-      exec(cmd, (err) => (err ? reject(err) : resolve()));
-    });
-
-    const stickerBuffer = fs.readFileSync(finalWebpPath);
+    const stickerBuffer = fs.readFileSync(outputPath);
 
     await sock.sendMessage(from, {
       sticker: stickerBuffer,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
-    // Cleanup
     fs.unlinkSync(inputPath);
-    fs.unlinkSync(webpPath);
-    fs.unlinkSync(finalWebpPath);
-
+    fs.unlinkSync(outputPath);
   } catch (err) {
     console.error('❌ stiker error:', err);
     await sock.sendMessage(from, {
@@ -407,7 +400,6 @@ if (text === '.stiker') {
   }
 }
 
- // === .addbrat ===
 // === .addbrat ===
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
