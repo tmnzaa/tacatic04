@@ -2,6 +2,7 @@ const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const axios = require('axios')
+const Jimp = require('jimp')
 const fetch = require('node-fetch')
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
@@ -379,50 +380,57 @@ if (text === '.stiker') {
 
 // ===================== ADD BRAT – TEKS + BG PUTIH =====================
 if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1]?.trim()
+  const teks = text.slice(9).trim()
   if (!teks) return sock.sendMessage(from, {
-    text: '❌ Masukkan teks!\nContoh: *.addbrat Halo Dunia*'
+    text: '❌ Masukkan teks!\nContoh: *.addbrat Halo Dunia!*'
   }, { quoted: msg })
 
-  const url = `https://dummyimage.com/600x400/ffffff/000000.png&text=${encodeURIComponent(teks)}`
-
   try {
-    const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+    const image = new Jimp(600, 400, '#FFFFFF')
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
+    image.print(font, 0, 0, {
+      text: teks,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 600, 400)
 
+    const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
     await sock.sendMessage(from, {
-      sticker: data,
+      sticker: buffer,
       mimetype: 'image/webp'
     }, { quoted: msg })
   } catch (err) {
-    console.error('❌ addbrat error:', err)
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker addbrat.'
+    console.error('❌ .addbrat error:', err)
+    sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker.'
     }, { quoted: msg })
   }
 }
 
 // ===================== BRATKEREN – NAMA + TEKS =====================
 if (text.startsWith('.bratkeren ')) {
-  const teks = text.split('.bratkeren ')[1]?.trim()
-  if (!teks) return sock.sendMessage(from, {
-    text: '❌ Masukkan teks!\nContoh: *.bratkeren Semangat terus ya!*'
-  }, { quoted: msg })
+  const teks = text.slice(11).trim()
+  const name = metadata?.participants?.find(p => p.id === sender)?.name || 'Pengguna'
+  const fullText = `${name}\n${teks}`
 
   try {
-    const namaPengirim = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
-    const fullText = `${namaPengirim}\n${teks}`
-   const url = `https://dummyimage.com/600x400/ffffff/000000.png&text=${encodeURIComponent(fullText)}`
+    const image = new Jimp(600, 400, '#FFFFFF')
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
+    image.print(font, 0, 0, {
+      text: fullText,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 600, 400)
 
-    const { data } = await axios.get(url, { responseType: 'arraybuffer' })
-
+    const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
     await sock.sendMessage(from, {
-      sticker: data,
+      sticker: buffer,
       mimetype: 'image/webp'
     }, { quoted: msg })
   } catch (err) {
-    console.error('❌ bratkeren error:', err)
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker bratkeren.'
+    console.error('❌ .bratkeren error:', err)
+    sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker.'
     }, { quoted: msg })
   }
 }
