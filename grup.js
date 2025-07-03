@@ -351,7 +351,8 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
 // === .stiker ===
-  if (text === '.stiker') {
+  // === .stiker ===
+if (text === '.stiker') {
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
@@ -361,24 +362,48 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
     }, { quoted: msg });
   }
 
-  const buffer = await downloadMediaMessage(
-    { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-    'buffer',
-    {},
-    { logger: console, reuploadRequest: sock.updateMediaMessage }
-  );
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
 
-  if (!buffer) {
-    return sock.sendMessage(from, { text: '❌ Gagal mendownload media' }, { quoted: msg });
+    const filename = `./${Date.now()}`;
+    const inputPath = `${filename}.jpg`;
+    const outputPath = `${filename}.webp`;
+
+    writeFileSync(inputPath, buffer);
+
+    // Convert ke webp pakai imagemagick + tambahkan author WM
+    await new Promise((resolve, reject) => {
+      const cmd = `convert "${inputPath}" -resize 512x512 -gravity south -fill white -undercolor '#00000080' -annotate +0+5 '🛠️ Tacatic04' "${outputPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const stickerBuffer = require('fs').readFileSync(outputPath);
+
+    await sock.sendMessage(from, {
+      sticker: stickerBuffer,
+      mimetype: 'image/webp'
+    }, { quoted: msg });
+
+    // Bersihkan file sementara
+    unlinkSync(inputPath);
+    unlinkSync(outputPath);
+  } catch (err) {
+    console.error('❌ stiker error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
   }
-
-  await sock.sendMessage(from, {
-    sticker: buffer,
-    mimetype: 'image/webp'
-  }, { quoted: msg });
 }
 
-  // === .addbrat [teks] ===
+ // === .addbrat [teks] ===
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
@@ -391,38 +416,52 @@ if (text.startsWith('.addbrat ')) {
     const filename = Date.now();
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
+    const finalPath = `./${filename}_final.webp`;
 
-    // Buat gambar PNG
-    const image = new Jimp(512, 300, '#FFFFFF');
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_128_BLACK);
+    // Otomatis sesuaikan ukuran font
+    let fontSize;
+    if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
+    else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
+    else if (teks.length <= 40) fontSize = Jimp.FONT_SANS_32_BLACK;
+    else fontSize = Jimp.FONT_SANS_16_BLACK;
+
+    const font = await Jimp.loadFont(fontSize);
+    const image = new Jimp(512, 512, '#FFFFFF');
 
     image.print(font, 0, 0, {
       text: teks,
       alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
       alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 300);
+    }, 512, 512);
 
     await image.writeAsync(pngPath);
 
-    // Convert ke WebP dengan imagemagick
+    // Convert PNG ke WebP
     await new Promise((resolve, reject) => {
-      exec(`convert ${pngPath} ${webpPath}`, (err) => {
+      exec(`convert "${pngPath}" "${webpPath}"`, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const buffer = fs.readFileSync(webpPath);
+    // Tambahkan metadata author ke WebP (biar bisa diklik & disimpan)
+    await new Promise((resolve, reject) => {
+      exec(`exiftool -overwrite_original "-Software=Tacatic 04" "${webpPath}" -o "${finalPath}"`, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
 
-    // Tambahkan author metadata
-    const stickerBuffer = addAuthorMetadata(buffer, "Tacatic 04");
+    const buffer = fs.readFileSync(finalPath);
 
     await sock.sendMessage(from, {
-      sticker: stickerBuffer
+      sticker: buffer
     }, { quoted: msg });
 
+    // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
+    fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
