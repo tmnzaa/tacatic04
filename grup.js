@@ -2,6 +2,9 @@ const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
+const path = require('path');
+const { exec } = require('child_process');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -348,63 +351,83 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 
 // === .stiker ===
   if (text === '.stiker') {
-    const mtype = Object.keys(msg.message)[0]
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-    const mediaMessage = quoted?.imageMessage || msg.message?.imageMessage
+  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-    if (!mediaMessage) {
-      return sock.sendMessage(from, {
-        text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-      }, { quoted: msg })
-    }
-
-    try {
-      const buffer = await sock.downloadMediaMessage(quoted ? { message: quoted } : msg)
-
-      await sock.sendMessage(from, {
-        sticker: buffer,
-        mimetype: 'image/webp'
-      }, { quoted: msg })
-
-    } catch (err) {
-      console.error('❌ stiker error:', err)
-      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
-    }
+  if (!mediaMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+    }, { quoted: msg });
   }
+
+  const buffer = await downloadMediaMessage(
+    { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+    'buffer',
+    {},
+    { logger: console, reuploadRequest: sock.updateMediaMessage }
+  );
+
+  if (!buffer) {
+    return sock.sendMessage(from, { text: '❌ Gagal mendownload media' }, { quoted: msg });
+  }
+
+  await sock.sendMessage(from, {
+    sticker: buffer,
+    mimetype: 'image/webp'
+  }, { quoted: msg });
+}
 
   // === .addbrat [teks] ===
-  if (text.startsWith('.addbrat ')) {
-    const teks = text.split('.addbrat ')[1].trim()
-    if (!teks) {
-      return sock.sendMessage(from, {
-        text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-      }, { quoted: msg })
-    }
-
-    try {
-      const image = new Jimp(512, 512, '#FFFFFF')
-      const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
-
-      image.print(font, 0, 0, {
-        text: teks,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      }, 512, 512)
-
-      const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-
-      await sock.sendMessage(from, {
-        sticker: buffer,
-        mimetype: 'image/webp',
-        packname: 'Tacatic Brat',
-        author: 'Bot 04'
-      }, { quoted: msg })
-
-    } catch (err) {
-      console.error('❌ addbrat error:', err)
-      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
-    }
+  
+if (text.startsWith('.addbrat ')) {
+  const teks = text.split('.addbrat ')[1].trim();
+  if (!teks) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+    }, { quoted: msg });
   }
+
+  try {
+    const filename = Date.now();
+    const pngPath = `./${filename}.png`;
+    const webpPath = `./${filename}.webp`;
+
+    // Buat gambar PNG
+    const image = new Jimp(512, 512, '#FFFFFF');
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+
+    image.print(font, 0, 0, {
+      text: teks,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 512, 512);
+
+    await image.writeAsync(pngPath);
+
+    // Convert ke WebP dengan imagemagick
+    await new Promise((resolve, reject) => {
+      exec(`convert ${pngPath} ${webpPath}`, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const buffer = fs.readFileSync(webpPath);
+
+    // Kirim sebagai stiker
+    await sock.sendMessage(from, {
+      sticker: buffer
+    }, { quoted: msg });
+
+    fs.unlinkSync(pngPath);
+    fs.unlinkSync(webpPath);
+  } catch (err) {
+    console.error('❌ addbrat error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
+}
 
   // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
