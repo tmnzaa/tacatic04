@@ -51,34 +51,48 @@ module.exports = async (sock, msg) => {
   const fitur = db[from]
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
-  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k'].includes(text) && !isBotAdmin) {
-    return sock.sendMessage(from, { text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!' })
+  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
+  if (!isBotAdmin) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
+    })
   }
 
-  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k'].includes(text)) {
-    if (!isOwner) return sock.sendMessage(from, {
+  if (!isOwner) {
+    return sock.sendMessage(from, {
       text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!'
     })
+  }
 
-    const now = new Date()
-    const expiredDate = fitur.expired ? new Date(fitur.expired) : null
+  const now = new Date()
+  const expiredDate = fitur.expired ? new Date(fitur.expired) : null
 
-    if (expiredDate && expiredDate >= now) {
-      return sock.sendMessage(from, {
-        text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.expired}*`
-      })
-    }
-
-    if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
-    if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
-    if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
-
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
-
+  if (fitur.permanen || (expiredDate && expiredDate >= now)) {
     return sock.sendMessage(from, {
-      text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.expired}*`
+      text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
     })
   }
+
+  if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
+  if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
+  if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
+
+  if (text === '.aktifbotper') {
+    const OWNER_BOT = '6282333014459@s.whatsapp.net' // ganti sesuai nomor owner bot kamu
+    if (sender !== OWNER_BOT) {
+      return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' })
+    }
+    fitur.permanen = true
+    fitur.expired = null
+  }
+
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+
+  return sock.sendMessage(from, {
+    text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+  })
+}
+
 
   const now = new Date().toISOString().split('T')[0]
 if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < new Date(now))) {
