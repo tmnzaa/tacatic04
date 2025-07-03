@@ -185,7 +185,13 @@ if (text === '.menu') {
 • 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
 
 📊 *FITUR LAINNYA*:
-• 💡 _.cekaktif_  → Cek fitur aktif
+• 💡 _.cekaktif_      → Cek fitur aktif
+• 🖼️ _.stiker_        → Buat stiker dari gambar
+• 🔤 _.addbrat teks_  → Buat stiker teks brat
+
+Contoh:
+• Kirim/reply gambar lalu ketik _.stiker_
+• _.addbrat Stiker teks_
 
 📌 *Catatan*:
 – Hanya admin atau owner grup yang bisa akses fitur.
@@ -483,7 +489,9 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-  if (text.startsWith('.bratkeren ')) {
+//bratkeren
+  // === .bratkeren ===
+if (text.startsWith('.bratkeren ')) {
   const teks = text.split('.bratkeren ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
@@ -492,34 +500,33 @@ if (text.startsWith('.addbrat ')) {
   }
 
   try {
-    const name = m?.pushName || sender.split('@')[0];
+    const name = msg?.pushName || sender.split('@')[0];
 
     // Ambil foto profil pengguna
     let ppUrl;
     try {
       ppUrl = await sock.profilePictureUrl(sender, 'image');
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default pp jika tidak ada
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png';
     }
 
     const ppImage = await Jimp.read(ppUrl);
-    const base = new Jimp(512, 512, '#ffcdf3'); // background pink lucu
+    const base = new Jimp(512, 512, '#ffe5f1');
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
 
-    // Resize dan crop PP jadi bulat (pakai masking manual)
+    // Resize dan buat PP jadi bulat
     ppImage.resize(128, 128);
     const mask = await new Jimp(128, 128, 0xFFFFFFFF);
-    mask.circle(); // bentuk bulat
+    mask.circle();
     ppImage.mask(mask, 0, 0);
 
-    // Tempelkan foto profil ke kiri atas
     base.composite(ppImage, 20, 20);
 
-    // Tulis nama & teks di samping PP
+    // Tulis nama user kecil di samping PP
     base.print(
       fontSmall,
-      160, 30,
+      160, 40,
       {
         text: `${name}`,
         alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
@@ -528,38 +535,61 @@ if (text.startsWith('.addbrat ')) {
       330, 40
     );
 
+    // Bungkus teks agar tidak keluar
+    const wrapText = (text, maxLength = 28) => {
+      const words = text.split(' ');
+      const lines = [];
+      let line = '';
+
+      for (const word of words) {
+        if ((line + word).length <= maxLength) {
+          line += word + ' ';
+        } else {
+          lines.push(line.trim());
+          line = word + ' ';
+        }
+      }
+      if (line) lines.push(line.trim());
+      return lines.join('\n');
+    };
+
+    const wrappedText = wrapText(teks);
+
+    // Tulis teks besar di tengah bawah
     base.print(
       font,
       30, 180,
       {
-        text: teks,
+        text: wrappedText,
         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
         alignmentY: Jimp.VERTICAL_ALIGN_TOP
       },
       452, 300
     );
 
-    const filename = `./${Date.now()}.webp`;
-    await base.writeAsync('./temp.png');
+    const tempPng = './temp_bratkeren.png';
+    const tempWebp = './temp_bratkeren.webp';
 
-    // Konversi ke WebP
+    await base.writeAsync(tempPng);
+
+    // Konversi PNG ke WebP (biar stiker bagus)
     await new Promise((resolve, reject) => {
-      exec(`convert "./temp.png" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${filename}"`, (err) => {
+      const cmd = `convert "${tempPng}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${tempWebp}"`;
+      exec(cmd, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const buffer = fs.readFileSync(filename);
+    const buffer = fs.readFileSync(tempWebp);
+
     await sock.sendMessage(from, {
       sticker: buffer,
-      mimetype: 'image/webp',
-      packname: 'Brat Mode',
-      author: name
+      mimetype: 'image/webp'
     }, { quoted: msg });
 
-    fs.unlinkSync('./temp.png');
-    fs.unlinkSync(filename);
+    fs.unlinkSync(tempPng);
+    fs.unlinkSync(tempWebp);
   } catch (err) {
     console.error('❌ bratkeren error:', err);
     await sock.sendMessage(from, {
@@ -567,5 +597,6 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
+
 
 }
