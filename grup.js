@@ -358,43 +358,75 @@ const allowedCommands = [
 
   // ✅ Kirim stiker dari kata brat acak
   if (text === '.stiker') {
-    if (!fitur.brats.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*' })
-const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
-    return await kirimGambarTeks(sock, from, random)
+  if (!fitur.brats || !fitur.brats.length) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*'
+    })
   }
 
-  // ✅ Kirim stiker dari teks khusus
-  if (text.startsWith('.stiker ')) {
-    const kata = text.split('.stiker ')[1]?.trim()
-    if (!kata) return sock.sendMessage(from, { text: '⚠️ Masukkan teks setelah .stiker' })
-    return await kirimGambarTeks(sock, from, kata)
-  }
-
-  // ✅ Gambar putih background + teks hitam tengah
-  if (text.startsWith('.gambar')) {
-    const isi = text.split('.gambar')[1]?.trim()
-    if (!isi) return sock.sendMessage(from, { text: '❌ Masukkan teks untuk digambar.' })
-    return await kirimGambarTeks(sock, from, isi)
-  }
+  const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
+  return await kirimGambarTeks(sock, from, random, isCommand)
 }
 
-// Fungsi bantu kirim gambar teks
-async function kirimGambarTeks(sock, from, teks) {
+  // 🔁 .stiker random dari brat
+if (text === '.stiker') {
+  if (!fitur.brats || !fitur.brats.length) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*'
+    })
+  }
+
+  const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
+  return await kirimGambarTeks(sock, from, random, true)
+}
+
+// ✅ Kirim stiker dari teks khusus
+if (text.startsWith('.stiker ')) {
+  const kata = text.split('.stiker ')[1]?.trim()
+  if (!kata) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Masukkan teks setelah .stiker'
+    })
+  }
+
+  return await kirimGambarTeks(sock, from, kata, true)
+}
+
+// ✅ Gambar putih background + teks hitam tengah
+if (text.startsWith('.gambar')) {
+  const isi = text.split('.gambar')[1]?.trim()
+  if (!isi) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks untuk digambar.'
+    })
+  }
+
+  return await kirimGambarTeks(sock, from, isi, true)
+}
+
+async function kirimGambarTeks(sock, from, teks, isCommand = false) {
   try {
-    const img = new Jimp(600, 300, '#ffffff')
+    const img = new Jimp(600, 300, '#ffffff') // background putih
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
-    img.print(font, 0, 0, {
-      text: teks,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 600, 300)
+    img.print(
+      font,
+      0,
+      0,
+      {
+        text: teks,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      },
+      600,
+      300
+    )
 
     const buffer = await img.getBufferAsync(Jimp.MIME_JPEG)
 
     await sock.sendMessage(from, {
       image: buffer,
-      caption: teks
+      caption: isCommand ? '' : teks
     })
   } catch (err) {
     console.error('❌ ERROR:', err)
