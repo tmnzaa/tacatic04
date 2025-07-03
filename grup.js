@@ -1,8 +1,6 @@
 const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
-const { createCanvas } = require('canvas')
-const bratFile = './brat.json'
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -344,53 +342,66 @@ const allowedCommands = [
 ]
 
 // ✨ BRAT GENERATOR ✨
-if (!fs.existsSync(bratFile)) fs.writeJsonSync(bratFile, { brat: [] })
+const Jimp = require('jimp')
 
+// Fitur .addbrat
 if (text.startsWith('.addbrat')) {
-  const kata = text.split('.addbrat')[1]?.trim()
-  if (!kata) return sock.sendMessage(from, { text: '⚠️ Contoh: *.addbrat kata lucu*' })
-
-  const dbBrat = fs.readJsonSync(bratFile)
-  if (dbBrat.brat.includes(kata)) return sock.sendMessage(from, { text: '❗ Brat itu sudah ada!' })
-
-  dbBrat.brat.push(kata)
-  fs.writeJsonSync(bratFile, dbBrat, { spaces: 2 })
-  return sock.sendMessage(from, { text: `✅ Ditambahkan:\n${kata}` })
-}
-
-if (text === '.stiker') {
-  const dbBrat = fs.readJsonSync(bratFile)
-  if (!dbBrat.brat.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat. Gunakan *.addbrat* dulu.' })
-
-  const isi = dbBrat.brat[Math.floor(Math.random() * dbBrat.brat.length)]
-  const canvas = createCanvas(512, 512)
-  const ctx = canvas.getContext('2d')
-
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(0, 0, 512, 512)
-
-  ctx.fillStyle = '#000'
-  ctx.font = 'bold 32px sans-serif'
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
-
-  const lines = isi.split('\\n')
-  const startY = 256 - ((lines.length - 1) * 40)
-
-  lines.forEach((line, i) => {
-    ctx.fillText(line, 256, startY + (i * 60))
+  if (!isOwner) return sock.sendMessage(from, {
+    text: '⚠️ Hanya owner grup yang bisa nambah brat!'
   })
 
-  const buffer = canvas.toBuffer('image/webp')
-  const tempFile = './brat_temp.webp'
-  fs.writeFileSync(tempFile, buffer)
+  const bratText = text.replace('.addbrat', '').trim()
+  if (!bratText) return sock.sendMessage(from, {
+    text: '❌ Format salah!\nContoh: *.addbrat aku rapopo*'
+  })
+
+  fitur.bratList = fitur.bratList || []
+  fitur.bratList.push(bratText)
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+
+  return sock.sendMessage(from, {
+    text: `✅ Kata brat berhasil ditambahkan:\n"${bratText}"`
+  })
+}
+
+// Fitur .stiker
+if (text === '.stiker') {
+  fitur.bratList = fitur.bratList || []
+  if (fitur.bratList.length === 0) {
+    return sock.sendMessage(from, {
+      text: '❌ Belum ada brat yang ditambahkan!\nGunakan *.addbrat teks* dulu.'
+    })
+  }
+
+  const kataRandom = fitur.bratList[Math.floor(Math.random() * fitur.bratList.length)]
+  const lines = kataRandom.split(' ').reduce((acc, word) => {
+    const last = acc[acc.length - 1]
+    if ((last + ' ' + word).length <= 15) {
+      acc[acc.length - 1] += (last ? ' ' : '') + word
+    } else {
+      acc.push(word)
+    }
+    return acc
+  }, [''])
+
+  const image = new Jimp(512, 512, '#FFFFFF')
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK)
+  const yStart = (512 - lines.length * 70) / 2
+
+  lines.forEach((line, i) => {
+    const width = Jimp.measureText(font, line)
+    image.print(font, (512 - width) / 2, yStart + i * 70, line)
+  })
+
+  const file = './brat.png'
+  await image.writeAsync(file)
 
   await sock.sendMessage(from, {
-    sticker: { url: tempFile },
+    sticker: { url: file },
     mimetype: 'image/webp'
   })
 
-  fs.unlinkSync(tempFile)
+  fs.unlinkSync(file)
 }
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
