@@ -1,18 +1,21 @@
-const fs = require("fs");
+const fs = require('fs');
 
 const metadata = {
-  "sticker-pack-id": "tamstore.id",
-  "sticker-pack-name": "Tam Store Sticker",
-  "sticker-pack-publisher": "Tamianza",
-  emojis: ["🔥"]
+  "sticker-pack-id": "tacatic04",
+  "sticker-pack-name": "Tam Store",
+  "sticker-pack-publisher": "Tamianza"
 };
 
-const jsonStr = JSON.stringify(metadata);
+const json = JSON.stringify(metadata);
 const exifAttr = Buffer.concat([
-  Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00]), // TIFF header
-  Buffer.from(jsonStr)
+  Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00]),
+  Buffer.from(json)
 ]);
 
-fs.writeFileSync("metadata.exif", exifAttr);
+const exif = Buffer.concat([
+  Buffer.from('Exif\x00\x00'),
+  exifAttr
+]);
 
-console.log("✅ metadata.exif berhasil dibuat!");
+fs.writeFileSync('metadata.exif', exif);
+console.log('✅ metadata.exif berhasil dibuat!');
