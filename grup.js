@@ -1,4 +1,4 @@
-const fs = require('fs-extra')
+const fs = require("fs")
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
@@ -402,7 +402,7 @@ if (text === '.stiker') {
 }
 
  // === .addbrat ===
-// === .addbrat ===
+
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
@@ -415,20 +415,20 @@ if (text.startsWith('.addbrat ')) {
     const filename = Date.now();
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
+    const finalPath = `./${filename}_final.webp`;
 
-    // Font utama dan font kecil
+    // Font utama dan kecil
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
     const image = new Jimp(512, 512, '#FFFFFF');
 
-    // Fungsi pembungkus teks otomatis
-    const wrapText = (text, maxLength = 25) => {
+    // Bungkus teks panjang
+    const wrapText = (text, maxLen = 25) => {
       const words = text.split(' ');
       const lines = [];
       let line = '';
-
       for (const word of words) {
-        if ((line + word).length <= maxLength) {
+        if ((line + word).length <= maxLen) {
           line += word + ' ';
         } else {
           lines.push(line.trim());
@@ -441,56 +441,49 @@ if (text.startsWith('.addbrat ')) {
 
     const wrappedText = wrapText(teks);
 
-    // Cetak teks utama di tengah
-    image.print(
-      font,
-      0,
-      0,
-      {
-        text: wrappedText,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      },
-      512,
-      512
-    );
+    // Teks utama tengah
+    image.print(font, 0, 0, {
+      text: wrappedText,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 512, 512);
 
-    // Tambahkan author kecil di bawah
-    image.print(
-      fontSmall,
-      0,
-      480, // atas bawah margin
-      {
-        text: 'brat [TacaBot]', // Ganti sesuai tag kamu
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
-      },
-      512,
-      32
-    );
+    // Author kecil bawah
+    image.print(fontSmall, 0, 480, {
+      text: 'brat [TacaBot]',
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
+    }, 512, 32);
 
-    image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Konversi PNG ke WebP
+    // Konversi ke WebP
     await new Promise((resolve, reject) => {
-      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-      exec(cmd, (err) => {
+      exec(`convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const buffer = fs.readFileSync(webpPath);
+    // Tambah metadata via webpmux
+    await new Promise((resolve, reject) => {
+      exec(`webpmux -set exif metadata.exif "${webpPath}" -o "${finalPath}"`, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const sticker = fs.readFileSync(finalPath);
 
     await sock.sendMessage(from, {
-      sticker: buffer,
+      sticker,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
     // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
+    fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
