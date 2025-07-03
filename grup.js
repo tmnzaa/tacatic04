@@ -348,8 +348,8 @@ const allowedCommands = [
     const kata = text.split('.addbrat')[1]?.trim()
     if (!kata) return sock.sendMessage(from, { text: '❌ Masukkan kata untuk brat-nya!' })
 
-    if (!grupData.brats.includes(kata)) {
-      grupData.brats.push(kata)
+    if (!fitur.brats.includes(kata)) {
+  fitur.brats.push(kata)
       fs.writeJsonSync(dbFile, db, { spaces: 2 })
     }
 
@@ -358,8 +358,8 @@ const allowedCommands = [
 
   // ✅ Kirim stiker dari kata brat acak
   if (text === '.stiker') {
-    if (!grupData.brats.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*' })
-    const random = grupData.brats[Math.floor(Math.random() * grupData.brats.length)]
+    if (!fitur.brats.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*' })
+const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
     return await kirimGambarTeks(sock, from, random)
   }
 
