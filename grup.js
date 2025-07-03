@@ -1,9 +1,8 @@
 const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
-const axios = require('axios')
+const { Sticker } = require('wa-sticker-formatter')
 const Jimp = require('jimp')
-const fetch = require('node-fetch')
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -349,90 +348,84 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
 // ===================== STIKER DARI GAMBAR =====================
+// FITUR .stiker dari gambar
 if (text === '.stiker') {
-  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
-  const imageMessage = quoted?.imageMessage || msg.message?.imageMessage
+  const m = msg.message
+  const quoted = m?.extendedTextMessage?.contextInfo?.quotedMessage
+  const mediaMessage = quoted?.imageMessage || m?.imageMessage
 
-  if (!imageMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Kirim gambar lalu reply dengan *.stiker* atau langsung ketik *.stiker* saat kirim gambar.'
-    }, { quoted: msg })
+  if (!mediaMessage) {
+    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan perintah *.stiker*' }, { quoted: msg })
   }
 
-  try {
-    const media = quoted
-      ? { message: quoted }
-      : msg
+  const mediaKey = quoted ? msg.message.extendedTextMessage.contextInfo : msg
+  const buffer = await sock.downloadMediaMessage(mediaKey)
 
-    const buffer = await sock.downloadMediaMessage(media)
+  const sticker = new Sticker(buffer, {
+    type: 'full',
+    pack: 'Tacatic',
+    author: 'Bot 04',
+    quality: 70
+  })
 
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg })
-  } catch (err) {
-    console.error('❌ stiker error:', err)
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker dari gambar.'
-    }, { quoted: msg })
-  }
+  await sock.sendMessage(from, {
+    sticker: await sticker.toBuffer()
+  }, { quoted: msg })
 }
 
 // ===================== ADD BRAT – TEKS + BG PUTIH =====================
 if (text.startsWith('.addbrat ')) {
-  const teks = text.slice(9).trim()
-  if (!teks) return sock.sendMessage(from, {
-    text: '❌ Masukkan teks!\nContoh: *.addbrat Halo Dunia!*'
+  const teks = text.split('.addbrat ')[1].trim()
+  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.addbrat otw bos*' }, { quoted: msg })
+
+  const image = new Jimp(600, 400, '#FFFFFF') // background putih
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
+
+  image.print(font, 0, 0, {
+    text: teks,
+    alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+    alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+  }, 600, 400)
+
+  const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
+  const sticker = new Sticker(buffer, {
+    type: 'full',
+    pack: 'BratGen',
+    author: 'TacaticBot'
+  })
+
+  await sock.sendMessage(from, {
+    sticker: await sticker.toBuffer()
   }, { quoted: msg })
-
-  try {
-    const image = new Jimp(600, 400, '#FFFFFF')
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
-    image.print(font, 0, 0, {
-      text: teks,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 600, 400)
-
-    const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg })
-  } catch (err) {
-    console.error('❌ .addbrat error:', err)
-    sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker.'
-    }, { quoted: msg })
-  }
 }
 
 // ===================== BRATKEREN – NAMA + TEKS =====================
 if (text.startsWith('.bratkeren ')) {
-  const teks = text.slice(11).trim()
-  const name = metadata?.participants?.find(p => p.id === sender)?.name || 'Pengguna'
+  const teks = text.split('.bratkeren ')[1].trim()
+  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.bratkeren semangat ya*' }, { quoted: msg })
+
+  const name = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
   const fullText = `${name}\n${teks}`
 
-  try {
-    const image = new Jimp(600, 400, '#FFFFFF')
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
-    image.print(font, 0, 0, {
-      text: fullText,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 600, 400)
+  const image = new Jimp(600, 400, '#FFFFFF')
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
-    const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg })
-  } catch (err) {
-    console.error('❌ .bratkeren error:', err)
-    sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker.'
-    }, { quoted: msg })
-  }
+  image.print(font, 0, 0, {
+    text: fullText,
+    alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+    alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+  }, 600, 400)
+
+  const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
+  const sticker = new Sticker(buffer, {
+    type: 'full',
+    pack: 'BratKeren',
+    author: name
+  })
+
+  await sock.sendMessage(from, {
+    sticker: await sticker.toBuffer()
+  }, { quoted: msg })
 }
 
 }
