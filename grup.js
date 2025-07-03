@@ -393,14 +393,14 @@ if (text.startsWith('.addbrat ')) {
     const webpPath = `./${filename}.webp`;
 
     // Buat gambar PNG
-    const image = new Jimp(512, 512, '#FFFFFF');
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const image = new Jimp(512, 300, '#FFFFFF');
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_128_BLACK);
 
     image.print(font, 0, 0, {
       text: teks,
       alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
       alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 512);
+    }, 512, 300);
 
     await image.writeAsync(pngPath);
 
