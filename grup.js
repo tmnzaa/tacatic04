@@ -1,7 +1,8 @@
 const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
-const Jimp = require('jimp')
+const axios = require('axios')
+const fetch = require('node-fetch')
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -50,7 +51,6 @@ module.exports = async (sock, msg) => {
   db[from] = db[from] || {}
   db[from].nama = metadata.subject
   const fitur = db[from]
- db[from].brats = db[from].brats || [] // simpan kata brat
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
@@ -94,7 +94,6 @@ module.exports = async (sock, msg) => {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
   })
 }
-
 
   if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < new Date(now))) {
   if (isCommand && (isAdmin || isOwner)) {
@@ -292,27 +291,27 @@ if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?
 }
 
   // 🔓 .open & .close
-  if (text.startsWith('.open')) {
-    const jam = text.split(' ')[1]
-    if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
-      fitur.openTime = jam
-      fs.writeJsonSync(dbFile, db, { spaces: 2 })
-      return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam}*` })
-    }
-    await sock.groupSettingUpdate(from, 'not_announcement')
-    sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' })
+if (text.startsWith('.open')) {
+  const jam = text.split(' ')[1]
+  if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
+    fitur.openTime = jam
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam}*` })
   }
+  await sock.groupSettingUpdate(from, 'not_announcement')
+  return sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' }) // <== tambahkan return
+}
 
-  if (text.startsWith('.close')) {
-    const jam = text.split(' ')[1]
-    if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
-      fitur.closeTime = jam
-      fs.writeJsonSync(dbFile, db, { spaces: 2 })
-      return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam}*` })
-    }
-    await sock.groupSettingUpdate(from, 'announcement')
-    sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' })
+if (text.startsWith('.close')) {
+  const jam = text.split(' ')[1]
+  if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
+    fitur.closeTime = jam
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam}*` })
   }
+  await sock.groupSettingUpdate(from, 'announcement')
+  return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
+}
 
   if (text === '.cekaktif') {
   const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
@@ -343,57 +342,60 @@ const allowedCommands = [
   '.open', '.close', '.tagall', '.kick', '.promote', '.demote'
 ]
 
- if (text === '.stiker') {
-    if (!fitur.brats.length) {
-      return sock.sendMessage(from, { text: '⚠️ Tambahkan brat dulu pakai *.addbrat kata*' })
-    }
-    const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
-    return await kirimGambarTeks(sock, from, random, true)
-  }
-
-  if (text.startsWith('.stiker ')) {
-    const kata = text.split('.stiker ')[1]?.trim()
-    if (!kata) return sock.sendMessage(from, { text: '⚠️ Masukkan teks setelah .stiker' })
-    return await kirimGambarTeks(sock, from, kata, true)
-  }
-
-  if (text.startsWith('.gambar')) {
-    const isi = text.split('.gambar')[1]?.trim()
-    if (!isi) return sock.sendMessage(from, { text: '❌ Masukkan teks.' })
-    return await kirimGambarTeks(sock, from, isi, true)
-  }
-
-  if (text.startsWith('.addbrat')) {
-    const kata = text.split('.addbrat')[1]?.trim()
-    if (!kata) return sock.sendMessage(from, { text: '❌ Masukkan kata brat!' })
-    if (!fitur.brats.includes(kata)) {
-      fitur.brats.push(kata)
-      fs.writeJsonSync(dbFile, db, { spaces: 2 })
-    }
-    return sock.sendMessage(from, { text: `✅ Brat ditambahkan: *"${kata}"*` })
-  }
-
-  if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) return
+// Cek jika pesan dimulai titik tapi bukan command yang dikenali
+if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
+  return // abaikan command yang tidak dikenal
 }
 
-async function kirimGambarTeks(sock, from, teks, isCommand = false) {
-  try {
-    const img = new Jimp(600, 300, '#ffffff')
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
+if (text === '.stiker') {
+  const m = msg.message
+  const quoted = m?.extendedTextMessage?.contextInfo?.quotedMessage
+  const mediaMessage = quoted?.imageMessage || m?.imageMessage
 
-    img.print(
-      font,
-      0,
-      0,
-      { text: teks, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER, alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE },
-      600,
-      300
-    )
-
-    const buffer = await img.getBufferAsync(Jimp.MIME_JPEG)
-    await sock.sendMessage(from, { image: buffer, caption: isCommand ? '' : teks })
-  } catch (err) {
-    console.error('❌ ERROR:', err)
-    sock.sendMessage(from, { text: '❌ Gagal kirim gambar.' })
+  if (!mediaMessage) {
+    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan perintah *.stiker*' }, { quoted: msg })
   }
+
+  const mediaKey = mediaMessage?.url ? mediaMessage : msg
+  const buffer = await sock.downloadMediaMessage(mediaKey)
+
+  await sock.sendMessage(from, {
+    sticker: buffer,
+    mimetype: 'image/webp'
+  }, { quoted: msg })
+}
+
+if (text.startsWith('.addbrat ')) {
+  const teks = text.split('.addbrat ')[1].trim()
+  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.addbrat otw bos*' }, { quoted: msg })
+
+  const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(teks)}&font=lobster`
+  const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+
+  await sock.sendMessage(from, {
+    sticker: data,
+    mimetype: 'image/webp'
+  }, { quoted: msg })
+}
+
+if (text.startsWith('.bratkeren ')) {
+  const teks = text.split('.bratkeren ')[1].trim()
+  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.bratkeren semangat ya*' }, { quoted: msg })
+
+  const name = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
+  const fullText = `${name}\n${teks}`
+  const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(fullText)}&font=lobster`
+
+  try {
+    const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+    await sock.sendMessage(from, {
+      sticker: data,
+      mimetype: 'image/webp'
+    }, { quoted: msg })
+  } catch (err) {
+    console.error('❌ bratkeren error:', err)
+    await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker' }, { quoted: msg })
+  }
+}
+
 }
