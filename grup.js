@@ -401,12 +401,7 @@ if (text === '.stiker') {
   }
 }
 
-  // === .addbrat ===
-  const fs = require("fs");
-const { exec } = require("child_process");
-const Jimp = require("jimp");
-
-// === .addbrat ===
+ // === .addbrat ===
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
