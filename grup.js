@@ -351,7 +351,6 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
 // === .stiker ===
- // === .stiker ===
 if (text === '.stiker') {
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
@@ -376,7 +375,7 @@ if (text === '.stiker') {
 
     fs.writeFileSync(inputPath, buffer);
 
-    // Resize rapi, center, pas ukuran 512x512
+    // Resize dengan kualitas tinggi & center 512x512
     await new Promise((resolve, reject) => {
       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
       exec(cmd, (err) => {
@@ -385,13 +384,10 @@ if (text === '.stiker') {
       });
     });
 
-    const webpBuffer = fs.readFileSync(outputPath);
-
-    // Tambah metadata langsung di buffer
-    const finalSticker = addAuthorMetadata(webpBuffer, "Tamianza", "Tam Store");
+    const stickerBuffer = fs.readFileSync(outputPath);
 
     await sock.sendMessage(from, {
-      sticker: finalSticker,
+      sticker: stickerBuffer,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
