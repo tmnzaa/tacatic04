@@ -402,6 +402,7 @@ if (text === '.stiker') {
 }
 
  // === .addbrat ===
+// === .addbrat ===
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
@@ -415,11 +416,12 @@ if (text.startsWith('.addbrat ')) {
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
 
-    // Tentukan font
+    // Font utama dan font kecil
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
     const image = new Jimp(512, 512, '#FFFFFF');
 
-    // Potong teks panjang jadi per baris maksimal 25 karakter
+    // Fungsi pembungkus teks otomatis
     const wrapText = (text, maxLength = 25) => {
       const words = text.split(' ');
       const lines = [];
@@ -439,6 +441,7 @@ if (text.startsWith('.addbrat ')) {
 
     const wrappedText = wrapText(teks);
 
+    // Cetak teks utama di tengah
     image.print(
       font,
       0,
@@ -452,10 +455,24 @@ if (text.startsWith('.addbrat ')) {
       512
     );
 
+    // Tambahkan author kecil di bawah
+    image.print(
+      fontSmall,
+      0,
+      480, // atas bawah margin
+      {
+        text: 'brat [TacaBot]', // Ganti sesuai tag kamu
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
+      },
+      512,
+      32
+    );
+
     image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Konversi PNG ke WebP dengan center dan kualitas tinggi
+    // Konversi PNG ke WebP
     await new Promise((resolve, reject) => {
       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
       exec(cmd, (err) => {
@@ -481,7 +498,6 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
-
 
   // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
