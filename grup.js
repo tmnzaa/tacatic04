@@ -1,4 +1,4 @@
-const fs = require("fs")
+const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
@@ -371,28 +371,41 @@ if (text === '.stiker') {
 
     const filename = `./${Date.now()}`;
     const inputPath = `${filename}.jpg`;
-    const outputPath = `${filename}.webp`;
+    const webpPath = `${filename}.webp`;
+    const finalWebpPath = `${filename}_final.webp`;
 
+    // Simpan gambar ke file sementara
     fs.writeFileSync(inputPath, buffer);
 
-    // Resize dengan kualitas tinggi & center 512x512
+    // Convert ke WebP ukuran 512x512 dengan kualitas tinggi
     await new Promise((resolve, reject) => {
-      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
       exec(cmd, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const stickerBuffer = fs.readFileSync(outputPath);
+    // Tambahkan metadata agar stikernya bisa disimpan dan klik seperti Sticker.ly
+    await new Promise((resolve, reject) => {
+      const cmd = `webpmux -set exif metadata.exif "${webpPath}" -o "${finalWebpPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const stickerBuffer = fs.readFileSync(finalWebpPath);
 
     await sock.sendMessage(from, {
       sticker: stickerBuffer,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
+    // Hapus semua file sementara
     fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
+    fs.unlinkSync(webpPath);
+    fs.unlinkSync(finalWebpPath);
   } catch (err) {
     console.error('❌ stiker error:', err);
     await sock.sendMessage(from, {
@@ -402,7 +415,7 @@ if (text === '.stiker') {
 }
 
  // === .addbrat ===
-
+// === .addbrat ===
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
@@ -415,20 +428,20 @@ if (text.startsWith('.addbrat ')) {
     const filename = Date.now();
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
-    const finalPath = `./${filename}_final.webp`;
 
-    // Font utama dan kecil
+    // Font utama dan font kecil
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
     const image = new Jimp(512, 512, '#FFFFFF');
 
-    // Bungkus teks panjang
-    const wrapText = (text, maxLen = 25) => {
+    // Fungsi pembungkus teks otomatis
+    const wrapText = (text, maxLength = 25) => {
       const words = text.split(' ');
       const lines = [];
       let line = '';
+
       for (const word of words) {
-        if ((line + word).length <= maxLen) {
+        if ((line + word).length <= maxLength) {
           line += word + ' ';
         } else {
           lines.push(line.trim());
@@ -441,49 +454,56 @@ if (text.startsWith('.addbrat ')) {
 
     const wrappedText = wrapText(teks);
 
-    // Teks utama tengah
-    image.print(font, 0, 0, {
-      text: wrappedText,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 512);
+    // Cetak teks utama di tengah
+    image.print(
+      font,
+      0,
+      0,
+      {
+        text: wrappedText,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      },
+      512,
+      512
+    );
 
-    // Author kecil bawah
-    image.print(fontSmall, 0, 480, {
-      text: 'brat [TacaBot]',
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
-    }, 512, 32);
+    // Tambahkan author kecil di bawah
+    image.print(
+      fontSmall,
+      0,
+      480, // atas bawah margin
+      {
+        text: 'brat [TacaBot]', // Ganti sesuai tag kamu
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
+      },
+      512,
+      32
+    );
 
+    image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Konversi ke WebP
+    // Konversi PNG ke WebP
     await new Promise((resolve, reject) => {
-      exec(`convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`, (err) => {
+      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
+      exec(cmd, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    // Tambah metadata via webpmux
-    await new Promise((resolve, reject) => {
-      exec(`webpmux -set exif metadata.exif "${webpPath}" -o "${finalPath}"`, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
-
-    const sticker = fs.readFileSync(finalPath);
+    const buffer = fs.readFileSync(webpPath);
 
     await sock.sendMessage(from, {
-      sticker,
+      sticker: buffer,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
     // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
-    fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
