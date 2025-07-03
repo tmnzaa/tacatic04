@@ -483,41 +483,89 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-
-  // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
-    const teks = text.split('.bratkeren ')[1].trim()
-    if (!teks) {
-      return sock.sendMessage(from, {
-        text: '❌ Masukkan teks!\nContoh: *.bratkeren hai kamu*'
-      }, { quoted: msg })
-    }
-
-    const name = m?.pushName || sender.split('@')[0]
-    const fullText = `${name}\n${teks}`
-
-    try {
-      const image = new Jimp(512, 512, '#ffcdf3') // warna pink lucu
-      const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
-
-      image.print(font, 0, 0, {
-        text: fullText,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      }, 512, 512)
-
-      const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-
-      await sock.sendMessage(from, {
-        sticker: buffer,
-        mimetype: 'image/webp',
-        packname: 'Brat Mode',
-        author: name
-      }, { quoted: msg })
-
-    } catch (err) {
-      console.error('❌ bratkeren error:', err)
-      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
-    }
+  const teks = text.split('.bratkeren ')[1].trim();
+  if (!teks) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks!\nContoh: *.bratkeren hai kamu*'
+    }, { quoted: msg });
   }
+
+  try {
+    const name = m?.pushName || sender.split('@')[0];
+
+    // Ambil foto profil pengguna
+    let ppUrl;
+    try {
+      ppUrl = await sock.profilePictureUrl(sender, 'image');
+    } catch {
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default pp jika tidak ada
+    }
+
+    const ppImage = await Jimp.read(ppUrl);
+    const base = new Jimp(512, 512, '#ffcdf3'); // background pink lucu
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+
+    // Resize dan crop PP jadi bulat (pakai masking manual)
+    ppImage.resize(128, 128);
+    const mask = await new Jimp(128, 128, 0xFFFFFFFF);
+    mask.circle(); // bentuk bulat
+    ppImage.mask(mask, 0, 0);
+
+    // Tempelkan foto profil ke kiri atas
+    base.composite(ppImage, 20, 20);
+
+    // Tulis nama & teks di samping PP
+    base.print(
+      fontSmall,
+      160, 30,
+      {
+        text: `${name}`,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
+        alignmentY: Jimp.VERTICAL_ALIGN_TOP
+      },
+      330, 40
+    );
+
+    base.print(
+      font,
+      30, 180,
+      {
+        text: teks,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_TOP
+      },
+      452, 300
+    );
+
+    const filename = `./${Date.now()}.webp`;
+    await base.writeAsync('./temp.png');
+
+    // Konversi ke WebP
+    await new Promise((resolve, reject) => {
+      exec(`convert "./temp.png" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${filename}"`, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const buffer = fs.readFileSync(filename);
+    await sock.sendMessage(from, {
+      sticker: buffer,
+      mimetype: 'image/webp',
+      packname: 'Brat Mode',
+      author: name
+    }, { quoted: msg });
+
+    fs.unlinkSync('./temp.png');
+    fs.unlinkSync(filename);
+  } catch (err) {
+    console.error('❌ bratkeren error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
+}
+
 }
