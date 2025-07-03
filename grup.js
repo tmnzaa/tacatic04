@@ -2,7 +2,6 @@ const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
-const webp = require('webp-converter') // Untuk convert PNG ke WebP
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -23,24 +22,6 @@ const kataKasar = [
   'tai',
   // dst...
 ]
-
-async function convertToWebp(inputBuffer) {
-  const tempInput = './tmp_input.png'
-  const tempOutput = './tmp_output.webp'
-
-  fs.writeFileSync(tempInput, inputBuffer)
-
-  await webp.cwebp(tempInput, tempOutput, "-q 80", (status, error) => {
-    if (status !== '100') console.error('❌ Convert Error:', error)
-  })
-
-  const webpBuffer = fs.readFileSync(tempOutput)
-  fs.unlinkSync(tempInput)
-  fs.unlinkSync(tempOutput)
-
-  return webpBuffer
-}
-
 
 module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
@@ -365,66 +346,100 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
 }
 
-// ===================== STIKER DARI GAMBAR =====================
-if (text === '.stiker') {
-  const m = msg.message
-  const quoted = m?.extendedTextMessage?.contextInfo?.quotedMessage
-  const mediaMessage = quoted?.imageMessage || m?.imageMessage
+// === .stiker ===
+  if (text === '.stiker') {
+    const mtype = Object.keys(msg.message)[0]
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+    const mediaMessage = quoted?.imageMessage || msg.message?.imageMessage
 
-  if (!mediaMessage) {
-    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan perintah *.stiker*' }, { quoted: msg })
+    if (!mediaMessage) {
+      return sock.sendMessage(from, {
+        text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+      }, { quoted: msg })
+    }
+
+    try {
+      const buffer = await sock.downloadMediaMessage(quoted ? { message: quoted } : msg)
+
+      await sock.sendMessage(from, {
+        sticker: buffer,
+        mimetype: 'image/webp'
+      }, { quoted: msg })
+
+    } catch (err) {
+      console.error('❌ stiker error:', err)
+      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
+    }
   }
 
-  const mediaKey = mediaMessage?.url ? mediaMessage : msg
-  const buffer = await sock.downloadMediaMessage(mediaKey)
+  // === .addbrat [teks] ===
+  if (text.startsWith('.addbrat ')) {
+    const teks = text.split('.addbrat ')[1].trim()
+    if (!teks) {
+      return sock.sendMessage(from, {
+        text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+      }, { quoted: msg })
+    }
 
-  const webpBuffer = await convertToWebp(buffer)
+    try {
+      const image = new Jimp(512, 512, '#FFFFFF')
+      const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
-  await sock.sendMessage(from, {
-    sticker: webpBuffer
-  }, { quoted: msg })
-}
+      image.print(font, 0, 0, {
+        text: teks,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      }, 512, 512)
 
-// ===================== ADD BRAT – TEKS + BG PUTIH =====================
-if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1].trim()
-  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.addbrat otw bos*' }, { quoted: msg })
+      const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
 
-  const image = new Jimp(512, 512, '#FFFFFF')
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
-  image.print(font, 0, 0, {
-    text: teks,
-    alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-    alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-  }, 512, 512)
+      await sock.sendMessage(from, {
+        sticker: buffer,
+        mimetype: 'image/webp',
+        packname: 'Tacatic Brat',
+        author: 'Bot 04'
+      }, { quoted: msg })
 
-  const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-  const webpBuffer = await convertToWebp(buffer)
+    } catch (err) {
+      console.error('❌ addbrat error:', err)
+      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
+    }
+  }
 
-  await sock.sendMessage(from, {
-    sticker: webpBuffer
-  }, { quoted: msg })
-}
+  // === .bratkeren [teks] ===
+  if (text.startsWith('.bratkeren ')) {
+    const teks = text.split('.bratkeren ')[1].trim()
+    if (!teks) {
+      return sock.sendMessage(from, {
+        text: '❌ Masukkan teks!\nContoh: *.bratkeren hai kamu*'
+      }, { quoted: msg })
+    }
 
-// ===================== BRATKEREN – NAMA + TEKS =====================
-if (text.startsWith('.bratkeren ')) {
-  const teks = text.split('.bratkeren ')[1].trim()
-  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.bratkeren semangat ya*' }, { quoted: msg })
+    const name = m?.pushName || sender.split('@')[0]
+    const fullText = `${name}\n${teks}`
 
-  const name = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
-  const fullText = `${name}\n${teks}`
+    try {
+      const image = new Jimp(512, 512, '#ffcdf3') // warna pink lucu
+      const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
-  const image = new Jimp(512, 512, '#FFFFFF')
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK)
-  image.print(font, 10, 10, fullText, 500)
+      image.print(font, 0, 0, {
+        text: fullText,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      }, 512, 512)
 
-  const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
-  const webpBuffer = await convertToWebp(buffer)
+      const buffer = await image.getBufferAsync(Jimp.MIME_PNG)
 
-  await sock.sendMessage(from, {
-    sticker: webpBuffer
-  }, { quoted: msg })
-}
+      await sock.sendMessage(from, {
+        sticker: buffer,
+        mimetype: 'image/webp',
+        packname: 'Brat Mode',
+        author: name
+      }, { quoted: msg })
 
-
+    } catch (err) {
+      console.error('❌ bratkeren error:', err)
+      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg })
+    }
+  }
 }
