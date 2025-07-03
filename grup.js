@@ -489,13 +489,12 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-//bratkeren
-  // === .bratkeren ===
+// === .bratkeren ===
 if (text.startsWith('.bratkeren ')) {
   const teks = text.split('.bratkeren ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
-      text: '❌ Masukkan teks!\nContoh: *.bratkeren hai kamu*'
+      text: '❌ Masukkan teks!\nContoh: *.bratkeren miris bgt*'
     }, { quoted: msg });
   }
 
@@ -507,36 +506,35 @@ if (text.startsWith('.bratkeren ')) {
     try {
       ppUrl = await sock.profilePictureUrl(sender, 'image');
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png';
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default pp
     }
 
     const ppImage = await Jimp.read(ppUrl);
-    const base = new Jimp(512, 512, '#ffe5f1');
+    const base = new Jimp(512, 512, '#ffffff'); // background putih
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
 
-    // Resize dan buat PP jadi bulat
-    ppImage.resize(128, 128);
-    const mask = await new Jimp(128, 128, 0xFFFFFFFF);
+    // Resize dan bulatkan PP
+    ppImage.resize(96, 96);
+    const mask = await new Jimp(96, 96, 0xFFFFFFFF);
     mask.circle();
     ppImage.mask(mask, 0, 0);
+    base.composite(ppImage, 30, 30);
 
-    base.composite(ppImage, 20, 20);
-
-    // Tulis nama user kecil di samping PP
+    // Nama user di samping PP
     base.print(
       fontSmall,
-      160, 40,
+      140, 50,
       {
-        text: `${name}`,
+        text: name,
         alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
         alignmentY: Jimp.VERTICAL_ALIGN_TOP
       },
       330, 40
     );
 
-    // Bungkus teks agar tidak keluar
-    const wrapText = (text, maxLength = 28) => {
+    // Bungkus teks agar pas
+    const wrapText = (text, maxLength = 20) => {
       const words = text.split(' ');
       const lines = [];
       let line = '';
@@ -555,7 +553,7 @@ if (text.startsWith('.bratkeren ')) {
 
     const wrappedText = wrapText(teks);
 
-    // Tulis teks besar di tengah bawah
+    // Tampilkan teks user di bawah
     base.print(
       font,
       30, 180,
@@ -572,7 +570,7 @@ if (text.startsWith('.bratkeren ')) {
 
     await base.writeAsync(tempPng);
 
-    // Konversi PNG ke WebP (biar stiker bagus)
+    // Konversi ke stiker
     await new Promise((resolve, reject) => {
       const cmd = `convert "${tempPng}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${tempWebp}"`;
       exec(cmd, (err) => {
