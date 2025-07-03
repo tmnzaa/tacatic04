@@ -4,6 +4,7 @@ const strikeFile = './strike.json'
 const Jimp = require('jimp')
 const path = require('path');
 const { exec } = require('child_process');
+const { addAuthorMetadata } = require('./exif'); // pastikan di atas
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
@@ -378,7 +379,6 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
   // === .addbrat [teks] ===
-  
 if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
@@ -414,9 +414,11 @@ if (text.startsWith('.addbrat ')) {
 
     const buffer = fs.readFileSync(webpPath);
 
-    // Kirim sebagai stiker
+    // Tambahkan author metadata
+    const stickerBuffer = addAuthorMetadata(buffer, "Tacatic 04");
+
     await sock.sendMessage(from, {
-      sticker: buffer
+      sticker: stickerBuffer
     }, { quoted: msg });
 
     fs.unlinkSync(pngPath);
