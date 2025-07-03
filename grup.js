@@ -1,6 +1,7 @@
 const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
+const Jimp = require('jimp')
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -49,6 +50,7 @@ module.exports = async (sock, msg) => {
   db[from] = db[from] || {}
   db[from].nama = metadata.subject
   const fitur = db[from]
+  grupData.brats = grupData.brats || [] // simpan kata brat
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
@@ -341,67 +343,63 @@ const allowedCommands = [
   '.open', '.close', '.tagall', '.kick', '.promote', '.demote'
 ]
 
-// ✨ BRAT GENERATOR ✨
-const Jimp = require('jimp')
+// ✅ Tambahkan kata brat
+  if (text.startsWith('.addbrat')) {
+    const kata = text.split('.addbrat')[1]?.trim()
+    if (!kata) return sock.sendMessage(from, { text: '❌ Masukkan kata untuk brat-nya!' })
 
-// Fitur .addbrat
-if (text.startsWith('.addbrat')) {
-  if (!isOwner) return sock.sendMessage(from, {
-    text: '⚠️ Hanya owner grup yang bisa nambah brat!'
-  })
+    if (!grupData.brats.includes(kata)) {
+      grupData.brats.push(kata)
+      fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    }
 
-  const bratText = text.replace('.addbrat', '').trim()
-  if (!bratText) return sock.sendMessage(from, {
-    text: '❌ Format salah!\nContoh: *.addbrat aku rapopo*'
-  })
-
-  fitur.bratList = fitur.bratList || []
-  fitur.bratList.push(bratText)
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
-
-  return sock.sendMessage(from, {
-    text: `✅ Kata brat berhasil ditambahkan:\n"${bratText}"`
-  })
-}
-
-// Fitur .stiker
-if (text === '.stiker') {
-  fitur.bratList = fitur.bratList || []
-  if (fitur.bratList.length === 0) {
-    return sock.sendMessage(from, {
-      text: '❌ Belum ada brat yang ditambahkan!\nGunakan *.addbrat teks* dulu.'
-    })
+    return sock.sendMessage(from, { text: `✅ Kata brat berhasil ditambahkan:\n*"${kata}"*` })
   }
 
-  const kataRandom = fitur.bratList[Math.floor(Math.random() * fitur.bratList.length)]
-  const lines = kataRandom.split(' ').reduce((acc, word) => {
-    const last = acc[acc.length - 1]
-    if ((last + ' ' + word).length <= 15) {
-      acc[acc.length - 1] += (last ? ' ' : '') + word
-    } else {
-      acc.push(word)
-    }
-    return acc
-  }, [''])
+  // ✅ Kirim stiker dari kata brat acak
+  if (text === '.stiker') {
+    if (!grupData.brats.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*' })
+    const random = grupData.brats[Math.floor(Math.random() * grupData.brats.length)]
+    return await kirimGambarTeks(sock, from, random)
+  }
 
-  const image = new Jimp(512, 512, '#FFFFFF')
-  const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK)
-  const yStart = (512 - lines.length * 70) / 2
+  // ✅ Kirim stiker dari teks khusus
+  if (text.startsWith('.stiker ')) {
+    const kata = text.split('.stiker ')[1]?.trim()
+    if (!kata) return sock.sendMessage(from, { text: '⚠️ Masukkan teks setelah .stiker' })
+    return await kirimGambarTeks(sock, from, kata)
+  }
 
-  lines.forEach((line, i) => {
-    const width = Jimp.measureText(font, line)
-    image.print(font, (512 - width) / 2, yStart + i * 70, line)
-  })
+  // ✅ Gambar putih background + teks hitam tengah
+  if (text.startsWith('.gambar')) {
+    const isi = text.split('.gambar')[1]?.trim()
+    if (!isi) return sock.sendMessage(from, { text: '❌ Masukkan teks untuk digambar.' })
+    return await kirimGambarTeks(sock, from, isi)
+  }
+}
 
-  const file = './brat.png'
-  await image.writeAsync(file)
+// Fungsi bantu kirim gambar teks
+async function kirimGambarTeks(sock, from, teks) {
+  try {
+    const img = new Jimp(600, 300, '#ffffff')
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
-  await sock.sendMessage(from, {
-    sticker: { url: file },
-    mimetype: 'image/webp'
-  })
+    img.print(font, 0, 0, {
+      text: teks,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 600, 300)
 
-  fs.unlinkSync(file)
+    const buffer = await img.getBufferAsync(Jimp.MIME_JPEG)
+
+    await sock.sendMessage(from, {
+      image: buffer,
+      caption: teks
+    })
+  } catch (err) {
+    console.error('❌ ERROR:', err)
+    sock.sendMessage(from, { text: '❌ Gagal kirim gambar.' })
+  }
 }
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
