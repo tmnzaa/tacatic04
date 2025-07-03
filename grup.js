@@ -368,30 +368,23 @@ if (text === '.stiker') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    const filename = `./${Date.now()}`;
-    const inputPath = `${filename}.jpg`;
-    const webpPath = `${filename}.webp`;
-    const finalWebpPath = `${filename}_final.webp`;
+    const timestamp = Date.now();
+    const inputPath = `./${timestamp}.jpg`;
+    const webpPath = `./${timestamp}.webp`;
+    const finalWebpPath = `./${timestamp}_final.webp`;
 
-    // Simpan gambar ke file sementara
     fs.writeFileSync(inputPath, buffer);
 
-    // Convert ke WebP ukuran 512x512 dengan kualitas tinggi
+    // Convert ke webp dengan ukuran dan kualitas bagus
     await new Promise((resolve, reject) => {
       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
+      exec(cmd, (err) => (err ? reject(err) : resolve()));
     });
 
-    // Tambahkan metadata agar stikernya bisa disimpan dan klik seperti Sticker.ly
+    // Tambahkan EXIF metadata biar bisa diklik/disimpan
     await new Promise((resolve, reject) => {
       const cmd = `webpmux -set exif metadata.exif "${webpPath}" -o "${finalWebpPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
+      exec(cmd, (err) => (err ? reject(err) : resolve()));
     });
 
     const stickerBuffer = fs.readFileSync(finalWebpPath);
@@ -401,10 +394,11 @@ if (text === '.stiker') {
       mimetype: 'image/webp'
     }, { quoted: msg });
 
-    // Hapus semua file sementara
+    // Cleanup
     fs.unlinkSync(inputPath);
     fs.unlinkSync(webpPath);
     fs.unlinkSync(finalWebpPath);
+
   } catch (err) {
     console.error('❌ stiker error:', err);
     await sock.sendMessage(from, {
@@ -465,20 +459,6 @@ if (text.startsWith('.addbrat ')) {
       },
       512,
       512
-    );
-
-    // Tambahkan watermark/brat kecil di bawah
-    image.print(
-      fontSmall,
-      0,
-      480,
-      {
-        text: 'brat [TacaBot]',
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_BOTTOM
-      },
-      512,
-      32
     );
 
     image.quality(100);
