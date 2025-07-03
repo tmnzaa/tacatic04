@@ -94,14 +94,13 @@ module.exports = async (sock, msg) => {
 }
 
 
-  const now = new Date().toISOString().split('T')[0]
-if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < new Date(now))) {
+  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < new Date(now))) {
   if (isCommand && (isAdmin || isOwner)) {
     return sock.sendMessage(from, {
-      text: `🕒 *Tacatic Bot 04* belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)`
+      text: `🕒 *Tacatic Bot 04* belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (PERMANEN – hanya Owner Bot)`
     })
   }
-  return // jangan lakukan apapun jika bukan command
+  return // Non-admin tidak bisa pakai fitur sebelum bot aktif
 }
 
   // 💡 Hanya batasi command jika bukan admin
