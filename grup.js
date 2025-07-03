@@ -50,7 +50,7 @@ module.exports = async (sock, msg) => {
   db[from] = db[from] || {}
   db[from].nama = metadata.subject
   const fitur = db[from]
-  grupData.brats = grupData.brats || [] // simpan kata brat
+ db[from].brats = db[from].brats || [] // simpan kata brat
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
