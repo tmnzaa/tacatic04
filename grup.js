@@ -384,7 +384,7 @@ if (text.startsWith('.addbrat ')) {
     text: '❌ Masukkan teks!\nContoh: *.addbrat Halo Dunia*'
   }, { quoted: msg })
 
-  const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(teks)}&font=lobster`
+  const url = `https://dummyimage.com/600x400/ffffff/000000.png&text=${encodeURIComponent(teks)}`
 
   try {
     const { data } = await axios.get(url, { responseType: 'arraybuffer' })
@@ -411,7 +411,7 @@ if (text.startsWith('.bratkeren ')) {
   try {
     const namaPengirim = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
     const fullText = `${namaPengirim}\n${teks}`
-    const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(fullText)}&font=lobster`
+   const url = `https://dummyimage.com/600x400/ffffff/000000.png&text=${encodeURIComponent(fullText)}`
 
     const { data } = await axios.get(url, { responseType: 'arraybuffer' })
 
