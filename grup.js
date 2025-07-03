@@ -403,9 +403,9 @@ if (text === '.stiker') {
   }
 }
 
- // === .addbrat [teks] ===
+ // ===== .addbrat [teks] =====
 if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1].trim();
+  const teks = text.slice(9).trim();
   if (!teks) {
     return sock.sendMessage(from, {
       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
@@ -414,11 +414,11 @@ if (text.startsWith('.addbrat ')) {
 
   try {
     const filename = Date.now();
-    const pngPath = `./${filename}.png`;
-    const webpPath = `./${filename}.webp`;
-    const finalPath = `./${filename}_final.webp`;
+    const pngPath = `./tmp_${filename}.png`;
+    const webpPath = `./tmp_${filename}.webp`;
+    const finalPath = `./tmp_${filename}_final.webp`;
 
-    // Otomatis sesuaikan ukuran font
+    // Tentukan ukuran font
     let fontSize;
     if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
     else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
@@ -426,17 +426,24 @@ if (text.startsWith('.addbrat ')) {
     else fontSize = Jimp.FONT_SANS_16_BLACK;
 
     const font = await Jimp.loadFont(fontSize);
-    const image = new Jimp(512, 512, '#FFFFFF');
+    const image = new Jimp(512, 512, '#FFFFFF'); // Latar putih
 
-    image.print(font, 0, 0, {
-      text: teks,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 512);
+    image.print(
+      font,
+      0,
+      0,
+      {
+        text: teks,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      },
+      512,
+      512
+    );
 
     await image.writeAsync(pngPath);
 
-    // Convert PNG ke WebP
+    // Convert ke WebP
     await new Promise((resolve, reject) => {
       exec(`convert "${pngPath}" "${webpPath}"`, (err) => {
         if (err) return reject(err);
@@ -444,7 +451,7 @@ if (text.startsWith('.addbrat ')) {
       });
     });
 
-    // Tambahkan metadata author ke WebP (biar bisa diklik & disimpan)
+    // Tambahkan metadata supaya bisa diklik dan disimpan
     await new Promise((resolve, reject) => {
       exec(`exiftool -overwrite_original "-Software=Tacatic 04" "${webpPath}" -o "${finalPath}"`, (err) => {
         if (err) return reject(err);
@@ -455,13 +462,14 @@ if (text.startsWith('.addbrat ')) {
     const buffer = fs.readFileSync(finalPath);
 
     await sock.sendMessage(from, {
-      sticker: buffer
+      sticker: buffer,
+      mimetype: 'image/webp'
     }, { quoted: msg });
 
-    // Hapus file sementara
-    fs.unlinkSync(pngPath);
-    fs.unlinkSync(webpPath);
-    fs.unlinkSync(finalPath);
+    // Bersihkan file sementara
+    if (fs.existsSync(pngPath)) fs.unlinkSync(pngPath);
+    if (fs.existsSync(webpPath)) fs.unlinkSync(webpPath);
+    if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
