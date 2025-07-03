@@ -4,7 +4,6 @@ const strikeFile = './strike.json'
 const Jimp = require('jimp')
 const path = require('path');
 const { exec } = require('child_process');
-const { addAuthorMetadata } = require('./exif'); // pastikan di atas
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
