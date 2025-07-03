@@ -339,7 +339,7 @@ const allowedCommands = [
   '.antipromosi on', '.antipromosi off',
   '.antitoxic on', '.antitoxic off',
   '.welcome on', '.welcome off',
-  '.open', '.close', '.tagall', '.kick', '.promote', '.demote'
+  '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat', '.bratkeren'
 ]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
@@ -347,54 +347,83 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
 }
 
+// ===================== STIKER DARI GAMBAR =====================
 if (text === '.stiker') {
-  const m = msg.message
-  const quoted = m?.extendedTextMessage?.contextInfo?.quotedMessage
-  const mediaMessage = quoted?.imageMessage || m?.imageMessage
+  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage
+  const imageMessage = quoted?.imageMessage || msg.message?.imageMessage
 
-  if (!mediaMessage) {
-    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan perintah *.stiker*' }, { quoted: msg })
+  if (!imageMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim gambar lalu reply dengan *.stiker* atau langsung ketik *.stiker* saat kirim gambar.'
+    }, { quoted: msg })
   }
 
-  const mediaKey = mediaMessage?.url ? mediaMessage : msg
-  const buffer = await sock.downloadMediaMessage(mediaKey)
+  try {
+    const media = quoted
+      ? { message: quoted }
+      : msg
 
-  await sock.sendMessage(from, {
-    sticker: buffer,
-    mimetype: 'image/webp'
-  }, { quoted: msg })
+    const buffer = await sock.downloadMediaMessage(media)
+
+    await sock.sendMessage(from, {
+      sticker: buffer,
+      mimetype: 'image/webp'
+    }, { quoted: msg })
+  } catch (err) {
+    console.error('❌ stiker error:', err)
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker dari gambar.'
+    }, { quoted: msg })
+  }
 }
 
+// ===================== ADD BRAT – TEKS + BG PUTIH =====================
 if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1].trim()
-  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.addbrat otw bos*' }, { quoted: msg })
+  const teks = text.split('.addbrat ')[1]?.trim()
+  if (!teks) return sock.sendMessage(from, {
+    text: '❌ Masukkan teks!\nContoh: *.addbrat Halo Dunia*'
+  }, { quoted: msg })
 
   const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(teks)}&font=lobster`
-  const { data } = await axios.get(url, { responseType: 'arraybuffer' })
-
-  await sock.sendMessage(from, {
-    sticker: data,
-    mimetype: 'image/webp'
-  }, { quoted: msg })
-}
-
-if (text.startsWith('.bratkeren ')) {
-  const teks = text.split('.bratkeren ')[1].trim()
-  if (!teks) return sock.sendMessage(from, { text: '❌ Masukkan teks!\nContoh: *.bratkeren semangat ya*' }, { quoted: msg })
-
-  const name = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
-  const fullText = `${name}\n${teks}`
-  const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(fullText)}&font=lobster`
 
   try {
     const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+
+    await sock.sendMessage(from, {
+      sticker: data,
+      mimetype: 'image/webp'
+    }, { quoted: msg })
+  } catch (err) {
+    console.error('❌ addbrat error:', err)
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker addbrat.'
+    }, { quoted: msg })
+  }
+}
+
+// ===================== BRATKEREN – NAMA + TEKS =====================
+if (text.startsWith('.bratkeren ')) {
+  const teks = text.split('.bratkeren ')[1]?.trim()
+  if (!teks) return sock.sendMessage(from, {
+    text: '❌ Masukkan teks!\nContoh: *.bratkeren Semangat terus ya!*'
+  }, { quoted: msg })
+
+  try {
+    const namaPengirim = metadata.participants.find(p => p.id === sender)?.name || 'Pengguna'
+    const fullText = `${namaPengirim}\n${teks}`
+    const url = `https://fakeimg.pl/600x400/ffffff/000000?text=${encodeURIComponent(fullText)}&font=lobster`
+
+    const { data } = await axios.get(url, { responseType: 'arraybuffer' })
+
     await sock.sendMessage(from, {
       sticker: data,
       mimetype: 'image/webp'
     }, { quoted: msg })
   } catch (err) {
     console.error('❌ bratkeren error:', err)
-    await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker' }, { quoted: msg })
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker bratkeren.'
+    }, { quoted: msg })
   }
 }
 
