@@ -1,6 +1,8 @@
 const fs = require('fs-extra')
 const dbFile = './grup.json'
 const strikeFile = './strike.json'
+const { createCanvas } = require('canvas')
+const bratFile = './brat.json'
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
@@ -340,6 +342,56 @@ const allowedCommands = [
   '.welcome on', '.welcome off',
   '.open', '.close', '.tagall', '.kick', '.promote', '.demote'
 ]
+
+// ✨ BRAT GENERATOR ✨
+if (!fs.existsSync(bratFile)) fs.writeJsonSync(bratFile, { brat: [] })
+
+if (text.startsWith('.addbrat')) {
+  const kata = text.split('.addbrat')[1]?.trim()
+  if (!kata) return sock.sendMessage(from, { text: '⚠️ Contoh: *.addbrat kata lucu*' })
+
+  const dbBrat = fs.readJsonSync(bratFile)
+  if (dbBrat.brat.includes(kata)) return sock.sendMessage(from, { text: '❗ Brat itu sudah ada!' })
+
+  dbBrat.brat.push(kata)
+  fs.writeJsonSync(bratFile, dbBrat, { spaces: 2 })
+  return sock.sendMessage(from, { text: `✅ Ditambahkan:\n${kata}` })
+}
+
+if (text === '.stiker') {
+  const dbBrat = fs.readJsonSync(bratFile)
+  if (!dbBrat.brat.length) return sock.sendMessage(from, { text: '⚠️ Belum ada brat. Gunakan *.addbrat* dulu.' })
+
+  const isi = dbBrat.brat[Math.floor(Math.random() * dbBrat.brat.length)]
+  const canvas = createCanvas(512, 512)
+  const ctx = canvas.getContext('2d')
+
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, 512, 512)
+
+  ctx.fillStyle = '#000'
+  ctx.font = 'bold 32px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  const lines = isi.split('\\n')
+  const startY = 256 - ((lines.length - 1) * 40)
+
+  lines.forEach((line, i) => {
+    ctx.fillText(line, 256, startY + (i * 60))
+  })
+
+  const buffer = canvas.toBuffer('image/webp')
+  const tempFile = './brat_temp.webp'
+  fs.writeFileSync(tempFile, buffer)
+
+  await sock.sendMessage(from, {
+    sticker: { url: tempFile },
+    mimetype: 'image/webp'
+  })
+
+  fs.unlinkSync(tempFile)
+}
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
 if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
