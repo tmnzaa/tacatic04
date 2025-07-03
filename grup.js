@@ -351,8 +351,7 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
 // === .stiker ===
-  // === .stiker ===
-if (text === '.stiker') {
+ if (text === '.stiker') {
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
@@ -374,9 +373,9 @@ if (text === '.stiker') {
     const inputPath = `${filename}.jpg`;
     const outputPath = `${filename}.webp`;
 
-    writeFileSync(inputPath, buffer);
+    fs.writeFileSync(inputPath, buffer);
 
-    // Convert ke webp pakai imagemagick + tambahkan author WM
+    // Convert pakai ImageMagick + watermark
     await new Promise((resolve, reject) => {
       const cmd = `convert "${inputPath}" -resize 512x512 -gravity south -fill white -undercolor '#00000080' -annotate +0+5 '🛠️ Tacatic04' "${outputPath}"`;
       exec(cmd, (err) => {
@@ -385,16 +384,15 @@ if (text === '.stiker') {
       });
     });
 
-    const stickerBuffer = require('fs').readFileSync(outputPath);
+    const stickerBuffer = fs.readFileSync(outputPath);
 
     await sock.sendMessage(from, {
       sticker: stickerBuffer,
       mimetype: 'image/webp'
     }, { quoted: msg });
 
-    // Bersihkan file sementara
-    unlinkSync(inputPath);
-    unlinkSync(outputPath);
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
   } catch (err) {
     console.error('❌ stiker error:', err);
     await sock.sendMessage(from, {
@@ -405,7 +403,7 @@ if (text === '.stiker') {
 
  // ===== .addbrat [teks] =====
 if (text.startsWith('.addbrat ')) {
-  const teks = text.slice(9).trim();
+  const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
@@ -414,11 +412,11 @@ if (text.startsWith('.addbrat ')) {
 
   try {
     const filename = Date.now();
-    const pngPath = `./tmp_${filename}.png`;
-    const webpPath = `./tmp_${filename}.webp`;
-    const finalPath = `./tmp_${filename}_final.webp`;
+    const pngPath = `./${filename}.png`;
+    const webpPath = `./${filename}.webp`;
+    const finalPath = `./${filename}_final.webp`;
 
-    // Tentukan ukuran font
+    // Tentukan ukuran font berdasarkan panjang teks
     let fontSize;
     if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
     else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
@@ -426,24 +424,21 @@ if (text.startsWith('.addbrat ')) {
     else fontSize = Jimp.FONT_SANS_16_BLACK;
 
     const font = await Jimp.loadFont(fontSize);
-    const image = new Jimp(512, 512, '#FFFFFF'); // Latar putih
+    const image = new Jimp(512, 512, '#FFFFFF');
 
-    image.print(
-      font,
-      0,
-      0,
-      {
-        text: teks,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      },
-      512,
-      512
-    );
+    // Wrap teks panjang agar tidak blur
+    const wrappedText = teks.match(/.{1,30}/g).join('\n');
 
+    image.print(font, 0, 0, {
+      text: wrappedText,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 512, 512);
+
+    image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Convert ke WebP
+    // Convert PNG ke WebP pakai ImageMagick
     await new Promise((resolve, reject) => {
       exec(`convert "${pngPath}" "${webpPath}"`, (err) => {
         if (err) return reject(err);
@@ -451,9 +446,16 @@ if (text.startsWith('.addbrat ')) {
       });
     });
 
-    // Tambahkan metadata supaya bisa diklik dan disimpan
+    // Tambahkan metadata lengkap agar bisa diklik & disimpan
     await new Promise((resolve, reject) => {
-      exec(`exiftool -overwrite_original "-Software=Tacatic 04" "${webpPath}" -o "${finalPath}"`, (err) => {
+      const cmd = `exiftool -overwrite_original \
+        "-Software=Tacatic 04" \
+        "-Sticker-Pack-Id=bratpack" \
+        "-Sticker-Pack-Name=Brat Pack" \
+        "-Sticker-Pack-Publisher=Tamianza" \
+        "${webpPath}" -o "${finalPath}"`;
+
+      exec(cmd, (err) => {
         if (err) return reject(err);
         resolve();
       });
@@ -462,14 +464,13 @@ if (text.startsWith('.addbrat ')) {
     const buffer = fs.readFileSync(finalPath);
 
     await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
+      sticker: buffer
     }, { quoted: msg });
 
-    // Bersihkan file sementara
-    if (fs.existsSync(pngPath)) fs.unlinkSync(pngPath);
-    if (fs.existsSync(webpPath)) fs.unlinkSync(webpPath);
-    if (fs.existsSync(finalPath)) fs.unlinkSync(finalPath);
+    // Hapus file sementara
+    fs.unlinkSync(pngPath);
+    fs.unlinkSync(webpPath);
+    fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
