@@ -397,10 +397,3 @@ async function kirimGambarTeks(sock, from, teks, isCommand = false) {
     sock.sendMessage(from, { text: '❌ Gagal kirim gambar.' })
   }
 }
-
-// Cek jika pesan dimulai titik tapi bukan command yang dikenali
-if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
-  return // abaikan command yang tidak dikenal
-}
-
-}
