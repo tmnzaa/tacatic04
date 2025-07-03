@@ -351,126 +351,137 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 }
 
 // === .stiker ===
-  if (text === '.stiker') {
-    const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+ // === .stiker ===
+if (text === '.stiker') {
+  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-    if (!mediaMessage) {
-      return sock.sendMessage(from, {
-        text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-      }, { quoted: msg });
-    }
-
-    try {
-      const buffer = await downloadMediaMessage(
-        { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-        'buffer',
-        {},
-        { logger: console, reuploadRequest: sock.updateMediaMessage }
-      );
-
-      const name = `./${Date.now()}`;
-      const input = `${name}.jpg`;
-      const output = `${name}.webp`;
-      const final = `${name}_final.webp`;
-
-      fs.writeFileSync(input, buffer);
-
-      await new Promise((resolve, reject) => {
-        const cmd = `convert "${input}" -resize 512x512 "${output}"`;
-        exec(cmd, err => err ? reject(err) : resolve());
-      });
-
-      await new Promise((resolve, reject) => {
-        const cmd = `exiftool -overwrite_original \
-          "-Software=Tacatic 04" \
-          "-Sticker-Pack-Id=tacatic04" \
-          "-Sticker-Pack-Name=Tam Store" \
-          "-Sticker-Pack-Publisher=Tamianza" \
-          "${output}" -o "${final}"`;
-        exec(cmd, err => err ? reject(err) : resolve());
-      });
-
-      const stickerBuffer = fs.readFileSync(final);
-
-      await sock.sendMessage(from, {
-        sticker: stickerBuffer
-      }, { quoted: msg });
-
-      [input, output, final].forEach(file => {
-        if (fs.existsSync(file)) fs.unlinkSync(file);
-      });
-    } catch (err) {
-      console.error('❌ stiker error:', err);
-      await sock.sendMessage(from, {
-        text: '⚠️ Gagal membuat stiker!'
-      }, { quoted: msg });
-    }
+  if (!mediaMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+    }, { quoted: msg });
   }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const filename = `./${Date.now()}`;
+    const inputPath = `${filename}.jpg`;
+    const outputPath = `${filename}.webp`;
+
+    fs.writeFileSync(inputPath, buffer);
+
+    // Resize rapi, center, pas ukuran 512x512
+    await new Promise((resolve, reject) => {
+      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const webpBuffer = fs.readFileSync(outputPath);
+
+    // Tambah metadata langsung di buffer
+    const finalSticker = addAuthorMetadata(webpBuffer, "Tamianza", "Tam Store");
+
+    await sock.sendMessage(from, {
+      sticker: finalSticker,
+      mimetype: 'image/webp'
+    }, { quoted: msg });
+
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+  } catch (err) {
+    console.error('❌ stiker error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
+}
 
   // === .addbrat ===
-  if (text?.startsWith('.addbrat ')) {
-    const teks = text.split('.addbrat ')[1].trim();
-    if (!teks) {
-      return sock.sendMessage(from, {
-        text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-      }, { quoted: msg });
-    }
-
-    try {
-      const name = `./${Date.now()}`;
-      const pngPath = `${name}.png`;
-      const webpPath = `${name}.webp`;
-      const finalPath = `${name}_final.webp`;
-
-      let fontSize;
-      if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
-      else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
-      else if (teks.length <= 40) fontSize = Jimp.FONT_SANS_32_BLACK;
-      else fontSize = Jimp.FONT_SANS_16_BLACK;
-
-      const font = await Jimp.loadFont(fontSize);
-      const image = new Jimp(512, 512, '#FFFFFF');
-      const wrapped = teks.match(/.{1,30}/g).join('\n');
-
-      image.print(font, 0, 0, {
-        text: wrapped,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      }, 512, 512);
-
-      await image.writeAsync(pngPath);
-
-      await new Promise((resolve, reject) => {
-        exec(`convert "${pngPath}" "${webpPath}"`, err => err ? reject(err) : resolve());
-      });
-
-      await new Promise((resolve, reject) => {
-        const cmd = `exiftool -overwrite_original \
-          "-Software=Tacatic 04" \
-          "-Sticker-Pack-Id=bratpack" \
-          "-Sticker-Pack-Name=Brat Pack" \
-          "-Sticker-Pack-Publisher=Tamianza" \
-          "${webpPath}" -o "${finalPath}"`;
-        exec(cmd, err => err ? reject(err) : resolve());
-      });
-
-      const buffer = fs.readFileSync(finalPath);
-      await sock.sendMessage(from, {
-        sticker: buffer
-      }, { quoted: msg });
-
-      [pngPath, webpPath, finalPath].forEach(file => {
-        if (fs.existsSync(file)) fs.unlinkSync(file);
-      });
-    } catch (err) {
-      console.error('❌ addbrat error:', err);
-      await sock.sendMessage(from, {
-        text: '⚠️ Gagal membuat stiker!'
-      }, { quoted: msg });
-    }
+  if (text.startsWith('.addbrat ')) {
+  const teks = text.split('.addbrat ')[1].trim();
+  if (!teks) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+    }, { quoted: msg });
   }
-  
+
+  try {
+    const filename = Date.now();
+    const pngPath = `./${filename}.png`;
+    const webpPath = `./${filename}.webp`;
+    const finalPath = `./${filename}_final.webp`;
+
+    // Pilih font berdasarkan panjang teks
+    let fontSize;
+    if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
+    else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
+    else if (teks.length <= 40) fontSize = Jimp.FONT_SANS_32_BLACK;
+    else fontSize = Jimp.FONT_SANS_16_BLACK;
+
+    const font = await Jimp.loadFont(fontSize);
+    const image = new Jimp(512, 512, '#FFFFFF');
+
+    // Bungkus teks agar tidak keluar dari batas
+    const wrappedText = teks.match(/.{1,30}/g).join('\n');
+
+    image.print(font, 0, 0, {
+      text: wrappedText,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 512, 512);
+
+    image.quality(100);
+    await image.writeAsync(pngPath);
+
+    // Convert PNG ke WebP
+    await new Promise((resolve, reject) => {
+      exec(`convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    // Tambahkan metadata agar bisa diklik
+    await new Promise((resolve, reject) => {
+      const cmd = `exiftool -overwrite_original \
+        "-Software=Tacatic 04" \
+        "-Sticker-Pack-Id=bratpack" \
+        "-Sticker-Pack-Name=Brat Pack" \
+        "-Sticker-Pack-Publisher=Tamianza" \
+        "${webpPath}" -o "${finalPath}"`;
+
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
+
+    const buffer = fs.readFileSync(finalPath);
+
+    await sock.sendMessage(from, {
+      sticker: buffer
+    }, { quoted: msg });
+
+    fs.unlinkSync(pngPath);
+    fs.unlinkSync(webpPath);
+    fs.unlinkSync(finalPath);
+  } catch (err) {
+    console.error('❌ addbrat error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
+}
+
   // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
     const teks = text.split('.bratkeren ')[1].trim()
