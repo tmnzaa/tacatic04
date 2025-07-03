@@ -402,7 +402,12 @@ if (text === '.stiker') {
 }
 
   // === .addbrat ===
-  if (text.startsWith('.addbrat ')) {
+  const fs = require("fs");
+const { exec } = require("child_process");
+const Jimp = require("jimp");
+
+// === .addbrat ===
+if (text.startsWith('.addbrat ')) {
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
@@ -414,62 +419,66 @@ if (text === '.stiker') {
     const filename = Date.now();
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
-    const finalPath = `./${filename}_final.webp`;
 
-    // Pilih font berdasarkan panjang teks
-    let fontSize;
-    if (teks.length <= 10) fontSize = Jimp.FONT_SANS_128_BLACK;
-    else if (teks.length <= 20) fontSize = Jimp.FONT_SANS_64_BLACK;
-    else if (teks.length <= 40) fontSize = Jimp.FONT_SANS_32_BLACK;
-    else fontSize = Jimp.FONT_SANS_16_BLACK;
-
-    const font = await Jimp.loadFont(fontSize);
+    // Tentukan font
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
     const image = new Jimp(512, 512, '#FFFFFF');
 
-    // Bungkus teks agar tidak keluar dari batas
-    const wrappedText = teks.match(/.{1,30}/g).join('\n');
+    // Potong teks panjang jadi per baris maksimal 25 karakter
+    const wrapText = (text, maxLength = 25) => {
+      const words = text.split(' ');
+      const lines = [];
+      let line = '';
 
-    image.print(font, 0, 0, {
-      text: wrappedText,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 512);
+      for (const word of words) {
+        if ((line + word).length <= maxLength) {
+          line += word + ' ';
+        } else {
+          lines.push(line.trim());
+          line = word + ' ';
+        }
+      }
+      if (line) lines.push(line.trim());
+      return lines.join('\n');
+    };
+
+    const wrappedText = wrapText(teks);
+
+    image.print(
+      font,
+      0,
+      0,
+      {
+        text: wrappedText,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      },
+      512,
+      512
+    );
 
     image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Convert PNG ke WebP
+    // Konversi PNG ke WebP dengan center dan kualitas tinggi
     await new Promise((resolve, reject) => {
-      exec(`convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
-
-    // Tambahkan metadata agar bisa diklik
-    await new Promise((resolve, reject) => {
-      const cmd = `exiftool -overwrite_original \
-        "-Software=Tacatic 04" \
-        "-Sticker-Pack-Id=bratpack" \
-        "-Sticker-Pack-Name=Brat Pack" \
-        "-Sticker-Pack-Publisher=Tamianza" \
-        "${webpPath}" -o "${finalPath}"`;
-
+      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
       exec(cmd, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const buffer = fs.readFileSync(finalPath);
+    const buffer = fs.readFileSync(webpPath);
 
     await sock.sendMessage(from, {
-      sticker: buffer
+      sticker: buffer,
+      mimetype: 'image/webp'
     }, { quoted: msg });
 
+    // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
-    fs.unlinkSync(finalPath);
   } catch (err) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
@@ -477,6 +486,7 @@ if (text === '.stiker') {
     }, { quoted: msg });
   }
 }
+
 
   // === .bratkeren [teks] ===
   if (text.startsWith('.bratkeren ')) {
