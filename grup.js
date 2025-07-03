@@ -3,7 +3,6 @@ const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
 const webp = require('webp-converter') // Untuk convert PNG ke WebP
-const fs = require('fs')
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
