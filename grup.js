@@ -343,91 +343,55 @@ const allowedCommands = [
   '.open', '.close', '.tagall', '.kick', '.promote', '.demote'
 ]
 
-// ✅ Tambahkan kata brat
+ if (text === '.stiker') {
+    if (!fitur.brats.length) {
+      return sock.sendMessage(from, { text: '⚠️ Tambahkan brat dulu pakai *.addbrat kata*' })
+    }
+    const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
+    return await kirimGambarTeks(sock, from, random, true)
+  }
+
+  if (text.startsWith('.stiker ')) {
+    const kata = text.split('.stiker ')[1]?.trim()
+    if (!kata) return sock.sendMessage(from, { text: '⚠️ Masukkan teks setelah .stiker' })
+    return await kirimGambarTeks(sock, from, kata, true)
+  }
+
+  if (text.startsWith('.gambar')) {
+    const isi = text.split('.gambar')[1]?.trim()
+    if (!isi) return sock.sendMessage(from, { text: '❌ Masukkan teks.' })
+    return await kirimGambarTeks(sock, from, isi, true)
+  }
+
   if (text.startsWith('.addbrat')) {
     const kata = text.split('.addbrat')[1]?.trim()
-    if (!kata) return sock.sendMessage(from, { text: '❌ Masukkan kata untuk brat-nya!' })
-
+    if (!kata) return sock.sendMessage(from, { text: '❌ Masukkan kata brat!' })
     if (!fitur.brats.includes(kata)) {
-  fitur.brats.push(kata)
+      fitur.brats.push(kata)
       fs.writeJsonSync(dbFile, db, { spaces: 2 })
     }
-
-    return sock.sendMessage(from, { text: `✅ Kata brat berhasil ditambahkan:\n*"${kata}"*` })
+    return sock.sendMessage(from, { text: `✅ Brat ditambahkan: *"${kata}"*` })
   }
 
-  // ✅ Kirim stiker dari kata brat acak
-  if (text === '.stiker') {
-  if (!fitur.brats || !fitur.brats.length) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*'
-    })
-  }
-
-  const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
-  return await kirimGambarTeks(sock, from, random, isCommand)
-}
-
-  // 🔁 .stiker random dari brat
-if (text === '.stiker') {
-  if (!fitur.brats || !fitur.brats.length) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Belum ada brat yang ditambahkan. Tambah pakai *.addbrat <kata>*'
-    })
-  }
-
-  const random = fitur.brats[Math.floor(Math.random() * fitur.brats.length)]
-  return await kirimGambarTeks(sock, from, random, true)
-}
-
-// ✅ Kirim stiker dari teks khusus
-if (text.startsWith('.stiker ')) {
-  const kata = text.split('.stiker ')[1]?.trim()
-  if (!kata) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Masukkan teks setelah .stiker'
-    })
-  }
-
-  return await kirimGambarTeks(sock, from, kata, true)
-}
-
-// ✅ Gambar putih background + teks hitam tengah
-if (text.startsWith('.gambar')) {
-  const isi = text.split('.gambar')[1]?.trim()
-  if (!isi) {
-    return sock.sendMessage(from, {
-      text: '❌ Masukkan teks untuk digambar.'
-    })
-  }
-
-  return await kirimGambarTeks(sock, from, isi, true)
+  if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) return
 }
 
 async function kirimGambarTeks(sock, from, teks, isCommand = false) {
   try {
-    const img = new Jimp(600, 300, '#ffffff') // background putih
+    const img = new Jimp(600, 300, '#ffffff')
     const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK)
 
     img.print(
       font,
       0,
       0,
-      {
-        text: teks,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      },
+      { text: teks, alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER, alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE },
       600,
       300
     )
 
     const buffer = await img.getBufferAsync(Jimp.MIME_JPEG)
-
-    await sock.sendMessage(from, {
-      image: buffer,
-      caption: isCommand ? '' : teks
-    })
+    await sock.sendMessage(from, { image: buffer, caption: isCommand ? '' : teks })
   } catch (err) {
     console.error('❌ ERROR:', err)
     sock.sendMessage(from, { text: '❌ Gagal kirim gambar.' })
