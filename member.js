@@ -67,12 +67,15 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
   }, { quoted: msg });
 }
 
-if (text === '.limit') {
-  const db = fs.readJsonSync('./limit.json');
+if (text.toLowerCase().trim() === '.limit') {
+  const limitFile = './limit.json';
+  if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {});
+  
+  const db = fs.readJsonSync(limitFile);
   const today = new Date().toISOString().split('T')[0];
+  const sender = msg.key.participant || msg.key.remoteJid;
   const senderData = db[from]?.[sender] || {};
 
-  // Daftar fitur yang dibatasi
   const fiturList = ['stiker', 'hd', 'removebg', 'addbrat'];
   let reply = '📊 *Sisa Limit Harian Kamu:*\n\n';
 
