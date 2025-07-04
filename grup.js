@@ -492,64 +492,98 @@ if (text.startsWith('.addbrat ')) {
 }
 
 //bratkeren
-  if (text.startsWith('.bratkeren ')) {
-  const input = text.split('.bratkeren ')[1].trim();
-  if (!input) return sock.sendMessage(from, { text: 'Ketik: *.bratkeren kamu keren*' }, { quoted: msg });
+  const Jimp = require("jimp");
+const fs = require("fs");
+const path = require("path");
 
+async function bratkeren(msg, sock) {
   try {
-    const teks = input;
-    let ppUrl;
+    const nama = msg.pushName || "Pengguna";
+    const isiPesan = msg.body.split(" ").slice(1).join(" ") || "isi kosong";
+
+    // Ambil foto profil
+    let urlpp;
     try {
-      ppUrl = await sock.profilePictureUrl(sender, 'image');
+      urlpp = await sock.profilePictureUrl(msg.sender, "image");
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png';
+      urlpp = "https://telegra.ph/file/265c67209a2d7d436f94b.jpg"; // fallback
     }
 
-    const pp = await Jimp.read(ppUrl);
-    pp.resize(96, 96);
-    const bulat = new Jimp(96, 96, 0x00000000);
-    const mask = new Jimp(96, 96, 0xFFFFFFFF);
-    mask.circle();
-    pp.mask(mask, 0, 0);
-    bulat.composite(pp, 0, 0);
+    // Buat gambar profil bulat
+    const avatar = await Jimp.read(urlpp);
+    avatar.resize(100, 100);
+    const mask = await Jimp.read(
+      "https://raw.githubusercontent.com/nuxtlabs/ui/main/packages/playground/public/mask-circle.png"
+    ); // lingkaran transparan
+    mask.resize(100, 100);
+    avatar.mask(mask, 0, 0);
 
-    // Ukuran dinamis tergantung teks
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    const textWidth = Jimp.measureText(font, teks);
-    const textHeight = Jimp.measureTextHeight(font, teks, 400);
-    const bubbleWidth = textWidth + 80;
-    const bubbleHeight = textHeight + 60;
+    // Atur font
+    const fontUsername = await Jimp.loadFont(Jimp.FONT_SANS_16_GREEN);
+    const fontText = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
 
-    const canvas = new Jimp(bubbleWidth + 110, bubbleHeight + 40, 0x00000000); // transparan
+    // Hitung ukuran bubble
+    const textWidth = Jimp.measureText(fontText, isiPesan);
+    const textHeight = Jimp.measureTextHeight(fontText, isiPesan, 500);
 
-    const bubble = new Jimp(bubbleWidth, bubbleHeight, '#FFFFFF'); // warna bubble putih
-    bubble.roundCorners(30); // rounded bubble
+    const bubbleWidth = Math.max(textWidth + 40, 150);
+    const bubbleHeight = textHeight + 40;
 
-    bubble.print(font, 40, 25, teks);
+    // Buat bubble putih
+    const bubble = new Jimp(bubbleWidth, bubbleHeight, "#FFFFFF");
 
-    canvas.composite(bulat, 0, 10);
-    canvas.composite(bubble, 100, 0);
+    // Buat sudut rounded pakai masking
+    const radius = 25;
+    const roundedMask = new Jimp(bubbleWidth, bubbleHeight, 0x00000000);
+    roundedMask.scan(0, 0, bubbleWidth, bubbleHeight, function (x, y, idx) {
+      const isCorner =
+        (x < radius && y < radius && Math.hypot(x - radius, y - radius) > radius) ||
+        (x > bubbleWidth - radius && y < radius && Math.hypot(x - (bubbleWidth - radius), y - radius) > radius) ||
+        (x < radius && y > bubbleHeight - radius && Math.hypot(x - radius, y - (bubbleHeight - radius)) > radius) ||
+        (x > bubbleWidth - radius && y > bubbleHeight - radius && Math.hypot(x - (bubbleWidth - radius), y - (bubbleHeight - radius)) > radius);
 
-    await canvas.writeAsync('./bratkeren.png');
+      if (!isCorner) this.bitmap.data[idx + 3] = 255;
+    });
+    bubble.mask(roundedMask, 0, 0);
 
-    // Convert ke sticker
-    await new Promise((resolve, reject) => {
-      exec(`convert "./bratkeren.png" -resize 512x512 "./bratkeren.webp"`, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
+    // Tulis pesan ke dalam bubble
+    bubble.print(fontText, 20, 20, {
+      text: isiPesan,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
+      alignmentY: Jimp.VERTICAL_ALIGN_TOP,
     });
 
-    const buffer = fs.readFileSync('./bratkeren.webp');
-    await sock.sendMessage(from, { sticker: buffer }, { quoted: msg });
+    // Buat canvas final
+    const canvasWidth = 50 + avatar.bitmap.width + bubble.bitmap.width;
+    const canvasHeight = Math.max(avatar.bitmap.height, bubble.bitmap.height + 20) + 20;
 
-    fs.unlinkSync('./bratkeren.png');
-    fs.unlinkSync('./bratkeren.webp');
+    const canvas = new Jimp(canvasWidth, canvasHeight, "#00000000");
+
+    // Tambah foto profil
+    canvas.composite(avatar, 20, 20);
+
+    // Tambah username
+    canvas.print(fontUsername, 140, 10, nama);
+
+    // Tambah bubble
+    canvas.composite(bubble, 140, 35);
+
+    const outPath = path.join(__dirname, "bratkeren.jpg");
+    await canvas.writeAsync(outPath);
+
+    await sock.sendMessage(msg.from, {
+      image: fs.readFileSync(outPath),
+      caption: isiPesan,
+    });
   } catch (e) {
-    console.error('Gagal bratkeren:', e);
-    sock.sendMessage(from, { text: '❌ Gagal generate stiker bratkeren.' }, { quoted: msg });
+    console.log("bratkeren error:", e);
+    await sock.sendMessage(msg.from, {
+      text: `❌ Gagal bratkeren: ${e.message}`,
+    });
   }
 }
+
+module.exports = bratkeren;
 
 
 }
