@@ -95,86 +95,23 @@ module.exports = async (sock, msg) => {
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
- }, { quoted: msg })
+  }, { quoted: msg });
 }
 
- // 🔒 Daftar fitur publik yang boleh digunakan member biasa
-const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
-
-// 🛡️ Daftar fitur khusus admin / owner
-const fiturHanyaAdmin = [
-  '.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome',
-  '.tagall', '.kick', '.promote', '.demote',
-  '.open', '.close', '.cekaktif'
-]
-
-// 🧠 Proses awal
-const now = new Date()
-const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
-const cmdUtama = text.trim().split(' ')[0].toLowerCase()
-const fullCmd = text.trim().toLowerCase()
-
-// 🧹 Filter command hanya yang dikenal
-const allowedCommands = [
-  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
-  '.antilink1 on', '.antilink1 off',
-  '.antilink2 on', '.antilink2 off',
-  '.antipromosi on', '.antipromosi off',
-  '.antitoxic on', '.antitoxic off',
-  '.welcome on', '.welcome off',
-  '.open', '.close', '.tagall', '.kick', '.promote', '.demote',
-  '.cekaktif', '.stiker', '.addbrat'
-]
-
-// 🚫 Tolak jika bukan perintah yang dikenal
-if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) {
-  return // abaikan, tidak valid
-}
-
-// 🔒 Bot belum aktif → hanya boleh akses fiturBolehMember
-if (!isBotAktif) {
-  if (isCommand && fiturBolehMember.includes(cmdUtama)) {
+  const now = new Date();
+if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
+  if (isCommand && (isAdmin || isOwner)) {
     return sock.sendMessage(from, {
-      text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
-    }, { quoted: msg })
+      text: `🕒 *Tacatic Bot 04* belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (PERMANEN – hanya Owner Bot)`
+   }, { quoted: msg });
   }
-  if (isCommand) return // blokir semua command lain
+  return // Non-admin tidak bisa pakai fitur sebelum bot aktif
 }
 
-// 🛡️ Fitur hanya untuk admin / owner
-if (
-  isCommand &&
-  fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) && // ambil hanya command utamanya
-  !isAdmin &&
-  !isOwner
-) {
-  return sock.sendMessage(from, {
-    text: '⚠️ Fitur ini hanya bisa digunakan oleh *Admin Grup*!'
-  }, { quoted: msg })
-}
-
-// 🚫 Bot belum jadi admin → fitur admin tidak bisa jalan
-if (
-  isCommand &&
-  (isAdmin || isOwner) &&
-  fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) &&
-  !isBotAdmin
-) {
-  return sock.sendMessage(from, {
-    text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
-  }, { quoted: msg })
-}
-
-// ❌ Member akses fitur selain publik
-if (
-  isCommand &&
-  !fiturBolehMember.includes(cmdUtama) &&
-  !isAdmin &&
-  !isOwner
-) {
-  return sock.sendMessage(from, {
-    text: '❌ Kamu tidak punya akses untuk perintah ini.'
-  }, { quoted: msg })
+  // 💡 Hanya batasi command jika bukan admin
+  if (isCommand && !isAdmin && !isOwner) return
+if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
+  return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
 }
 
   // ✅ Filter pesan (untuk semua member)
@@ -263,7 +200,7 @@ Contoh:
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
-  })
+  }, { quoted: msg });
 }
 
   // 🔁 ON / OFF FITUR (versi pintar & rapi)
@@ -404,6 +341,17 @@ if (text.startsWith('.close')) {
   })
 }
 
+  // 🚫 Batasi command hanya yang tersedia di bot
+const allowedCommands = [
+  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
+  '.antilink1 on', '.antilink1 off',
+  '.antilink2 on', '.antilink2 off',
+  '.antipromosi on', '.antipromosi off',
+  '.antitoxic on', '.antitoxic off',
+  '.welcome on', '.welcome off',
+  '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
+]
+
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
 if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
@@ -434,6 +382,7 @@ if (text === '.stiker') {
 
     fs.writeFileSync(inputPath, buffer);
 
+    // Resize dengan kualitas tinggi & center 512x512
     await new Promise((resolve, reject) => {
       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
       exec(cmd, (err) => {
@@ -473,9 +422,12 @@ if (text.startsWith('.addbrat ')) {
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
 
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
-    const image = new Jimp(512, 512, 0xFFFFFFFF); // background putih
+    // Font besar dan kecil
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
 
+    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
     const wrapAnomaliStyle = (text) => {
       const words = text.trim().split(' ');
       const lines = [];
@@ -483,8 +435,10 @@ if (text.startsWith('.addbrat ')) {
 
       for (let i = 0; i < words.length; i++) {
         line.push(words[i]);
+
+        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
         if (line.length === 2 || i === words.length - 1) {
-          lines.push(line.join('     '));
+          lines.push(line.join('     ')); // spasi antar kata
           line = [];
         }
       }
@@ -493,6 +447,7 @@ if (text.startsWith('.addbrat ')) {
 
     const wrappedText = wrapAnomaliStyle(teks);
 
+    // Cetak teks di tengah
     image.print(
       font,
       0,
@@ -509,6 +464,7 @@ if (text.startsWith('.addbrat ')) {
     image.quality(100);
     await image.writeAsync(pngPath);
 
+    // Konversi PNG ke WebP
     await new Promise((resolve, reject) => {
       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
       exec(cmd, (err) => {
@@ -524,6 +480,7 @@ if (text.startsWith('.addbrat ')) {
       mimetype: 'image/webp'
     }, { quoted: msg });
 
+    // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
   } catch (err) {
@@ -533,6 +490,4 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
-
-
 }
