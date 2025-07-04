@@ -432,8 +432,8 @@ if (text === '.hd') {
 
     const image = await Jimp.read(filename);
     image
-      .contrast(0.30)     // Tambah kontras
-      .brightness(1)    // Tambah sedikit terang
+      .contrast(0.20)     // Tambah kontras
+      .brightness(0.5)    // Tambah sedikit terang
       .quality(85);       // Simpan dengan kualitas cukup tinggi
 
     await image.writeAsync(filename);
@@ -441,7 +441,7 @@ if (text === '.hd') {
     const result = fs.readFileSync(filename);
     await sock.sendMessage(from, {
       image: result,
-      caption: '✅ Ini versi HD ringan-nya ya!'
+      caption: '✅ Success'
     }, { quoted: msg });
 
     fs.unlinkSync(filename);
