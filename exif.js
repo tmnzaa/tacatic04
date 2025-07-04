@@ -1,24 +1,23 @@
-// exif.js
-const makeExif = (packname = 'Tacatic Pack', author = 'aditttt') => {
-  const code = [
-    0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
-    0x01, 0x00, 0x1C, 0x01, 0x07, 0x00
-  ];
+const fs = require('fs');
 
-  const json = {
-    'sticker-pack-id': 'com.tacatic.sticker',
-    'sticker-pack-name': packname,
-    'sticker-pack-publisher': author,
-    'android-app-store-link': '',
-    'ios-app-store-link': ''
+module.exports = (packname, author) => {
+  const exifAttr = {
+    "sticker-pack-id": "com.tacatic.tamstoree",
+    "sticker-pack-name": packname,
+    "sticker-pack-publisher": author,
+    emojis: ["🌟"]
   };
 
-  const len = JSON.stringify(json).length;
-
-  return Buffer.concat([
-    Buffer.from([...code, len, 0x00, 0x00, 0x00, 0x1A, 0x00, 0x00, 0x00]),
-    Buffer.from(JSON.stringify(json), 'utf-8')
+  const json = Buffer.from(JSON.stringify(exifAttr), 'utf-8');
+  const exif = Buffer.concat([
+    Buffer.from([0x49, 0x49, 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00]),
+    Buffer.from([0x01, 0x00]),
+    Buffer.from([0x1C, 0x01]),
+    Buffer.from([0x07, 0x00]),
+    Buffer.from([json.length, 0x00, 0x00, 0x00]),
+    Buffer.from([0x1A, 0x00, 0x00, 0x00]),
+    json
   ]);
-};
 
-module.exports = makeExif;
+  fs.writeFileSync('exif.exif', exif);
+};
