@@ -42,9 +42,14 @@ if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     return console.error('❌ ERROR Metadata:', err.message);
   }
 
-const participantData = metadata.participants.find(p => p.id === sender);
-const isAdmin = participantData?.admin === 'admin' || participantData?.admin === 'superadmin';
-const isOwner = participantData?.admin === 'superadmin';
+let isAdmin = false;
+let isOwner = false;
+
+const participantData = metadata?.participants?.find(p => p.id === sender);
+if (participantData) {
+  isAdmin = participantData.admin === 'admin' || participantData.admin === 'superadmin';
+  isOwner = participantData.admin === 'superadmin';
+}
 
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
 const botData = metadata.participants.find(p => p.id === botNumber);
