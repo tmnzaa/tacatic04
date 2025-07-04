@@ -27,9 +27,9 @@ module.exports = async (sock, msg) => {
   const isCommand = text.startsWith('.');
 
   // 💡 Perintah yang boleh digunakan oleh SEMUA MEMBER
-const allowedForAll = ['.stiker', '.addbrat']; // ⬅️ .menu JANGAN masuk sini
+const allowedForAll = ['.stiker', '.addbrat']; // ⬅️ KAMU SUDAH HAPUS .menu DARI SINI
 if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
-  const memberHandler = require('./member'); // pastikan kamu buat file member.js juga
+  const memberHandler = require('./member');
   await memberHandler(sock, msg, text, from);
   return;
 }
@@ -100,7 +100,7 @@ if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
   }
 
   // 🔐 Batasi semua command kecuali admin/owner
-  if (isCommand && !isAdmin && !isOwner) return;
+  if (isCommand && !isAdmin && !isOwner && !['.stiker', '.addbrat', '.menu'].includes(text)) return;
   if (isCommand && (isAdmin || isOwner) && !isBotAdmin) {
     return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*!' });
   }
@@ -155,8 +155,18 @@ try {
   console.error('❌ Filter error:', err)
 }
 
- // 📋 Menu Rapi & Menarik (dibedakan berdasarkan role)
+ // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
 if (text === '.menu') {
+  let metadata;
+  try {
+    metadata = await sock.groupMetadata(from);
+  } catch (err) {
+    return console.error('❌ ERROR Metadata:', err.message);
+  }
+
+  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin');
+  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
+
   if (isAdmin || isOwner) {
     return sock.sendMessage(from, {
       text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
@@ -183,12 +193,8 @@ if (text === '.menu') {
 • 🖼️ _.stiker_        → Buat stiker dari gambar
 • 🔤 _.addbrat teks_  → Buat stiker teks brat
 
-Contoh:
-• Kirim/reply gambar lalu ketik _.stiker_
-• _.addbrat Stiker teks_
-
 📌 *Catatan*:
-– Hanya admin atau owner grup yang bisa akses fitur.
+– Hanya admin atau owner grup yang bisa akses semua fitur.
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
