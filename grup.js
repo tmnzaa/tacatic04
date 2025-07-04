@@ -1,119 +1,109 @@
-const fs = require('fs-extra')
-const dbFile = './grup.json'
-const strikeFile = './strike.json'
-const Jimp = require('jimp')
+const fs = require('fs-extra');
+const dbFile = './grup.json';
+const strikeFile = './strike.json';
+const Jimp = require('jimp');
 const path = require('path');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
-if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
+
+if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
+if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 
 const tambahHari = (jumlah) => {
-  const date = new Date()
-  date.setDate(date.getDate() + jumlah)
-  return date.toISOString().split('T')[0]
-}
+  const date = new Date();
+  date.setDate(date.getDate() + jumlah);
+  return date.toISOString().split('T')[0];
+};
 
-const kataKasar = [
-  'jancok',
-  'anjing',
-  'babi',
-  'kontol',
-  'brengsek',
-  'bangsat',
-  'goblok',
-  'tai',
-  'bokep',
-  // dst...
-]
+const kataKasar = ['jancok', 'anjing', 'babi', 'kontol', 'brengsek', 'bangsat', 'goblok', 'tai', 'bokep'];
 
 module.exports = async (sock, msg) => {
-  const from = msg.key.remoteJid
-  if (!from.endsWith('@g.us')) return
+  const from = msg.key.remoteJid;
+  if (!from.endsWith('@g.us')) return;
 
-  const sender = msg.key.participant
-  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
-  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
-  const isCommand = text.startsWith('.') // penting!
+  const sender = msg.key.participant;
+  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+  const isCommand = text.startsWith('.');
 
-  let metadata
+  // 💡 Perintah yang boleh digunakan oleh SEMUA MEMBER
+  const allowedForAll = ['.menu', '.stiker', '.addbrat'];
+  if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
+    const memberHandler = require('./member'); // ⬅️ Buat file member.js berisi fitur .menu .stiker .addbrat
+    await memberHandler(sock, msg, text, from);
+    return; // Penting agar tidak lanjut ke bawah
+  }
+
+  // Grup Metadata & Setup
+  let metadata;
   try {
-    metadata = await sock.groupMetadata(from)
+    metadata = await sock.groupMetadata(from);
   } catch (err) {
-    return console.error('❌ ERROR Metadata:', err.message)
+    return console.error('❌ ERROR Metadata:', err.message);
   }
 
-  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin')
-  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin');
+  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
 
-  if (mentions.includes(botNumber) && !isCommand) return
+  if (mentions.includes(botNumber) && !isCommand) return;
 
-  const db = fs.readJsonSync(dbFile)
-  db[from] = db[from] || {}
-  db[from].nama = metadata.subject
-  const fitur = db[from]
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+  const db = fs.readJsonSync(dbFile);
+  db[from] = db[from] || {};
+  db[from].nama = metadata.subject;
+  const fitur = db[from];
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
+  // Aktifkan Bot
   if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
-  if (!isBotAdmin) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-    })
-  }
+    if (!isBotAdmin) return sock.sendMessage(from, { text: '⚠️ Aku harus jadi *Admin Grup* dulu!' });
+    if (!isOwner) return sock.sendMessage(from, { text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!' });
 
-  if (!isOwner) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!'
-    })
-  }
+    const now = new Date();
+    const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
 
-  const now = new Date()
-  const expiredDate = fitur.expired ? new Date(fitur.expired) : null
-
-  if (fitur.permanen || (expiredDate && expiredDate >= now)) {
-    return sock.sendMessage(from, {
-      text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-    })
-  }
-
-  if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
-  if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
-  if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
-
-  if (text === '.aktifbotper') {
-    const OWNER_BOT = '6282333014459@s.whatsapp.net' // ganti sesuai nomor owner bot kamu
-    if (sender !== OWNER_BOT) {
-      return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' })
+    if (fitur.permanen || (expiredDate && expiredDate >= now)) {
+      return sock.sendMessage(from, {
+        text: `🟢 *Bot sudah aktif di grup ini!*\n📛 Grup: *${fitur.nama}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+      });
     }
-    fitur.permanen = true
-    fitur.expired = null
-  }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
+    if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
+    if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
+    if (text === '.aktifbotper') {
+      const OWNER_BOT = '6282333014459@s.whatsapp.net';
+      if (sender !== OWNER_BOT) {
+        return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' });
+      }
+      fitur.permanen = true;
+      fitur.expired = null;
+    }
 
-  return sock.sendMessage(from, {
-    text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-  }, { quoted: msg });
-}
+    fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-  const now = new Date();
-if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-  if (isCommand && (isAdmin || isOwner)) {
     return sock.sendMessage(from, {
-      text: `🕒 *Tacatic Bot 04* belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (PERMANEN – hanya Owner Bot)`
-   }, { quoted: msg });
+      text: `✅ *Bot diaktifkan!*\n📛 Grup: *${fitur.nama}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+    }, { quoted: msg });
   }
-  return // Non-admin tidak bisa pakai fitur sebelum bot aktif
-}
 
- // 💡 Hanya batasi command jika bukan admin, kecuali .menu, .stiker, .addbrat
-const allowedForMember = ['.menu', '.stiker', '.addbrat'];
-if (isCommand && !isAdmin && !isOwner && !allowedForMember.some(cmd => text.startsWith(cmd))) return;
-if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
-  return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
-}
+  // ⛔ Blokir non-admin jika bot belum aktif
+  const now = new Date();
+  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
+    if (isCommand && (isAdmin || isOwner)) {
+      return sock.sendMessage(from, {
+        text: `🕒 Bot belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
+      }, { quoted: msg });
+    }
+    return; // member biasa tidak bisa apa-apa kalau belum aktif
+  }
+
+  // 🔐 Batasi semua command kecuali admin/owner
+  if (isCommand && !isAdmin && !isOwner) return;
+  if (isCommand && (isAdmin || isOwner) && !isBotAdmin) {
+    return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*!' });
+  }
 
   // ✅ Filter pesan (untuk semua member)
   const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
