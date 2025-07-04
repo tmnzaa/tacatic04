@@ -276,7 +276,7 @@ for (let f of fiturList) {
 
     fitur[f] = true;
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
-    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!` });
+    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!`   }, { quoted: msg });
   }
 
   if (text === `.${f} off`) {
@@ -292,7 +292,7 @@ for (let f of fiturList) {
 
     fitur[f] = false;
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
-    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.` });
+    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.`  }, { quoted: msg });
   }
 }
 
