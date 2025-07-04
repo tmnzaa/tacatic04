@@ -98,60 +98,83 @@ module.exports = async (sock, msg) => {
  }, { quoted: msg })
 }
 
- const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
+ // 🔒 Daftar fitur publik yang boleh digunakan member biasa
+const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
+
+// 🛡️ Daftar fitur khusus admin / owner
 const fiturHanyaAdmin = [
+  '.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome',
+  '.tagall', '.kick', '.promote', '.demote',
+  '.open', '.close', '.cekaktif'
+]
+
+// 🧠 Proses awal
+const now = new Date()
+const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
+const cmdUtama = text.trim().split(' ')[0].toLowerCase()
+const fullCmd = text.trim().toLowerCase()
+
+// 🧹 Filter command hanya yang dikenal
+const allowedCommands = [
+  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
   '.antilink1 on', '.antilink1 off',
   '.antilink2 on', '.antilink2 off',
   '.antipromosi on', '.antipromosi off',
   '.antitoxic on', '.antitoxic off',
   '.welcome on', '.welcome off',
-  '.tagall', '.kick', '.promote', '.demote',
-  '.open', '.close', '.cekaktif'
+  '.open', '.close', '.tagall', '.kick', '.promote', '.demote',
+  '.cekaktif', '.stiker', '.addbrat'
 ]
 
-const now = new Date()
-const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
-const cmdUtama = text.split(' ')[0] // ambil command utamanya (tanpa argumen)
+// 🚫 Tolak jika bukan perintah yang dikenal
+if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) {
+  return // abaikan, tidak valid
+}
 
-// 🔒 Blokir semua fitur kalau bot belum aktif KECUALI fitur publik
+// 🔒 Bot belum aktif → hanya boleh akses fiturBolehMember
 if (!isBotAktif) {
   if (isCommand && fiturBolehMember.includes(cmdUtama)) {
     return sock.sendMessage(from, {
       text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
     }, { quoted: msg })
   }
-  if (isCommand) return // command lain tidak akan dijalankan
+  if (isCommand) return // blokir semua command lain
 }
 
-// 🛡️ Blokir fitur admin jika digunakan oleh member biasa
-if (isCommand && fiturHanyaAdmin.includes(cmdUtama) && !isAdmin && !isOwner) {
+// 🛡️ Fitur hanya untuk admin / owner
+if (
+  isCommand &&
+  fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) && // ambil hanya command utamanya
+  !isAdmin &&
+  !isOwner
+) {
   return sock.sendMessage(from, {
     text: '⚠️ Fitur ini hanya bisa digunakan oleh *Admin Grup*!'
   }, { quoted: msg })
 }
 
-// 🚫 Bot belum jadi admin, fitur admin dimatikan
-if (!isBotAdmin && isCommand && (isAdmin || isOwner) && fiturHanyaAdmin.includes(cmdUtama)) {
-  return sock.sendMessage(from, {
-    text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
-  })
-}
-
-// ❌ Tolak akses member jika fitur bukan publik
+// 🚫 Bot belum jadi admin → fitur admin tidak bisa jalan
 if (
   isCommand &&
+  (isAdmin || isOwner) &&
+  fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) &&
+  !isBotAdmin
+) {
+  return sock.sendMessage(from, {
+    text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
+  }, { quoted: msg })
+}
+
+// ❌ Member akses fitur selain publik
+if (
+  isCommand &&
+  !fiturBolehMember.includes(cmdUtama) &&
   !isAdmin &&
-  !isOwner &&
-  !fiturBolehMember.includes(cmdUtama)
+  !isOwner
 ) {
   return sock.sendMessage(from, {
     text: '❌ Kamu tidak punya akses untuk perintah ini.'
   }, { quoted: msg })
-}
-
-
-if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
-  return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
 }
 
   // ✅ Filter pesan (untuk semua member)
@@ -380,18 +403,6 @@ if (text.startsWith('.close')) {
     text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired || 'Belum aktif'}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
   })
 }
-
-  // 🚫 Batasi command hanya yang tersedia di bot
-const allowedCommands = [
-  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
-  '.antilink1 on', '.antilink1 off',
-  '.antilink2 on', '.antilink2 off',
-  '.antipromosi on', '.antipromosi off',
-  '.antitoxic on', '.antitoxic off',
-  '.welcome on', '.welcome off',
-  '.open', '.close', '.tagall', '.kick', '.promote', '.demote',
-  '.stiker', '.addbrat',
-]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
 if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
