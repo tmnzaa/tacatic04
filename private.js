@@ -3,7 +3,6 @@ const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
 const path = require('path');
-const gtts = require('node-gtts')('id');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
@@ -14,10 +13,6 @@ const tambahHari = (jumlah) => {
   date.setDate(date.getDate() + jumlah)
   return date.toISOString().split('T')[0]
 }
-
-const tmp = Date.now();
-const inputFile = `./tmp_${tmp}.mp3`;
-const outputFile = `./voice_${tmp}.mp3`;
 
 const kataKasar = [
   'jancok',
@@ -492,59 +487,6 @@ if (text.startsWith('.addbrat ')) {
     console.error('❌ addbrat error:', err);
     await sock.sendMessage(from, {
       text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
-  }
-}
-
-if (text.startsWith('.suara ')) {
-  const args = text.split(' ');
-  const jenis = args[1]?.toLowerCase();
-  const kalimat = text.split(' ').slice(2).join(' ');
-
-  if (!['cowok', 'cewek'].includes(jenis) || !kalimat) {
-    return sock.sendMessage(from, {
-      text: '❌ Contoh: *.suara cowok Aku sayang kamu*'
-    }, { quoted: msg });
-  }
-
-  try {
-    // Simpan audio mentah
-    await new Promise((resolve, reject) => {
-      gtts.save(inputFile, kalimat, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
-    // Atur pitch berdasarkan jenis suara
-    let ffmpegCmd;
-    if (jenis === 'cowok') {
-      ffmpegCmd = `ffmpeg -i ${inputFile} -filter:a "asetrate=12000,atempo=1.25" -y ${outputFile}`;
-    } else if (jenis === 'cewek') {
-      ffmpegCmd = `ffmpeg -i ${inputFile} -filter:a "asetrate=16000,atempo=1.0" -y ${outputFile}`;
-    }
-
-    // Eksekusi efek suara
-    await new Promise((resolve, reject) => {
-      exec(ffmpegCmd, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
-    const audio = fs.readFileSync(outputFile);
-    await sock.sendMessage(from, {
-      audio,
-      mimetype: 'audio/mp4',
-      ptt: true
-    }, { quoted: msg });
-
-    fs.unlinkSync(inputFile);
-    fs.unlinkSync(outputFile);
-  } catch (err) {
-    console.error('❌ Error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat suara.'
     }, { quoted: msg });
   }
 }
