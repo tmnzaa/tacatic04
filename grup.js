@@ -27,12 +27,12 @@ module.exports = async (sock, msg) => {
   const isCommand = text.startsWith('.');
 
   // 💡 Perintah yang boleh digunakan oleh SEMUA MEMBER
-  const allowedForAll = ['.menu', '.stiker', '.addbrat'];
-  if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
-    const memberHandler = require('./member'); // ⬅️ Buat file member.js berisi fitur .menu .stiker .addbrat
-    await memberHandler(sock, msg, text, from);
-    return; // Penting agar tidak lanjut ke bawah
-  }
+const allowedForAll = ['.stiker', '.addbrat']; // ⬅️ .menu JANGAN masuk sini
+if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
+  const memberHandler = require('./member'); // pastikan kamu buat file member.js juga
+  await memberHandler(sock, msg, text, from);
+  return;
+}
 
   // Grup Metadata & Setup
   let metadata;
@@ -155,10 +155,11 @@ try {
   console.error('❌ Filter error:', err)
 }
 
- // 📋 Menu Rapi & Menarik
-if (text === '.menu' && (isAdmin || isOwner)) {
-  return sock.sendMessage(from, {
-    text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
+ // 📋 Menu Rapi & Menarik (dibedakan berdasarkan role)
+if (text === '.menu') {
+  if (isAdmin || isOwner) {
+    return sock.sendMessage(from, {
+      text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
 📛 *FITUR KEAMANAN*:
 • 🚫 _.antilink1 on/off_  → Hapus link masuk
@@ -191,7 +192,25 @@ Contoh:
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
-  }, { quoted: msg });
+    }, { quoted: msg });
+  } else {
+    return sock.sendMessage(from, {
+      text: `🎀 *MENU UNTUK MEMBER* 🎀
+
+📌 Kamu bisa pakai fitur ini:
+
+• 🖼️ _.stiker_
+→ Kirim atau reply gambar lalu ketik .stiker
+
+• 🔤 _.addbrat teks_
+→ Buat stiker teks lucu (contoh: .addbrat Selamat ulang tahun)
+
+• 📋 _.menu_
+→ Melihat daftar fitur yang tersedia
+
+✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
+    }, { quoted: msg });
+  }
 }
 
   // 🔁 ON / OFF FITUR (versi pintar & rapi)
@@ -481,6 +500,4 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 //     }, { quoted: msg });
 //   }
 // }
-const memberHandler = require('./member')
-await memberHandler(sock, msg, text, from)
 }
