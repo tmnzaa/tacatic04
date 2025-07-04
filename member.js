@@ -210,13 +210,13 @@ if (text === '.removebg') {
 }
 
   if (text === '.stiker') {
-  if (!isAdmin && !isOwner) {
-    if (!cekLimit(from, sender, 'stiker')) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-      }, { quoted: msg });
-    }
-  }
+  // if (!isAdmin && !isOwner) {
+  //   if (!cekLimit(from, sender, 'stiker')) {
+  //     return sock.sendMessage(from, {
+  //       text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+  //     }, { quoted: msg });
+  //   }
+  // }
 
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
