@@ -32,8 +32,8 @@ const cekLimit = (from, sender, fitur) => {
   return true
 }
 
-module.exports = async (sock, msg, text, from) => {
-  const db = fs.readJsonSync('./grup.json');
+module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
+  const db = fs.readJsonSync('./graup.json');
   const fitur = db[from] || {};
 
   const now = new Date();
