@@ -236,6 +236,7 @@ if (text === '.menu') {
 📊 *FITUR LAINNYA*:
 • 🖼️ _.stiker_        → Buat stiker dari gambar
 • 🔤 _.addbrat teks_  → Buat stiker teks brat
+• 📷 _.hd_ → Ubah gambar jadi HD
 
 📌 *Catatan*:
 – Hanya admin atau owner grup yang bisa akses semua fitur.
@@ -251,6 +252,9 @@ if (text === '.menu') {
 
 • 🖼️ _.stiker_
 → Kirim atau reply gambar lalu ketik .stiker
+
+• 🖼️ _.hd_
+→ Ubah foto jadi lebih tajam dan cerah
 
 • 🔤 _.addbrat teks_
 → Buat stiker teks lucu (contoh: .addbrat Selamat ulang tahun)
@@ -409,51 +413,51 @@ if (text.startsWith('.close')) {
     }, { quoted: msg });
 }
 
-if (text === '.hd') {
-  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+// if (text === '.hd') {
+//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-  if (!mediaMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
-    }, { quoted: msg });
-  }
+//   if (!mediaMessage) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const buffer = await downloadMediaMessage(
-      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
+//   try {
+//     const buffer = await downloadMediaMessage(
+//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+//       'buffer',
+//       {},
+//       { logger: console, reuploadRequest: sock.updateMediaMessage }
+//     );
 
-    const filename = `./hd-${Date.now()}.jpg`;
-    fs.writeFileSync(filename, buffer);
+//     const filename = `./hd-${Date.now()}.jpg`;
+//     fs.writeFileSync(filename, buffer);
 
-    const image = await Jimp.read(filename);
-    image
-      .contrast(0.20)       // Tambah kontras
-      .brightness(0.5)      // Tambah terang
-      .normalize()          // Normalisasi warna
-      .posterize(180)       // Sedikit tajamkan warna
-      .quality(90);         // Kualitas tinggi
+//     const image = await Jimp.read(filename);
+//     image
+//       .contrast(0.20)       // Tambah kontras
+//       .brightness(0.5)      // Tambah terang
+//       .normalize()          // Normalisasi warna
+//       .posterize(180)       // Sedikit tajamkan warna
+//       .quality(90);         // Kualitas tinggi
 
-    await image.writeAsync(filename);
+//     await image.writeAsync(filename);
 
-    const result = fs.readFileSync(filename);
-    await sock.sendMessage(from, {
-      image: result,
-      caption: '📸 Sudah aku-HD-kan! Lebih tajam dan cerah ✨'
-    }, { quoted: msg });
+//     const result = fs.readFileSync(filename);
+//     await sock.sendMessage(from, {
+//       image: result,
+//       caption: '📸 Sudah aku-HD-kan! Lebih tajam dan cerah ✨'
+//     }, { quoted: msg });
 
-    fs.unlinkSync(filename);
-  } catch (err) {
-    console.error('❌ HD error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat versi HD foto.'
-    }, { quoted: msg });
-  }
-}
+//     fs.unlinkSync(filename);
+//   } catch (err) {
+//     console.error('❌ HD error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal membuat versi HD foto.'
+//     }, { quoted: msg });
+//   }
+// }
 
 //   // 🚫 Batasi command hanya yang tersedia di bot
 // const allowedCommands = [
