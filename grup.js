@@ -497,11 +497,13 @@ if (text === '.hd') {
 
   if (!mediaMessage) {
     return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar lalu ketik *.hd* untuk memperjelas.'
+      text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
     }, { quoted: msg });
   }
 
   try {
+    await sock.sendMessage(from, { text: '⏳ Sedang memperjelas gambarnya, tunggu sebentar ya...' }, { quoted: msg });
+
     const buffer = await downloadMediaMessage(
       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
       'buffer',
@@ -509,32 +511,31 @@ if (text === '.hd') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    const filename = Date.now();
-    const inputPath = `./${filename}.jpg`;
-    const outputPath = `./${filename}-hd.jpg`;
+    const fileName = `./${Date.now()}`;
+    const input = `${fileName}.jpg`;
+    const output = `${fileName}-hd.jpg`;
 
-    fs.writeFileSync(inputPath, buffer);
+    fs.writeFileSync(input, buffer);
 
-    const image = await Jimp.read(inputPath);
+    const image = await Jimp.read(input);
     image
-      .resize(image.getWidth() * 1.3, image.getHeight() * 1.3) // ringan
+      .resize(image.getWidth() * 1.3, image.getHeight() * 1.3)
       .contrast(0.2)
       .quality(85);
+    await image.writeAsync(output);
 
-    await image.writeAsync(outputPath);
-    const hdBuffer = fs.readFileSync(outputPath);
-
+    const hasil = fs.readFileSync(output);
     await sock.sendMessage(from, {
-      image: hdBuffer,
-      caption: '📷 Ini versi *HD ringan*!',
+      image: hasil,
+      caption: '📸 Gambar sudah diperjelas (versi ringan)'
     }, { quoted: msg });
 
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
+    fs.unlinkSync(input);
+    fs.unlinkSync(output);
   } catch (err) {
     console.error('❌ HD error:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal memperjelas gambar.'
+      text: '⚠️ Gagal membuat versi HD.'
     }, { quoted: msg });
   }
 }
