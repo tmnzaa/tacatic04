@@ -36,14 +36,13 @@ Contoh:
   }, { quoted: msg });
 }
 
- if (text === '.hd') {
-  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+ // 🖼️ .hd
+if (text === '.hd') {
+  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg.message?.imageMessage;
 
   if (!mediaMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
-    }, { quoted: msg });
+    return sock.sendMessage(from, { text: '❌ Kirim atau *reply* gambar lalu ketik *.hd*' }, { quoted: msg });
   }
 
   try {
@@ -59,28 +58,28 @@ Contoh:
 
     const image = await Jimp.read(filename);
     image
-      .contrast(0.20)       // Tambah kontras
-      .brightness(0.5)      // Tambah terang
-      .normalize()          // Normalisasi warna
-      .posterize(180)       // Sedikit tajamkan warna
-      .quality(90);         // Kualitas tinggi
+      .contrast(0.2)
+      .brightness(0.5)
+      .normalize()
+      .quality(90);
 
     await image.writeAsync(filename);
 
     const result = fs.readFileSync(filename);
     await sock.sendMessage(from, {
       image: result,
-      caption: '📸 Sudah aku-HD-kan! Lebih tajam dan cerah ✨'
+      caption: '📸 Ini hasil versi HD-nya kak ✨'
     }, { quoted: msg });
 
     fs.unlinkSync(filename);
   } catch (err) {
-    console.error('❌ HD error:', err);
+    console.error('❌ Gagal ubah ke HD:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat versi HD foto.'
+      text: '⚠️ Gagal membuat versi HD. Pastikan kamu reply gambar dengan benar.'
     }, { quoted: msg });
   }
 }
+
 
   // 🖼️ .stiker
   if (text === '.stiker') {
