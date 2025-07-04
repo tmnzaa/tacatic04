@@ -298,30 +298,36 @@ if (text.startsWith('.tagall')) {
 }
 
   if (text.startsWith('.kick')) {
-  if (!isAdmin && !isOwner) return sock.sendMessage(from, {
-    text: '⚠️ Hanya admin grup yang bisa menendang member!'
-  })
+  (async () => {
+    if (!isAdmin && !isOwner) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Hanya admin grup yang bisa menendang member!'
+      })
+    }
 
-  if (!isBotAdmin) return sock.sendMessage(from, {
-    text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
-  })
+    if (!isBotAdmin) {
+      return sock.sendMessage(from, {
+        text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
+      })
+    }
 
-  const context = msg.message?.extendedTextMessage?.contextInfo || {}
-  const mentionTarget = context.mentionedJid
-  const replyTarget = context.participant
-  const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
+    const context = msg.message?.extendedTextMessage?.contextInfo || {}
+    const mentionTarget = context.mentionedJid
+    const replyTarget = context.participant
+    const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
 
-  if (!targets.length) {
+    if (!targets.length) {
+      return sock.sendMessage(from, {
+        text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
+      })
+    }
+
+    await sock.groupParticipantsUpdate(from, targets, 'remove')
     return sock.sendMessage(from, {
-      text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
+      text: `👢 Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
+      mentions: targets
     })
-  }
-
-  await sock.groupParticipantsUpdate(from, targets, 'remove')
-  return sock.sendMessage(from, {
-    text: `👢 Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
-    mentions: targets
-  })
+  })() // ← async langsung dipanggil di sini
 }
 
   // 👑 Promote
