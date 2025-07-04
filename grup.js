@@ -42,10 +42,13 @@ if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     return console.error('❌ ERROR Metadata:', err.message);
   }
 
-  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin');
-  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
+const participantData = metadata.participants.find(p => p.id === sender);
+const isAdmin = participantData?.admin === 'admin' || participantData?.admin === 'superadmin';
+const isOwner = participantData?.admin === 'superadmin';
+
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+const botData = metadata.participants.find(p => p.id === botNumber);
+const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
 
   if (mentions.includes(botNumber) && !isCommand) return;
 
@@ -155,18 +158,8 @@ try {
   console.error('❌ Filter error:', err)
 }
 
- // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
+// 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
 if (text === '.menu') {
-  let metadata;
-  try {
-    metadata = await sock.groupMetadata(from);
-  } catch (err) {
-    return console.error('❌ ERROR Metadata:', err.message);
-  }
-
-  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin');
-  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
-
   if (isAdmin || isOwner) {
     return sock.sendMessage(from, {
       text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
