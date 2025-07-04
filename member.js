@@ -4,7 +4,6 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
-const makeExif = require('./exif');
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -210,8 +209,7 @@ if (text === '.removebg') {
   }
 }
 
-  // 🖼️ .stiker
-if (text === '.stiker') {
+  if (text === '.stiker') {
   if (!isAdmin && !isOwner) {
     if (!cekLimit(from, sender, 'stiker')) {
       return sock.sendMessage(from, {
@@ -222,6 +220,7 @@ if (text === '.stiker') {
 
   const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+
   if (!mediaMessage) {
     return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .stiker' }, { quoted: msg });
   }
@@ -235,32 +234,45 @@ if (text === '.stiker') {
     );
 
     const filename = `./${Date.now()}`;
-    const inputPath = `${filename}.jpg`;
-    const outputPath = `${filename}.webp`;
+    const input = `${filename}.jpg`;
+    const output = `${filename}.webp`;
+    const final = `${filename}-final.webp`;
 
-    fs.writeFileSync(inputPath, buffer);
+    fs.writeFileSync(input, buffer);
 
-    await new Promise((resolve, reject) => {
-      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-      exec(cmd, (err) => err ? reject(err) : resolve());
+    // Convert ke WebP
+    exec(`ffmpeg -i ${input} -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=white" -qscale 100 -y ${output}`, async (err) => {
+      if (err) return sock.sendMessage(from, { text: '⚠️ Gagal convert gambar ke WebP' }, { quoted: msg });
+
+      // Tambah metadata (author & pack name)
+      exec(`webpmux -set exif exif.exif ${output} -o ${final}`, async (err2) => {
+        if (err2) return sock.sendMessage(from, { text: '⚠️ Gagal menambahkan info stiker' }, { quoted: msg });
+
+        const result = fs.readFileSync(final);
+        await sock.sendMessage(from, { sticker: result }, { quoted: msg });
+
+        fs.unlinkSync(input);
+        fs.unlinkSync(output);
+        fs.unlinkSync(final);
+      });
     });
 
-    // 🧠 Tambahkan Exif di sini
-    const makeExif = require('./exif'); // ← pastikan file ini ada
-    const exifBuffer = makeExif('Tacatic Pack', 'aditttt');
-    const webpBuffer = fs.readFileSync(outputPath);
-    const finalSticker = Buffer.concat([webpBuffer, exifBuffer]);
+    // Buat file EXIF
+    const exif = Buffer.from([
+      0x49, 0x49, 0x2A, 0x00, // TIFF header
+      0x08, 0x00, 0x00, 0x00, // Offset IFD
+      0x01, 0x00,             // Tag count
+      0x01, 0x01,             // Tag (Dummy)
+      0x00, 0x07,             // Type
+      0x00, 0x00, 0x00, 0x01, // Count
+      0x00, 0x00, 0x00, 0x00, // Value
+      0x00, 0x00              // End
+    ]);
+    fs.writeFileSync('exif.exif', exif);
 
-    await sock.sendMessage(from, {
-      sticker: finalSticker,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
-
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
-  } catch (err) {
-    console.error(err);
-    await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg });
+  } catch (e) {
+    console.log('⚠️ Error stiker:', e);
+    await sock.sendMessage(from, { text: '❌ Gagal membuat stiker.' }, { quoted: msg });
   }
 }
 
