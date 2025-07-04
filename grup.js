@@ -1,19 +1,19 @@
-const fs = require('fs-extra')
-const dbFile = './grup.json'
-const strikeFile = './strike.json'
-const Jimp = require('jimp')
-const path = require('path')
-const { exec } = require('child_process')
-const { downloadMediaMessage } = require('@whiskeysockets/baileys')
+const fs = require('fs-extra');
+const dbFile = './grup.json';
+const strikeFile = './strike.json';
+const Jimp = require('jimp');
+const path = require('path');
+const { exec } = require('child_process');
+const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
-if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
-if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
+if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
+if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 
 const tambahHari = (jumlah) => {
-  const date = new Date()
-  date.setDate(date.getDate() + jumlah)
-  return date.toISOString().split('T')[0]
-}
+  const date = new Date();
+  date.setDate(date.getDate() + jumlah);
+  return date.toISOString().split('T')[0];
+};
 
 const kataKasar = ['jancok','anjing','babi','kontol','brengsek','bangsat','goblok','tai','bokep']
 
@@ -21,10 +21,18 @@ module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
   if (!from.endsWith('@g.us')) return
 
-  const sender = msg.key.participant
-  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
-  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
-  const isCommand = text.startsWith('.')
+  const sender = msg.key.participant || msg.key.remoteJid;
+  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
+  const isCommand = text.startsWith('.');
+
+  // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
+  const allowedForAll = ['.stiker', '.addbrat'];
+  if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
+    const memberHandler = require('./member');
+    await memberHandler(sock, msg, text, from);
+    return;
+  }
 
   let metadata
   try {
@@ -174,11 +182,11 @@ module.exports = async (sock, msg) => {
     console.error('❌ Filter error:', err)
   }
 
-  // 📋 MENU UTAMA KHUSUS MEMBER/ADMIN/OWNER
-  if (text === '.menu') {
-    if (isAdmin || isOwner) {
-      return sock.sendMessage(from, {
-        text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
+  // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
+if (text === '.menu') {
+  if (isAdmin || isOwner) {
+    return sock.sendMessage(from, {
+      text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
 📛 *FITUR KEAMANAN*:
 • 🚫 _.antilink1 on/off_  → Hapus link masuk
@@ -207,10 +215,10 @@ module.exports = async (sock, msg) => {
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
-      }, { quoted: msg })
-    } else {
-      return sock.sendMessage(from, {
-        text: `🎀 *MENU UNTUK MEMBER* 🎀
+    }, { quoted: msg });
+  } else {
+    return sock.sendMessage(from, {
+      text: `🎀 *MENU UNTUK MEMBER* 🎀
 
 📌 Kamu bisa pakai fitur ini:
 
@@ -224,67 +232,51 @@ module.exports = async (sock, msg) => {
 → Melihat daftar fitur yang tersedia
 
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
-      }, { quoted: msg })
-    }
+    }, { quoted: msg });
   }
 }
-
 
   // ... lanjut kode lain di bawah sesuai versi kamu ...
 
 
- // 🔁 ON / OFF FITUR (versi pintar & rapi)
+  // 🔁 ON / OFF FITUR (versi pintar & rapi)
 const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
 
-const checkFitur = async () => {
-  for (const f of fiturList) {
-    if (text === `.${f} on`) {
-      if (!isOwner) {
-        return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh mengaktifkan fitur *${f}*.` })
-      }
+for (let f of fiturList) {
+  if (text === `.${f} on`) {
+    if (!isOwner) return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh mengaktifkan fitur *${f}*.` })
 
-      if (fitur[f]) {
-        return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` })
-      }
-
-      // Anti double fitur antilink
-      if (f === 'antilink1' && fitur['antilink2']) {
-        fitur['antilink2'] = false
-        await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` })
-      }
-      if (f === 'antilink2' && fitur['antilink1']) {
-        fitur['antilink1'] = false
-        await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` })
-      }
-
-      fitur[f] = true
-      fs.writeJsonSync(dbFile, db, { spaces: 2 })
-      return sock.sendMessage(from, {
-        text: `✅ Fitur *${f}* berhasil diaktifkan!\nAku akan standby dan menjaga dengan baik~ 😼`
-      })
+    if (fitur[f]) {
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` })
     }
 
-    if (text === `.${f} off`) {
-      if (!isOwner) {
-        return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh menonaktifkan fitur *${f}*.` })
-      }
-
-      if (!fitur[f]) {
-        return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` })
-      }
-
-      fitur[f] = false
-      fs.writeJsonSync(dbFile, db, { spaces: 2 })
-      return sock.sendMessage(from, {
-        text: `❌ Fitur *${f}* berhasil dimatikan.\nYasudah, aku istirahat dulu ya untuk bagian itu~ 💤`
-      })
+    // 🤖 Anti double: Matikan fitur antilink yang lain
+    if (f === 'antilink1' && fitur['antilink2']) {
+      fitur['antilink2'] = false
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` })
     }
+    if (f === 'antilink2' && fitur['antilink1']) {
+      fitur['antilink1'] = false
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` })
+    }
+
+    fitur[f] = true
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!\nAku akan standby dan menjaga dengan baik~ 😼` })
+  }
+
+  if (text === `.${f} off`) {
+    if (!isOwner) return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh menonaktifkan fitur *${f}*.` })
+
+    if (!fitur[f]) {
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` })
+    }
+
+    fitur[f] = false
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.\nYasudah, aku istirahat dulu ya untuk bagian itu~ 💤` })
   }
 }
-
-await (async () => {
-  await checkFitur()
-})()
 
   // 👮 .tagall tanpa tampil mention (silent mention)
 if (text.startsWith('.tagall')) {
@@ -298,49 +290,35 @@ if (text.startsWith('.tagall')) {
 }
 
   if (text.startsWith('.kick')) {
-  (async () => {
-    if (!isAdmin && !isOwner) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Hanya admin grup yang bisa menendang member!'
-      })
-    }
+  if (!isAdmin && !isOwner) return sock.sendMessage(from, {
+    text: '⚠️ Hanya admin grup yang bisa menendang member!'
+  })
 
-    if (!isBotAdmin) {
-      return sock.sendMessage(from, {
-        text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
-      })
-    }
+  if (!isBotAdmin) return sock.sendMessage(from, {
+    text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
+  })
 
-    const context = msg.message?.extendedTextMessage?.contextInfo || {}
-    const mentionTarget = context.mentionedJid
-    const replyTarget = context.participant
-    const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
+  const context = msg.message?.extendedTextMessage?.contextInfo || {}
+  const mentionTarget = context.mentionedJid
+  const replyTarget = context.participant
+  const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
 
-    if (!targets.length) {
-      return sock.sendMessage(from, {
-        text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
-      })
-    }
-
-    await sock.groupParticipantsUpdate(from, targets, 'remove')
+  if (!targets.length) {
     return sock.sendMessage(from, {
-      text: `👢 Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
-      mentions: targets
-    })
-  })() // ← async langsung dipanggil di sini
-}
-
-  // 👑 Promote
-if (text.startsWith('.promote')) handlePromote()
-
-async function handlePromote() {
-  const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
-  if (!target || !target.length) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Tag siapa dulu yang mau dipromote.'
+      text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
     })
   }
 
+  await sock.groupParticipantsUpdate(from, targets, 'remove')
+  return sock.sendMessage(from, {
+    text: `👢 Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
+    mentions: targets
+  })
+}
+
+  // 👑 Promote
+if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
+  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
   await sock.groupParticipantsUpdate(from, target, 'promote')
   return sock.sendMessage(from, {
     text: `🎉 *Promosi Berhasil!*\nSelamat kepada:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nKamu sekarang adalah *Admin Grup*! 🎖️`,
@@ -349,16 +327,8 @@ async function handlePromote() {
 }
 
 // 🧹 Demote
-if (text.startsWith('.demote')) handleDemote()
-
-async function handleDemote() {
-  const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
-  if (!target || !target.length) {
-    return sock.sendMessage(from, {
-      text: '⚠️ Tag siapa dulu yang mau didemote.'
-    })
-  }
-
+if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
+  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
   await sock.groupParticipantsUpdate(from, target, 'demote')
   return sock.sendMessage(from, {
     text: `⚠️ *Turunkan Jabatan!*\nYang tadinya admin sekarang jadi rakyat biasa:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nJangan sedih ya, tetap semangat! 😅`,
@@ -367,34 +337,27 @@ async function handleDemote() {
 }
 
   // 🔓 .open & .close
-if (text.startsWith('.open')) handleOpen()
-
-async function handleOpen() {
+if (text.startsWith('.open')) {
   const jam = text.split(' ')[1]
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
     fitur.openTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam}*` })
   }
-
   await sock.groupSettingUpdate(from, 'not_announcement')
-  return sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' })
+  return sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' }) // <== tambahkan return
 }
 
-if (text.startsWith('.close')) handleClose()
-
-async function handleClose() {
+if (text.startsWith('.close')) {
   const jam = text.split(' ')[1]
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
     fitur.closeTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam}*` })
   }
-
   await sock.groupSettingUpdate(from, 'announcement')
-  return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' })
+  return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
 }
-
 
   if (text === '.cekaktif') {
   const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
@@ -414,152 +377,153 @@ async function handleClose() {
   })
 }
 
-  // 🚫 Batasi command hanya yang tersedia di bot
-const allowedCommands = [
-  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
-  '.antilink1 on', '.antilink1 off',
-  '.antilink2 on', '.antilink2 off',
-  '.antipromosi on', '.antipromosi off',
-  '.antitoxic on', '.antitoxic off',
-  '.welcome on', '.welcome off',
-  '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
-]
+//   // 🚫 Batasi command hanya yang tersedia di bot
+// const allowedCommands = [
+//   '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
+//   '.antilink1 on', '.antilink1 off',
+//   '.antilink2 on', '.antilink2 off',
+//   '.antipromosi on', '.antipromosi off',
+//   '.antitoxic on', '.antitoxic off',
+//   '.welcome on', '.welcome off',
+//   '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
+// ]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
 if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
 }
 
-// === .stiker ===
-if (text === '.stiker') {
-  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+// // === .stiker ===
+// if (text === '.stiker') {
+//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-  if (!mediaMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-    }, { quoted: msg });
-  }
+//   if (!mediaMessage) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const buffer = await downloadMediaMessage(
-      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
+//   try {
+//     const buffer = await downloadMediaMessage(
+//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+//       'buffer',
+//       {},
+//       { logger: console, reuploadRequest: sock.updateMediaMessage }
+//     );
 
-    const filename = `./${Date.now()}`;
-    const inputPath = `${filename}.jpg`;
-    const outputPath = `${filename}.webp`;
+//     const filename = `./${Date.now()}`;
+//     const inputPath = `${filename}.jpg`;
+//     const outputPath = `${filename}.webp`;
 
-    fs.writeFileSync(inputPath, buffer);
+//     fs.writeFileSync(inputPath, buffer);
 
-    // Resize dengan kualitas tinggi & center 512x512
-    await new Promise((resolve, reject) => {
-      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
+//     // Resize dengan kualitas tinggi & center 512x512
+//     await new Promise((resolve, reject) => {
+//       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+//       exec(cmd, (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//       });
+//     });
 
-    const stickerBuffer = fs.readFileSync(outputPath);
+//     const stickerBuffer = fs.readFileSync(outputPath);
 
-    await sock.sendMessage(from, {
-      sticker: stickerBuffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
+//     await sock.sendMessage(from, {
+//       sticker: stickerBuffer,
+//       mimetype: 'image/webp'
+//     }, { quoted: msg });
 
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
-  } catch (err) {
-    console.error('❌ stiker error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
-  }
-}
+//     fs.unlinkSync(inputPath);
+//     fs.unlinkSync(outputPath);
+//   } catch (err) {
+//     console.error('❌ stiker error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal membuat stiker!'
+//     }, { quoted: msg });
+//   }
+// }
 
-// === .addbrat ===
-if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1].trim();
-  if (!teks) {
-    return sock.sendMessage(from, {
-      text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-    }, { quoted: msg });
-  }
+// // === .addbrat ===
+// if (text.startsWith('.addbrat ')) {
+//   const teks = text.split('.addbrat ')[1].trim();
+//   if (!teks) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const filename = Date.now();
-    const pngPath = `./${filename}.png`;
-    const webpPath = `./${filename}.webp`;
+//   try {
+//     const filename = Date.now();
+//     const pngPath = `./${filename}.png`;
+//     const webpPath = `./${filename}.webp`;
 
-    // Font besar dan kecil
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
+//     // Font besar dan kecil
+//     const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
+//     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+//     const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
 
-    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
-    const wrapAnomaliStyle = (text) => {
-      const words = text.trim().split(' ');
-      const lines = [];
-      let line = [];
+//     // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
+//     const wrapAnomaliStyle = (text) => {
+//       const words = text.trim().split(' ');
+//       const lines = [];
+//       let line = [];
 
-      for (let i = 0; i < words.length; i++) {
-        line.push(words[i]);
+//       for (let i = 0; i < words.length; i++) {
+//         line.push(words[i]);
 
-        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
-        if (line.length === 2 || i === words.length - 1) {
-          lines.push(line.join('     ')); // spasi antar kata
-          line = [];
-        }
-      }
-      return lines.join('\n');
-    };
+//         // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
+//         if (line.length === 2 || i === words.length - 1) {
+//           lines.push(line.join('     ')); // spasi antar kata
+//           line = [];
+//         }
+//       }
+//       return lines.join('\n');
+//     };
 
-    const wrappedText = wrapAnomaliStyle(teks);
+//     const wrappedText = wrapAnomaliStyle(teks);
 
-    // Cetak teks di tengah
-    image.print(
-      font,
-      0,
-      0,
-      {
-        text: wrappedText,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      },
-      512,
-      512
-    );
+//     // Cetak teks di tengah
+//     image.print(
+//       font,
+//       0,
+//       0,
+//       {
+//         text: wrappedText,
+//         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+//         alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+//       },
+//       512,
+//       512
+//     );
 
-    image.quality(100);
-    await image.writeAsync(pngPath);
+//     image.quality(100);
+//     await image.writeAsync(pngPath);
 
-    // Konversi PNG ke WebP
-    await new Promise((resolve, reject) => {
-      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
+//     // Konversi PNG ke WebP
+//     await new Promise((resolve, reject) => {
+//       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
+//       exec(cmd, (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//       });
+//     });
 
-    const buffer = fs.readFileSync(webpPath);
+//     const buffer = fs.readFileSync(webpPath);
 
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
+//     await sock.sendMessage(from, {
+//       sticker: buffer,
+//       mimetype: 'image/webp'
+//     }, { quoted: msg });
 
-    // Hapus file sementara
-    fs.unlinkSync(pngPath);
-    fs.unlinkSync(webpPath);
-  } catch (err) {
-    console.error('❌ addbrat error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
-  }
+//     // Hapus file sementara
+//     fs.unlinkSync(pngPath);
+//     fs.unlinkSync(webpPath);
+//   } catch (err) {
+//     console.error('❌ addbrat error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal membuat stiker!'
+//     }, { quoted: msg });
+//   }
+// }
 }
