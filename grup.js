@@ -149,51 +149,52 @@ if (isBotAktif && !isBotAdmin) {
   }
 
   // 🔥 Filter Otomatis Link, Promo, Toxic
-  const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
-  const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
-  const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
+const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
+const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
+const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
-  try {
-    if (!isAdmin && !isOwner) {
-      const strikeDB = fs.readJsonSync(strikeFile)
-      strikeDB[from] = strikeDB[from] || {}
-      strikeDB[from][sender] = strikeDB[from][sender] || 0
+try {
+  if (!isAdmin && !isOwner) {
+    const strikeDB = fs.readJsonSync(strikeFile)
+    strikeDB[from] = strikeDB[from] || {}
+    strikeDB[from][sender] = strikeDB[from][sender] || 0
 
-      const tambahStrike = async () => {
-        strikeDB[from][sender] += 1
-        fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-        if (strikeDB[from][sender] >= 5) {
-          await sock.groupParticipantsUpdate(from, [sender], 'remove')
-          delete strikeDB[from][sender]
-          fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-        }
-      }
-
-      if (fitur.antilink1 && isLink) {
-        await sock.sendMessage(from, { delete: msg.key })
-        await tambahStrike()
-      }
-
-      if (fitur.antilink2 && isLink) {
-        await sock.sendMessage(from, { delete: msg.key })
+    const tambahStrike = async () => {
+      strikeDB[from][sender] += 1
+      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+      if (strikeDB[from][sender] >= 5) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
         fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
       }
-
-      if (fitur.antipromosi && isPromo) {
-        await sock.sendMessage(from, { delete: msg.key })
-        await tambahStrike()
-      }
-
-      if (fitur.antitoxic && isToxic) {
-        await sock.sendMessage(from, { delete: msg.key })
-        await tambahStrike()
-      }
     }
-  } catch (err) {
-    console.error('❌ Filter error:', err)
+
+    // ✅ Tetap hapus walau pakai command (misal: .afk + link)
+    if (fitur.antilink1 && isLink) {
+      await sock.sendMessage(from, { delete: msg.key })
+      await tambahStrike()
+    }
+
+    if (fitur.antilink2 && isLink) {
+      await sock.sendMessage(from, { delete: msg.key })
+      await sock.groupParticipantsUpdate(from, [sender], 'remove')
+      delete strikeDB[from][sender]
+      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+    }
+
+    if (fitur.antipromosi && isPromo) {
+      await sock.sendMessage(from, { delete: msg.key })
+      await tambahStrike()
+    }
+
+    if (fitur.antitoxic && isToxic) {
+      await sock.sendMessage(from, { delete: msg.key })
+      await tambahStrike()
+    }
   }
+} catch (err) {
+  console.error('❌ Filter error:', err)
+}
 
   // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
 if (text === '.menu') {
@@ -407,7 +408,7 @@ if (text.startsWith('.close')) {
 // ]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
-const isCmdValid = allowedCommands.some(cmd => text.startsWith(cmd));
+const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
 
 // Jalankan command valid
 if (isCommand && isCmdValid) {
@@ -419,6 +420,7 @@ if (isCommand && !isCmdValid) {
   console.log(`⚠️ Command tidak dikenal: ${text}`);
   // Jangan return! Biarkan filter di bawah tetap berjalan
 }
+
 
 // // === .stiker ===
 // if (text === '.stiker') {
