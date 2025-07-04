@@ -98,14 +98,21 @@ module.exports = async (sock, msg) => {
   })
 }
 
-  const now = new Date();
+ const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
+
+const now = new Date()
 if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-  if (isCommand && (isAdmin || isOwner)) {
-    return sock.sendMessage(from, {
-      text: `🕒 *Tacatic Bot 04* belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (PERMANEN – hanya Owner Bot)`
-    })
+  if (isCommand) {
+    // Boleh menampilkan notifikasi jika command termasuk fitur publik
+    if (fiturBolehMember.some(cmd => text.startsWith(cmd))) {
+      return sock.sendMessage(from, {
+        text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
+      })
+    }
+
+    // Semua command lainnya diabaikan
+    return
   }
-  return // Non-admin tidak bisa pakai fitur sebelum bot aktif
 }
 
  // 💡 Daftar fitur yang hanya bisa dipakai oleh admin atau owner
@@ -359,13 +366,14 @@ if (text.startsWith('.close')) {
 
   // 🚫 Batasi command hanya yang tersedia di bot
 const allowedCommands = [
-  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k',
+  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
   '.antilink1 on', '.antilink1 off',
   '.antilink2 on', '.antilink2 off',
   '.antipromosi on', '.antipromosi off',
   '.antitoxic on', '.antitoxic off',
   '.welcome on', '.welcome off',
-  '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat', '.bratkeren'
+  '.open', '.close', '.tagall', '.kick', '.promote', '.demote',
+  '.stiker', '.addbrat',
 ]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
@@ -375,6 +383,13 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 
 // === .stiker ===
 if (text === '.stiker') {
+  const now = new Date()
+  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
+    return sock.sendMessage(from, {
+      text: '❌ Bot belum aktif di grup ini.\n\nAktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen – khusus owner)'
+    }, { quoted: msg })
+  }
+
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
@@ -398,7 +413,6 @@ if (text === '.stiker') {
 
     fs.writeFileSync(inputPath, buffer);
 
-    // Resize dengan kualitas tinggi & center 512x512
     await new Promise((resolve, reject) => {
       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
       exec(cmd, (err) => {
@@ -426,6 +440,13 @@ if (text === '.stiker') {
 
 // === .addbrat ===
 if (text.startsWith('.addbrat ')) {
+  const now = new Date()
+  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
+    return sock.sendMessage(from, {
+      text: '❌ Bot belum aktif di grup ini.\n\nAktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen – khusus owner)'
+    }, { quoted: msg })
+  }
+
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
@@ -438,12 +459,9 @@ if (text.startsWith('.addbrat ')) {
     const pngPath = `./${filename}.png`;
     const webpPath = `./${filename}.webp`;
 
-    // Font besar dan kecil
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK);
+    const image = new Jimp(512, 512, 0xFFFFFFFF); // background putih
 
-    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
     const wrapAnomaliStyle = (text) => {
       const words = text.trim().split(' ');
       const lines = [];
@@ -451,10 +469,8 @@ if (text.startsWith('.addbrat ')) {
 
       for (let i = 0; i < words.length; i++) {
         line.push(words[i]);
-
-        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
         if (line.length === 2 || i === words.length - 1) {
-          lines.push(line.join('     ')); // spasi antar kata
+          lines.push(line.join('     '));
           line = [];
         }
       }
@@ -463,7 +479,6 @@ if (text.startsWith('.addbrat ')) {
 
     const wrappedText = wrapAnomaliStyle(teks);
 
-    // Cetak teks di tengah
     image.print(
       font,
       0,
@@ -480,7 +495,6 @@ if (text.startsWith('.addbrat ')) {
     image.quality(100);
     await image.writeAsync(pngPath);
 
-    // Konversi PNG ke WebP
     await new Promise((resolve, reject) => {
       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
       exec(cmd, (err) => {
@@ -496,7 +510,6 @@ if (text.startsWith('.addbrat ')) {
       mimetype: 'image/webp'
     }, { quoted: msg });
 
-    // Hapus file sementara
     fs.unlinkSync(pngPath);
     fs.unlinkSync(webpPath);
   } catch (err) {
@@ -506,4 +519,5 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
+
 }
