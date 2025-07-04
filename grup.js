@@ -95,7 +95,7 @@ module.exports = async (sock, msg) => {
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-  })
+ }, { quoted: msg })
 }
 
  const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
@@ -111,40 +111,44 @@ const fiturHanyaAdmin = [
 
 const now = new Date()
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
+const cmdUtama = text.split(' ')[0] // ambil command utamanya (tanpa argumen)
 
-// 🔒 Blokir semua fitur kalau bot belum aktif KECUALI yang ada di fiturBolehMember
+// 🔒 Blokir semua fitur kalau bot belum aktif KECUALI fitur publik
 if (!isBotAktif) {
-  if (isCommand && fiturBolehMember.some(cmd => text.startsWith(cmd))) {
+  if (isCommand && fiturBolehMember.includes(cmdUtama)) {
     return sock.sendMessage(from, {
       text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
     }, { quoted: msg })
   }
-  if (isCommand) return // command lain diabaikan
+  if (isCommand) return // command lain tidak akan dijalankan
 }
 
-// 🛡️ Cegah akses fitur admin oleh member
-if (isCommand && fiturHanyaAdmin.some(cmd => text.startsWith(cmd)) && !isAdmin && !isOwner) {
+// 🛡️ Blokir fitur admin jika digunakan oleh member biasa
+if (isCommand && fiturHanyaAdmin.includes(cmdUtama) && !isAdmin && !isOwner) {
   return sock.sendMessage(from, {
     text: '⚠️ Fitur ini hanya bisa digunakan oleh *Admin Grup*!'
   }, { quoted: msg })
 }
 
-// 🚫 Bot belum jadi admin, hanya blokir fitur admin
-if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
-  return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
+// 🚫 Bot belum jadi admin, fitur admin dimatikan
+if (!isBotAdmin && isCommand && (isAdmin || isOwner) && fiturHanyaAdmin.includes(cmdUtama)) {
+  return sock.sendMessage(from, {
+    text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
+  })
 }
 
-// ❌ Tolak command member kalau bukan fitur publik
+// ❌ Tolak akses member jika fitur bukan publik
 if (
   isCommand &&
   !isAdmin &&
   !isOwner &&
-  !fiturBolehMember.some(cmd => text.split(' ')[0] === cmd)
+  !fiturBolehMember.includes(cmdUtama)
 ) {
   return sock.sendMessage(from, {
     text: '❌ Kamu tidak punya akses untuk perintah ini.'
   }, { quoted: msg })
 }
+
 
 if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
   return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
