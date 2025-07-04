@@ -4,6 +4,20 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 
 module.exports = async (sock, msg, text, from) => {
+  const db = fs.readJsonSync('./grup.json');
+  const fitur = db[from] || {};
+
+  const now = new Date();
+  const isAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
+
+  // Allow .menu even if bot is not active
+  if (!isAktif && !text.startsWith('.menu')) {
+    return sock.sendMessage(from, {
+      text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dulu dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
+    }, { quoted: msg });
+  }
+
+  // 📋 .menu
   if (text === '.menu') {
     return sock.sendMessage(from, {
       text: `🎀 *MENU BOT UNTUK SEMUA MEMBER* 🎀
@@ -17,11 +31,11 @@ Contoh:
 – .addbrat Selamat ulang tahun
 – Kirim gambar lalu ketik .stiker
 
-Semoga harimu menyenangkan! ✨`
+✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
     }, { quoted: msg });
   }
 
-  // .stiker
+  // 🖼️ .stiker
   if (text === '.stiker') {
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
@@ -59,7 +73,7 @@ Semoga harimu menyenangkan! ✨`
     }
   }
 
-  // .addbrat
+  // 💬 .addbrat
   if (text.startsWith('.addbrat ')) {
     const teks = text.split('.addbrat ')[1].trim();
     if (!teks) {
