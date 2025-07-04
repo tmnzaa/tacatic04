@@ -491,89 +491,58 @@ if (text.startsWith('.addbrat ')) {
 }
 
 //bratkeren
-  // === .bratkeren ===
-if (text.startsWith('.bratkeren ')) {
-  const teks = text.split('.bratkeren ')[1].trim();
-  if (!teks) {
+  if (text.startsWith('.bratkeren ')) {
+  const input = text.split('.bratkeren ')[1].trim();
+  if (!input) {
     return sock.sendMessage(from, {
-      text: '❌ Masukkan teks!\nContoh: *.bratkeren hai kamu*'
+      text: '❌ Masukkan teks!\nContoh: *.bratkeren kamu keren*'
     }, { quoted: msg });
   }
 
   try {
+    const teks = '💥 ' + input;
     const name = msg?.pushName || sender.split('@')[0];
 
-    // Ambil foto profil pengguna
+    // Ambil foto profil user
     let ppUrl;
     try {
       ppUrl = await sock.profilePictureUrl(sender, 'image');
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png';
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default
     }
 
-    const ppImage = await Jimp.read(ppUrl);
-    const base = new Jimp(512, 512, '#ffe5f1');
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+    const pp = await Jimp.read(ppUrl);
+    pp.resize(96, 96);
 
-    // Resize dan buat PP jadi bulat
-    ppImage.resize(128, 128);
-    const mask = await new Jimp(128, 128, 0xFFFFFFFF);
+    // Bulatkan PP
+    const mask = new Jimp(96, 96, 0xFFFFFFFF);
     mask.circle();
-    ppImage.mask(mask, 0, 0);
+    pp.mask(mask, 0, 0);
 
-    base.composite(ppImage, 20, 20);
+    // Buat bubble putih
+    const bubble = new Jimp(300, 100, '#ffffff');
+    const fontText = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    bubble.print(fontText, 20, 25, {
+      text: teks,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
+    }, 260, 60);
 
-    // Tulis nama user kecil di samping PP
-    base.print(
-      fontSmall,
-      160, 40,
-      {
-        text: `${name}`,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT,
-        alignmentY: Jimp.VERTICAL_ALIGN_TOP
-      },
-      330, 40
-    );
+    // Siapkan canvas utama
+    const base = new Jimp(512, 150, 0x00000000); // transparan
+    const fontName = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
 
-    // Bungkus teks agar tidak keluar
-    const wrapText = (text, maxLength = 28) => {
-      const words = text.split(' ');
-      const lines = [];
-      let line = '';
+    // Tempel PP & nama
+    base.composite(pp, 20, 25);
+    base.print(fontName, 20, 125, name);
 
-      for (const word of words) {
-        if ((line + word).length <= maxLength) {
-          line += word + ' ';
-        } else {
-          lines.push(line.trim());
-          line = word + ' ';
-        }
-      }
-      if (line) lines.push(line.trim());
-      return lines.join('\n');
-    };
+    // Tempel bubble di kanan
+    base.composite(bubble, 130, 25);
 
-    const wrappedText = wrapText(teks);
-
-    // Tulis teks besar di tengah bawah
-    base.print(
-      font,
-      30, 180,
-      {
-        text: wrappedText,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_TOP
-      },
-      452, 300
-    );
-
-    const tempPng = './temp_bratkeren.png';
-    const tempWebp = './temp_bratkeren.webp';
-
+    // Simpan sementara & konversi ke stiker
+    const tempPng = './bratkeren.png';
+    const tempWebp = './bratkeren.webp';
     await base.writeAsync(tempPng);
 
-    // Konversi PNG ke WebP (biar stiker bagus)
     await new Promise((resolve, reject) => {
       const cmd = `convert "${tempPng}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${tempWebp}"`;
       exec(cmd, (err) => {
