@@ -127,6 +127,16 @@ if (isBotAktif && !isBotAdmin) {
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
 
+  const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
+  
+// 🚫 Hapus command mencurigakan (tidak dikenal tapi berisi konten terlarang)
+if (isCommand && !isCmdValid && isBotAktif && !isAdmin && !isOwner) {
+  if (isLink || isPromo || isToxic) {
+    await sock.sendMessage(from, { delete: msg.key });
+    console.log(`⚠️ Command tidak dikenal + mencurigakan dihapus: ${text}`);
+  }
+}
+
   if (!isBotAktif) {
     if (isCommand && fiturBolehMember.includes(cmdUtama)) {
       return sock.sendMessage(from, {
@@ -151,14 +161,6 @@ if (isBotAktif && !isBotAdmin) {
  const isLink = /(https?:\/\/|www\.|\.com|\.net|\.org|\.xyz|\.id|t\.me\/|chat\.whatsapp\.com)/i.test(text)
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
-
-// 🚫 Hapus command mencurigakan (tidak dikenal tapi berisi konten terlarang)
-if (isCommand && !isCmdValid && isBotAktif && !isAdmin && !isOwner) {
-  if (isLink || isPromo || isToxic) {
-    await sock.sendMessage(from, { delete: msg.key });
-    console.log(`⚠️ Command tidak dikenal + mencurigakan dihapus: ${text}`);
-  }
-}
 
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
@@ -468,8 +470,6 @@ if (text === '.hd') {
 //   '.welcome on', '.welcome off',
 //   '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
 // ]
-
-const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
 
 // Jalankan command valid
 if (isCommand && isCmdValid) {
