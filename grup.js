@@ -493,78 +493,58 @@ if (text.startsWith('.addbrat ')) {
 //bratkeren
   if (text.startsWith('.bratkeren ')) {
   const input = text.split('.bratkeren ')[1].trim();
-  if (!input) {
-    return sock.sendMessage(from, {
-      text: '❌ Masukkan teks!\nContoh: *.bratkeren kamu keren*'
-    }, { quoted: msg });
-  }
+  if (!input) return sock.sendMessage(from, { text: 'Ketik: *.bratkeren kamu keren*' }, { quoted: msg });
 
   try {
     const teks = '💥 ' + input;
     const name = msg?.pushName || sender.split('@')[0];
 
-    // Ambil foto profil user
+    // Ambil PP
     let ppUrl;
     try {
       ppUrl = await sock.profilePictureUrl(sender, 'image');
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default PP
     }
 
     const pp = await Jimp.read(ppUrl);
     pp.resize(96, 96);
-
-    // Bulatkan PP
+    const bulat = new Jimp(96, 96, 0x00000000);
     const mask = new Jimp(96, 96, 0xFFFFFFFF);
     mask.circle();
     pp.mask(mask, 0, 0);
+    bulat.composite(pp, 0, 0);
 
-    // Buat bubble putih
-    const bubble = new Jimp(300, 100, '#ffffff');
+    const canvas = new Jimp(512, 200, '#ffe5ec'); // latar pink soft
     const fontText = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    bubble.print(fontText, 20, 25, {
-      text: teks,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_LEFT
-    }, 260, 60);
-
-    // Siapkan canvas utama
-    const base = new Jimp(512, 150, 0x00000000); // transparan
     const fontName = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
 
-    // Tempel PP & nama
-    base.composite(pp, 20, 25);
-    base.print(fontName, 20, 125, name);
+    const bubble = new Jimp(360, 100, '#ffffff');
+    bubble.print(fontText, 20, 25, teks);
 
-    // Tempel bubble di kanan
-    base.composite(bubble, 130, 25);
+    canvas.composite(bulat, 25, 50);
+    canvas.print(fontName, 25, 150, name);
+    canvas.composite(bubble, 130, 50);
 
-    // Simpan sementara & konversi ke stiker
-    const tempPng = './bratkeren.png';
-    const tempWebp = './bratkeren.webp';
-    await base.writeAsync(tempPng);
+    const temp = './bratkeren.webp';
+    await canvas.writeAsync('./bratkeren.png');
 
+    // Convert ke webp pakai sharp atau imagemagick
     await new Promise((resolve, reject) => {
-      const cmd = `convert "${tempPng}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${tempWebp}"`;
-      exec(cmd, (err) => {
+      exec(`convert "./bratkeren.png" -resize 512x512 "./bratkeren.webp"`, (err) => {
         if (err) return reject(err);
         resolve();
       });
     });
 
-    const buffer = fs.readFileSync(tempWebp);
+    const buffer = fs.readFileSync(temp);
+    await sock.sendMessage(from, { sticker: buffer, mimetype: 'image/webp' }, { quoted: msg });
 
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
-
-    fs.unlinkSync(tempPng);
-    fs.unlinkSync(tempWebp);
+    fs.unlinkSync('./bratkeren.png');
+    fs.unlinkSync('./bratkeren.webp');
   } catch (err) {
-    console.error('❌ bratkeren error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
+    console.error('bratkeren error:', err);
+    sock.sendMessage(from, { text: '⚠️ Gagal buat stiker.' }, { quoted: msg });
   }
 }
 
