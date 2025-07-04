@@ -199,7 +199,7 @@ Contoh:
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
-  })
+  }, { quoted: msg }) // <<< INI yang ditambahkan
 }
 
   // 🔁 ON / OFF FITUR (versi pintar & rapi)
