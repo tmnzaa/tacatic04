@@ -331,8 +331,16 @@ if (text.startsWith('.tagall')) {
 }
 
   // 👑 Promote
-if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
+if (text.startsWith('.promote')) handlePromote()
+
+async function handlePromote() {
+  const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
+  if (!target || !target.length) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Tag siapa dulu yang mau dipromote.'
+    })
+  }
+
   await sock.groupParticipantsUpdate(from, target, 'promote')
   return sock.sendMessage(from, {
     text: `🎉 *Promosi Berhasil!*\nSelamat kepada:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nKamu sekarang adalah *Admin Grup*! 🎖️`,
@@ -341,8 +349,16 @@ if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo
 }
 
 // 🧹 Demote
-if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
+if (text.startsWith('.demote')) handleDemote()
+
+async function handleDemote() {
+  const target = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid
+  if (!target || !target.length) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Tag siapa dulu yang mau didemote.'
+    })
+  }
+
   await sock.groupParticipantsUpdate(from, target, 'demote')
   return sock.sendMessage(from, {
     text: `⚠️ *Turunkan Jabatan!*\nYang tadinya admin sekarang jadi rakyat biasa:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nJangan sedih ya, tetap semangat! 😅`,
@@ -351,27 +367,34 @@ if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?
 }
 
   // 🔓 .open & .close
-if (text.startsWith('.open')) {
+if (text.startsWith('.open')) handleOpen()
+
+async function handleOpen() {
   const jam = text.split(' ')[1]
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
     fitur.openTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam}*` })
   }
+
   await sock.groupSettingUpdate(from, 'not_announcement')
-  return sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' }) // <== tambahkan return
+  return sock.sendMessage(from, { text: '✅ Grup dibuka! Ayo ngobrol!' })
 }
 
-if (text.startsWith('.close')) {
+if (text.startsWith('.close')) handleClose()
+
+async function handleClose() {
   const jam = text.split(' ')[1]
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
     fitur.closeTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam}*` })
   }
+
   await sock.groupSettingUpdate(from, 'announcement')
-  return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
+  return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' })
 }
+
 
   if (text === '.cekaktif') {
   const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
