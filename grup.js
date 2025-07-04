@@ -41,64 +41,66 @@ module.exports = async (sock, msg) => {
     return console.error('❌ ERROR Metadata:', err.message)
   }
 
- const OWNER_BOT = '6282333014459@s.whatsapp.net'; // ganti dengan nomor kamu
+ const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
+
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = sender === OWNER_BOT;
-const isOwner = isGroupOwner || isBotOwner;
-  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+const isOwner = isBotOwner; // ✅ hanya owner bot yang dianggap owner
+const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
 
-  if (mentions.includes(botNumber) && !isCommand) return
+if (mentions.includes(botNumber) && !isCommand) return;
 
-  const db = fs.readJsonSync(dbFile)
-  db[from] = db[from] || {}
-  db[from].nama = metadata.subject
-  const fitur = db[from]
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+const db = fs.readJsonSync(dbFile);
+db[from] = db[from] || {};
+db[from].nama = metadata.subject;
+const fitur = db[from];
+fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
-    if (!isBotAdmin) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-      })
-    }
+if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
+  if (!isBotAdmin) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
+    });
+  }
 
+  if (!isOwner) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Hanya *Owner Bot* yang bisa mengaktifkan bot ini!'
+    });
+  }
+
+  const now = new Date();
+  const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
+
+  if (fitur.permanen || (expiredDate && expiredDate >= now)) {
+    return sock.sendMessage(from, {
+      text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+    });
+  }
+
+  if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
+  if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
+  if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
+
+  if (text === '.aktifbotper') {
     if (!isOwner) {
       return sock.sendMessage(from, {
-        text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!'
-      })
+        text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
+      });
     }
-
-    const now = new Date()
-    const expiredDate = fitur.expired ? new Date(fitur.expired) : null
-
-    if (fitur.permanen || (expiredDate && expiredDate >= now)) {
-      return sock.sendMessage(from, {
-        text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-      })
-    }
-
-    if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
-    if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
-    if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
-
-    if (text === '.aktifbotper') {
-      const OWNER_BOT = '6282333014459@s.whatsapp.net'
-      if (sender !== OWNER_BOT) {
-        return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' })
-      }
-      fitur.permanen = true
-      fitur.expired = null
-    }
-
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
-
-    return sock.sendMessage(from, {
-      text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-    }, { quoted: msg })
+    fitur.permanen = true;
+    fitur.expired = null;
   }
+
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+
+  return sock.sendMessage(from, {
+    text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+  }, { quoted: msg });
+}
 
   const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif']
