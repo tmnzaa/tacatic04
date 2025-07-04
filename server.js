@@ -60,6 +60,17 @@ app.post('/grup/:id/hapus', (req, res) => {
   res.redirect('/');
 });
 
+app.delete('/grup/hapus-semua', (req, res) => {
+  try {
+    fs.writeJsonSync(dbFile, {}, { spaces: 2 });
+    emitUpdate();
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('❌ Gagal hapus semua grup:', err.message);
+    res.status(500).send('Gagal menghapus semua grup.');
+  }
+});
+
 // ✅ Watch perubahan file
 fs.watchFile(dbFile, emitUpdate);
 
