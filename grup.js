@@ -148,13 +148,14 @@ if (isBotAktif && !isBotAdmin) {
     }, { quoted: msg })
   }
 
-  // 🔥 Filter Otomatis Link, Promo, Toxic
+ // 🔥 Filter Otomatis Link, Promo, Toxic — WAJIB DI ATAS SEMUA if (isCommand)
 const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
-try {
-  if (!isAdmin && !isOwner) {
+// ⛔ Prioritaskan filter sebelum semua pengecekan command
+if (isBotAktif && !isAdmin && !isOwner) {
+  try {
     const strikeDB = fs.readJsonSync(strikeFile)
     strikeDB[from] = strikeDB[from] || {}
     strikeDB[from][sender] = strikeDB[from][sender] || 0
@@ -162,6 +163,7 @@ try {
     const tambahStrike = async () => {
       strikeDB[from][sender] += 1
       fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+
       if (strikeDB[from][sender] >= 5) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
@@ -169,12 +171,13 @@ try {
       }
     }
 
-    // ✅ Tetap hapus walau pakai command (misal: .afk + link)
+    // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && isLink) {
       await sock.sendMessage(from, { delete: msg.key })
       await tambahStrike()
     }
 
+    // 🚫 AntiLink 2: Hapus pesan + langsung tendang
     if (fitur.antilink2 && isLink) {
       await sock.sendMessage(from, { delete: msg.key })
       await sock.groupParticipantsUpdate(from, [sender], 'remove')
@@ -182,18 +185,21 @@ try {
       fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
     }
 
+    // 🚫 Anti Promosi
     if (fitur.antipromosi && isPromo) {
       await sock.sendMessage(from, { delete: msg.key })
       await tambahStrike()
     }
 
+    // 🚫 Anti Toxic
     if (fitur.antitoxic && isToxic) {
       await sock.sendMessage(from, { delete: msg.key })
       await tambahStrike()
     }
+
+  } catch (err) {
+    console.error('❌ Filter error:', err)
   }
-} catch (err) {
-  console.error('❌ Filter error:', err)
 }
 
   // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
