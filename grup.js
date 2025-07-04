@@ -61,50 +61,59 @@ module.exports = async (sock, msg) => {
   const fitur = db[from];
   fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-  // ✅ .menu fix admin/member dibedakan
-  if (text === '.menu') {
-    if (isAdmin || isOwner) {
-      return sock.sendMessage(from, {
-        text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
+  // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
+if (text === '.menu') {
+  if (isAdmin || isOwner) {
+    return sock.sendMessage(from, {
+      text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
 📛 *FITUR KEAMANAN*:
-• 🚫 _.antilink1 on/off_ → Hapus link
-• 🚷 _.antilink2 on/off_ → Hapus + tendang user
-• 📢 _.antipromosi on/off_ → Blok iklan
-• 🤬 _.antitoxic on/off_ → Filter kata kasar
+• 🚫 _.antilink1 on/off_  → Hapus link masuk
+• 🚷 _.antilink2 on/off_  → Hapus link + tendang user
+• 📢 _.antipromosi on/off_  → Blok iklan dan spam
+• 🤬 _.antitoxic on/off_  → Bersihin kata-kata kasar
 
-🎉 *FITUR INTERAKSI*:
-• 🗣️ _.tagall_ → Mention semua
-• 🎉 _.welcome on/off_ → Sambutan masuk
-• 👢 _.kick_ → Tendang member
+🎉 *FITUR SOSIAL & INTERAKSI*:
+• 🎉 _.welcome on/off_  → Sambutan buat member baru
+• 🗣️ _.tagall_  → Mention semua member aktif
+• 👢 _.kick_  → Tendang member (admin only)
 
-🛠️ *MANAJEMEN GRUP*:
-• 👑 _.promote_ → Admin-kan
-• 🧹 _.demote_ → Turunkan admin
-• 🔓 _.open [jam]_ → Buka grup
-• 🔒 _.close [jam]_ → Tutup grup
-• 💡 _.cekaktif_ → Cek fitur aktif
+🛠️ *FITUR MANAJEMEN GRUP*:
+• 👑 _.promote_  → Jadikan member jadi admin
+• 🧹 _.demote_  → Turunin admin
+• 🔓 _.open_ / _.open 20.00_  → Buka grup / jadwal buka
+• 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
+• 💡 _.cekaktif_      → Cek fitur aktif
 
-📊 *LAINNYA*:
+📊 *FITUR LAINNYA*:
+• 🖼️ _.stiker_        → Buat stiker dari gambar
+• 🔤 _.addbrat teks_  → Buat stiker teks brat
+
+📌 *Catatan*:
+– Hanya admin atau owner grup yang bisa akses semua fitur.
+– Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
+
+╚═════════════════════════╝`
+    }, { quoted: msg });
+  } else {
+    return sock.sendMessage(from, {
+      text: `🎀 *MENU UNTUK MEMBER* 🎀
+
+📌 Kamu bisa pakai fitur ini:
+
 • 🖼️ _.stiker_
+→ Kirim atau reply gambar lalu ketik .stiker
+
 • 🔤 _.addbrat teks_
+→ Buat stiker teks lucu (contoh: .addbrat Selamat ulang tahun)
 
-╚════════════════════════════╝`
-      }, { quoted: msg });
-    } else {
-      return sock.sendMessage(from, {
-        text: `🎀 *MENU UNTUK MEMBER* 🎀
+• 📋 _.menu_
+→ Melihat daftar fitur yang tersedia
 
-📌 Fitur yang bisa kamu pakai:
-
-• 🖼️ _.stiker_ → Kirim/reply gambar
-• 🔤 _.addbrat teks_ → Stiker teks lucu
-• 📋 _.menu_ → Lihat menu
-
-✨ Powered by *Tacatic Bot 04*!`
-      }, { quoted: msg });
-    }
+✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
+    }, { quoted: msg });
   }
+}
 
   // ... lanjut kode lain di bawah sesuai versi kamu ...
 
