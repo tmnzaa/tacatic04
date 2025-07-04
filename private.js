@@ -490,19 +490,18 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-// === .hd ===
-if (text === '.hd') {
+// === .removebg ===
+if (text === '.removebg') {
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
   if (!mediaMessage) {
     return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.hd* untuk meningkatkan kualitas.'
+      text: '❌ Kirim atau reply gambar dengan perintah *.removebg* untuk hapus background.'
     }, { quoted: msg });
   }
 
   try {
-    console.log('[.hd] Mulai download media...');
     const buffer = await downloadMediaMessage(
       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
       'buffer',
@@ -510,46 +509,50 @@ if (text === '.hd') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    if (!buffer || buffer.length < 10_000) {
-      console.error('[.hd] Buffer kosong atau terlalu kecil:', buffer?.length);
+    if (!buffer || buffer.length < 10000) {
       return sock.sendMessage(from, {
-        text: '⚠️ Gagal membaca gambar. Coba kirim ulang atau jangan pakai dokumen.'
+        text: '⚠️ Gambar gagal diambil. Kirim ulang dan jangan sebagai dokumen.'
       }, { quoted: msg });
     }
 
-    console.log('[.hd] Buffer OK:', buffer.length);
-
     const filename = Date.now();
-    const inputPath = `./${filename}.jpg`;
-    const outputPath = `./${filename}-hd.jpg`;
+    const inputPath = `./${filename}.png`;
+    const outputPath = `./${filename}-nobg.png`;
 
     fs.writeFileSync(inputPath, buffer);
-    console.log('[.hd] Input file disimpan:', inputPath);
-
     const image = await Jimp.read(inputPath);
-    console.log('[.hd] Gambar berhasil dibaca Jimp.');
 
-    image
-      .resize(image.getWidth() * 2, image.getHeight() * 2)
-      .quality(100)
-      .contrast(0.1)
-      .normalize();
+    const bgColor = Jimp.intToRGBA(image.getPixelColor(0, 0)); // ambil warna pojok kiri atas
+
+    image.scan(0, 0, image.bitmap.width, image.bitmap.height, function (x, y, idx) {
+      const red   = this.bitmap.data[idx + 0];
+      const green = this.bitmap.data[idx + 1];
+      const blue  = this.bitmap.data[idx + 2];
+
+      // jika warna mirip background, jadikan transparan
+      if (
+        Math.abs(red - bgColor.r) < 25 &&
+        Math.abs(green - bgColor.g) < 25 &&
+        Math.abs(blue - bgColor.b) < 25
+      ) {
+        this.bitmap.data[idx + 3] = 0; // alpha jadi transparan
+      }
+    });
 
     await image.writeAsync(outputPath);
-    console.log('[.hd] Gambar HD disimpan:', outputPath);
 
-    const hasilHD = fs.readFileSync(outputPath);
+    const result = fs.readFileSync(outputPath);
     await sock.sendMessage(from, {
-      image: hasilHD,
-      caption: '✅ Gambar berhasil di-HD-kan!'
+      image: result,
+      caption: '✅ Background berhasil dihapus (basic remover)',
     }, { quoted: msg });
 
     fs.unlinkSync(inputPath);
     fs.unlinkSync(outputPath);
   } catch (err) {
-    console.error('❌ ERROR saat .hd:', err);
+    console.error('❌ removebg error:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Terjadi kesalahan saat proses HD.\n' + err.message
+      text: '⚠️ Gagal menghapus background.\n' + err.message
     }, { quoted: msg });
   }
 }
