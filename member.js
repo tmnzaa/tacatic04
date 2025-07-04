@@ -17,23 +17,66 @@ module.exports = async (sock, msg, text, from) => {
     }, { quoted: msg });
   }
 
-  // 📋 .menu
   if (text === '.menu') {
-    return sock.sendMessage(from, {
-      text: `🎀 *MENU BOT UNTUK SEMUA MEMBER* 🎀
+  return sock.sendMessage(from, {
+    text: `🎀 *MENU BOT UNTUK SEMUA MEMBER* 🎀
 
 📌 Kamu bisa pakai fitur ini:
 • 📋 .menu
 • 🖼️ .stiker (kirim gambar, lalu ketik)
+• 🖼️ .hd (ubah gambar jadi lebih tajam)
 • 💬 .addbrat teks
 
 Contoh:
 – .addbrat Selamat ulang tahun
 – Kirim gambar lalu ketik .stiker
+– Reply gambar lalu ketik .hd
 
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
-    }, { quoted: msg });
+  }, { quoted: msg });
+}
+
+  // 🖼️ .hd
+if (text === '.hd') {
+  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+  if (!mediaMessage) {
+    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .hd' }, { quoted: msg });
   }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const filename = `./hd-${Date.now()}.jpg`;
+    fs.writeFileSync(filename, buffer);
+
+    const image = await Jimp.read(filename);
+    image
+      .contrast(0.20)
+      .brightness(0.5)
+      .normalize()
+      .posterize(180)
+      .quality(90);
+
+    await image.writeAsync(filename);
+
+    const result = fs.readFileSync(filename);
+    await sock.sendMessage(from, {
+      image: result,
+      caption: '📸 Sudah aku-HD-kan! ✨'
+    }, { quoted: msg });
+
+    fs.unlinkSync(filename);
+  } catch (err) {
+    console.error(err);
+    await sock.sendMessage(from, { text: '⚠️ Gagal membuat versi HD foto.' }, { quoted: msg });
+  }
+}
 
   // 🖼️ .stiker
   if (text === '.stiker') {
