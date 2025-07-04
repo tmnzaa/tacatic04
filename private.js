@@ -490,4 +490,57 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
+
+// === .hd ===
+if (text === '.hd') {
+  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+
+  if (!mediaMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim atau reply gambar lalu ketik *.hd* untuk memperjelas.'
+    }, { quoted: msg });
+  }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const filename = Date.now();
+    const inputPath = `./${filename}.jpg`;
+    const outputPath = `./${filename}-hd.jpg`;
+
+    fs.writeFileSync(inputPath, buffer);
+
+    const image = await Jimp.read(inputPath);
+    image
+      .resize(image.getWidth() * 2, image.getHeight() * 2) // Perbesar resolusi
+      .contrast(0.3)  // Tambahkan kontras
+      .normalize()    // Normalisasi warna
+      .sharpen()      // Pertajam gambar
+      .quality(90);   // Kompresi ringan
+
+    await image.writeAsync(outputPath);
+
+    const hdBuffer = fs.readFileSync(outputPath);
+
+    await sock.sendMessage(from, {
+      image: hdBuffer,
+      caption: '📷 Ini gambar versi *HD*! Semoga lebih jelas ya~',
+    }, { quoted: msg });
+
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+  } catch (err) {
+    console.error('❌ HD error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal memperjelas gambar.'
+    }, { quoted: msg });
+  }
+}
+
 }
