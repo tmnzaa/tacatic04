@@ -19,23 +19,24 @@ module.exports = async (sock, msg, text, from) => {
     }, { quoted: msg });
   }
 
-  if (text === '.menu') {
+ if (text === '.menu') {
   return sock.sendMessage(from, {
-    text: `🎀 *MENU BOT UNTUK SEMUA MEMBER* 🎀
+    text: `🎀 *MENU MEMBER – TACATIC BOT 04* 🎀
 
-📌 Kamu bisa pakai fitur ini:
-• 📋 .menu
-• 🖼️ .stiker (kirim gambar, lalu ketik)
-• 🖼️ .hd (ubah gambar jadi lebih tajam)
-• 🖼️ .removebg (hapus bakground)
-• 💬 .addbrat teks
+🛠️ *Fitur Tersedia untuk Member:*
+• 📋 _.menu_ – Lihat daftar fitur
+• 🖼️ _.stiker_ – Buat stiker dari gambar
+• 📷 _.hd_ – Jadikan gambar lebih tajam
+• 🧼 _.removebg_ – Hapus background gambar
+• 💬 _.addbrat teks_ – Buat stiker teks lucu
 
-Contoh:
+📌 *Contoh penggunaan:*
+– Kirim gambar lalu ketik _.stiker_
+– Reply gambar lalu ketik _.hd_
 – .addbrat Selamat ulang tahun
-– Kirim gambar lalu ketik .stiker
-– Reply gambar lalu ketik .hd
+– Reply gambar lalu ketik _.removebg_
 
-✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
+✨ Nikmati fitur seru dari *Tacatic Bot 04*!`,
   }, { quoted: msg });
 }
 
