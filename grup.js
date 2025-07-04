@@ -122,7 +122,7 @@ if (isBotAktif && !isBotAdmin) {
     '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
     '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
     '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd',
+    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
   ]
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -236,7 +236,8 @@ if (text === '.menu') {
 📊 *FITUR LAINNYA*:
 • 🖼️ _.stiker_        → Buat stiker dari gambar
 • 🔤 _.addbrat teks_  → Buat stiker teks brat
-• 📷 _.hd_ → Ubah gambar jadi HD
+• 📷 _.hd_            → Ubah gambar jadi HD
+• 🧼 _.removebg_      → Hapus background gambar
 
 📌 *Catatan*:
 – Hanya admin atau owner grup yang bisa akses semua fitur.
@@ -246,23 +247,27 @@ if (text === '.menu') {
     }, { quoted: msg });
   } else {
     return sock.sendMessage(from, {
-      text: `🎀 *MENU UNTUK MEMBER* 🎀
+      text: `🎀 *MENU MEMBER – TACATIC BOT 04* 🎀
 
-📌 Kamu bisa pakai fitur ini:
+🛠️ *Fitur yang bisa kamu gunakan:*
 
-• 🖼️ _.stiker_
-→ Kirim atau reply gambar lalu ketik .stiker
+• 🖼️ _.stiker_  
+→ Kirim atau reply gambar, lalu ketik _.stiker_
 
-• 🖼️ _.hd_
-→ Ubah foto jadi lebih tajam dan cerah
+• 📷 _.hd_  
+→ Ubah gambar jadi lebih tajam dan cerah
 
-• 🔤 _.addbrat teks_
-→ Buat stiker teks lucu (contoh: .addbrat Selamat ulang tahun)
+• 🧼 _.removebg_  
+→ Hapus background gambar
 
-• 📋 _.menu_
-→ Melihat daftar fitur yang tersedia
+• 🔤 _.addbrat teks_  
+→ Buat stiker teks lucu  
+Contoh: _.addbrat Selamat ulang tahun_
 
-✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
+• 📋 _.menu_  
+→ Lihat daftar fitur yang tersedia
+
+✨ Nikmati fitur seru dari *Tacatic Bot 04*!`,
     }, { quoted: msg });
   }
 }
