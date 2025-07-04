@@ -409,6 +409,55 @@ if (text.startsWith('.close')) {
     }, { quoted: msg });
 }
 
+if (text === '.hd') {
+  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+
+  if (!mediaMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
+    }, { quoted: msg });
+  }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const filename = Date.now();
+    const inputPath = `./${filename}.jpg`;
+    const outputPath = `./${filename}-hd.jpg`;
+
+    fs.writeFileSync(inputPath, buffer);
+
+    const image = await Jimp.read(inputPath);
+    image
+      .resize(1024, Jimp.AUTO)      // Perbesar lebar ke 1024px, tinggi otomatis
+      .quality(90)                  // Kualitas tinggi tapi tetap cepat
+      .contrast(0.2)                // Tambah kontras
+      .sharpen()                    // Tajamkan gambar (pakai filter built-in Jimp)
+
+    await image.writeAsync(outputPath);
+
+    const result = fs.readFileSync(outputPath);
+    await sock.sendMessage(from, {
+      image: result,
+      caption: '✅ Gambar berhasil di-HD-kan!'
+    }, { quoted: msg });
+
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+  } catch (err) {
+    console.error('❌ HD error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal mengubah gambar jadi HD!'
+    }, { quoted: msg });
+  }
+}
+
 //   // 🚫 Batasi command hanya yang tersedia di bot
 // const allowedCommands = [
 //   '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
