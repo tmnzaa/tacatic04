@@ -27,7 +27,7 @@ module.exports = async (sock, msg) => {
   const isCommand = text.startsWith('.');
 
   // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
-  const allowedForAll = ['.stiker', '.addbrat'];
+const allowedForAll = ['.stiker', '.addbrat', '.hd'];
   if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     const memberHandler = require('./member');
     await memberHandler(sock, msg, text, from);
