@@ -492,11 +492,7 @@ if (text.startsWith('.addbrat ')) {
 }
 
 //bratkeren
-  const Jimp = require("jimp");
-const fs = require("fs");
-const path = require("path");
-
-async function bratkeren(msg, sock) {
+ async function bratkeren(msg, sock) {
   try {
     const nama = msg.pushName || "Pengguna";
     const isiPesan = msg.body.split(" ").slice(1).join(" ") || "isi kosong";
