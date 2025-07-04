@@ -41,7 +41,11 @@ module.exports = async (sock, msg) => {
     return console.error('❌ ERROR Metadata:', err.message)
   }
 
- const isOwner = sender === metadata.owner;
+ const OWNER_BOT = '6282333014459@s.whatsapp.net'; // ganti dengan nomor kamu
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+const isGroupOwner = sender === groupOwner;
+const isBotOwner = sender === OWNER_BOT;
+const isOwner = isGroupOwner || isBotOwner;
   const isAdmin = metadata.participants.find(p => p.id === sender)?.admin
   const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
   const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
