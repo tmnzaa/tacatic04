@@ -41,7 +41,7 @@ module.exports = async (sock, msg) => {
     return console.error('❌ ERROR Metadata:', err.message)
   }
 
-  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin')
+ const isOwner = sender === metadata.owner;
   const isAdmin = metadata.participants.find(p => p.id === sender)?.admin
   const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
   const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
