@@ -4,6 +4,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
+const makeExif = require('./exif'); // ✅ Tambahkan di sini
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -222,7 +223,7 @@ if (text === '.removebg') {
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
   if (!mediaMessage) {
-    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .stiker' }, { quoted: msg });
+    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan *.stiker*' }, { quoted: msg });
   }
 
   try {
@@ -240,36 +241,33 @@ if (text === '.removebg') {
 
     fs.writeFileSync(input, buffer);
 
-    // Convert ke WebP
+    // 🔧 Convert ke WebP
     exec(`ffmpeg -i ${input} -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=white" -qscale 100 -y ${output}`, async (err) => {
-      if (err) return sock.sendMessage(from, { text: '⚠️ Gagal convert gambar ke WebP' }, { quoted: msg });
+      if (err) {
+        fs.unlinkSync(input);
+        return sock.sendMessage(from, { text: '⚠️ Gagal convert gambar ke WebP' }, { quoted: msg });
+      }
 
-      // Tambah metadata (author & pack name)
+      // ✍️ Buat file exif dulu (pack & author)
+      await makeExif('Tam Storee', 'Tacatic Bot');
+
+      // 🔖 Tambahkan exif
       exec(`webpmux -set exif exif.exif ${output} -o ${final}`, async (err2) => {
-        if (err2) return sock.sendMessage(from, { text: '⚠️ Gagal menambahkan info stiker' }, { quoted: msg });
+        if (err2) {
+          fs.unlinkSync(input);
+          fs.unlinkSync(output);
+          return sock.sendMessage(from, { text: '⚠️ Gagal menambahkan info stiker' }, { quoted: msg });
+        }
 
         const result = fs.readFileSync(final);
         await sock.sendMessage(from, { sticker: result }, { quoted: msg });
 
+        // 🧹 Bersihkan file sementara
         fs.unlinkSync(input);
         fs.unlinkSync(output);
         fs.unlinkSync(final);
       });
     });
-
-    // Buat file EXIF
-    const exif = Buffer.from([
-      0x49, 0x49, 0x2A, 0x00, // TIFF header
-      0x08, 0x00, 0x00, 0x00, // Offset IFD
-      0x01, 0x00,             // Tag count
-      0x01, 0x01,             // Tag (Dummy)
-      0x00, 0x07,             // Type
-      0x00, 0x00, 0x00, 0x01, // Count
-      0x00, 0x00, 0x00, 0x00, // Value
-      0x00, 0x00              // End
-    ]);
-    fs.writeFileSync('exif.exif', exif);
-
   } catch (e) {
     console.log('⚠️ Error stiker:', e);
     await sock.sendMessage(from, { text: '❌ Gagal membuat stiker.' }, { quoted: msg });
