@@ -249,42 +249,51 @@ if (text === '.menu') {
   }
 }
 
- if (text === `.${f} on`) {
-  if (!isAdmin) return sock.sendMessage(from, {
-    text: `⚠️ Hanya *Admin Grup* yang boleh mengaktifkan fitur *${f}*.`
-  })
 
-  if (fitur[f]) {
-    return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` })
+ const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome'];
+
+for (let f of fiturList) {
+  if (text === `.${f} on`) {
+    if (!isAdmin && !isOwner) {
+      return sock.sendMessage(from, {
+        text: `⚠️ Hanya *Admin Grup* yang boleh mengaktifkan fitur *${f}*.`
+      });
+    }
+
+    if (fitur[f]) {
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` });
+    }
+
+    if (f === 'antilink1' && fitur['antilink2']) {
+      fitur['antilink2'] = false;
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` });
+    }
+
+    if (f === 'antilink2' && fitur['antilink1']) {
+      fitur['antilink1'] = false;
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` });
+    }
+
+    fitur[f] = true;
+    fs.writeJsonSync(dbFile, db, { spaces: 2 });
+    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!` });
   }
 
-  // Matikan fitur antilink yang lain jika ada
-  if (f === 'antilink1' && fitur['antilink2']) {
-    fitur['antilink2'] = false
-    await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` })
+  if (text === `.${f} off`) {
+    if (!isAdmin && !isOwner) {
+      return sock.sendMessage(from, {
+        text: `⚠️ Hanya *Admin Grup* yang boleh menonaktifkan fitur *${f}*.`
+      });
+    }
+
+    if (!fitur[f]) {
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` });
+    }
+
+    fitur[f] = false;
+    fs.writeJsonSync(dbFile, db, { spaces: 2 });
+    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.` });
   }
-  if (f === 'antilink2' && fitur['antilink1']) {
-    fitur['antilink1'] = false
-    await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` })
-  }
-
-  fitur[f] = true
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
-  return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!` })
-}
-
-if (text === `.${f} off`) {
-  if (!isAdmin) return sock.sendMessage(from, {
-    text: `⚠️ Hanya *Admin Grup* yang boleh mematikan fitur *${f}*.`
-  })
-
-  if (!fitur[f]) {
-    return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` })
-  }
-
-  fitur[f] = false
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
-  return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.` })
 }
 
   // 👮 .tagall tanpa tampil mention (silent mention)
