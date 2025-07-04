@@ -149,7 +149,7 @@ if (isBotAktif && !isBotAdmin) {
   }
 
  // 🔥 Filter Otomatis Link, Promo, Toxic — WAJIB DI ATAS SEMUA if (isCommand)
-const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
+const isLink = /(?:https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
