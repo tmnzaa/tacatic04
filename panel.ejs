@@ -50,6 +50,9 @@
   <div class="panel-box d-none" id="panelBox">
     <button class="btn btn-outline-danger btn-sm logout-btn" onclick="logout()">Logout</button>
     <h5 class="mb-3">📊 Daftar Grup Aktif</h5>
+    
+    <button class="btn btn-danger mb-3" onclick="hapusSemua()">🗑️ Hapus Semua Grup</button>
+
     <div class="table-responsive">
       <table class="table table-bordered table-hover align-middle text-center" id="tabelGrup">
         <thead class="table-light">
@@ -73,11 +76,6 @@
           <% }) %>
         </tbody>
       </table>
-      <!-- Tambahan di dalam <div class="panel-box d-none" id="panelBox"> -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="mb-0">📊 Daftar Grup Aktif</h5>
-  <button class="btn btn-danger btn-sm" onclick="hapusSemua()">🗑️ Hapus Semua Grup</button>
-</div>
     </div>
   </div>
 
@@ -107,9 +105,9 @@
     });
   </script>
 
-  <!-- Login JS -->
+  <!-- Login JS + Hapus Semua -->
   <script>
-    const correctPassword = "admin123"; // Ganti sesuai keinginan
+    const correctPassword = "admin123"; // Ganti password panel
 
     function handleLogin() {
       const pass = document.getElementById("passwordInput").value;
@@ -127,25 +125,18 @@
       document.getElementById("loginBox").classList.remove("d-none");
       document.getElementById("passwordInput").value = '';
     }
+
+    function hapusSemua() {
+      if (!confirm("⚠️ Yakin ingin menghapus SEMUA grup?")) return;
+      fetch('/grup/hapus-semua', { method: 'DELETE' })
+        .then(res => {
+          if (!res.ok) throw new Error("Gagal");
+          alert('✅ Semua grup berhasil dihapus!');
+          document.getElementById("grupList").innerHTML = '';
+        })
+        .catch(err => alert('❌ Gagal menghapus semua grup.'));
+    }
   </script>
-
-  <script>
-  function hapusSemua() {
-    if (!confirm("⚠️ Yakin ingin menghapus semua grup dari database?")) return;
-
-    fetch('/grup/hapus-semua', { method: 'DELETE' })
-      .then(res => {
-        if (res.ok) {
-          alert("✅ Semua grup berhasil dihapus!");
-          document.getElementById('grupList').innerHTML = '';
-        } else {
-          alert("❌ Gagal menghapus. Coba lagi.");
-        }
-      })
-      .catch(() => alert("❌ Terjadi kesalahan saat menghubungi server."));
-  }
-</script>
-
 
 </body>
 </html>
