@@ -491,7 +491,6 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-// === .hd ===
 if (text === '.hd') {
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
@@ -518,19 +517,16 @@ if (text === '.hd') {
 
     const image = await Jimp.read(inputPath);
     image
-      .resize(image.getWidth() * 2, image.getHeight() * 2) // Perbesar resolusi
-      .contrast(0.3)  // Tambahkan kontras
-      .normalize()    // Normalisasi warna
-      .sharpen()      // Pertajam gambar
-      .quality(90);   // Kompresi ringan
+      .resize(image.getWidth() * 1.3, image.getHeight() * 1.3) // ringan
+      .contrast(0.2)
+      .quality(85);
 
     await image.writeAsync(outputPath);
-
     const hdBuffer = fs.readFileSync(outputPath);
 
     await sock.sendMessage(from, {
       image: hdBuffer,
-      caption: '📷 Ini gambar versi *HD*! Semoga lebih jelas ya~',
+      caption: '📷 Ini versi *HD ringan*!',
     }, { quoted: msg });
 
     fs.unlinkSync(inputPath);
