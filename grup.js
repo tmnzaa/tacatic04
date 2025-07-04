@@ -413,7 +413,6 @@ if (text.startsWith('.close')) {
 //   '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
 // ]
 
-// Cek jika pesan dimulai titik tapi bukan command yang dikenali
 const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
 
 // Jalankan command valid
@@ -426,7 +425,6 @@ if (isCommand && !isCmdValid) {
   console.log(`⚠️ Command tidak dikenal: ${text}`);
   // Jangan return! Biarkan filter di bawah tetap berjalan
 }
-
 
 // // === .stiker ===
 // if (text === '.stiker') {
