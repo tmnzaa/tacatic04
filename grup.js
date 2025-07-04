@@ -108,8 +108,9 @@ if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
   return // Non-admin tidak bisa pakai fitur sebelum bot aktif
 }
 
-  // 💡 Hanya batasi command jika bukan admin
-  if (isCommand && !isAdmin && !isOwner) return
+ // 💡 Hanya batasi command jika bukan admin, kecuali .menu, .stiker, .addbrat
+const allowedForMember = ['.menu', '.stiker', '.addbrat'];
+if (isCommand && !isAdmin && !isOwner && !allowedForMember.some(cmd => text.startsWith(cmd))) return;
 if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
   return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
 }
@@ -165,7 +166,7 @@ try {
 }
 
  // 📋 Menu Rapi & Menarik
-if (text === '.menu') {
+if (text === '.menu' && (isAdmin || isOwner)) {
   return sock.sendMessage(from, {
     text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
@@ -357,137 +358,139 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
 }
 
-// === .stiker ===
-if (text === '.stiker') {
-  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+// // === .stiker ===
+// if (text === '.stiker') {
+//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-  if (!mediaMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-    }, { quoted: msg });
-  }
+//   if (!mediaMessage) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const buffer = await downloadMediaMessage(
-      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
+//   try {
+//     const buffer = await downloadMediaMessage(
+//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+//       'buffer',
+//       {},
+//       { logger: console, reuploadRequest: sock.updateMediaMessage }
+//     );
 
-    const filename = `./${Date.now()}`;
-    const inputPath = `${filename}.jpg`;
-    const outputPath = `${filename}.webp`;
+//     const filename = `./${Date.now()}`;
+//     const inputPath = `${filename}.jpg`;
+//     const outputPath = `${filename}.webp`;
 
-    fs.writeFileSync(inputPath, buffer);
+//     fs.writeFileSync(inputPath, buffer);
 
-    // Resize dengan kualitas tinggi & center 512x512
-    await new Promise((resolve, reject) => {
-      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
+//     // Resize dengan kualitas tinggi & center 512x512
+//     await new Promise((resolve, reject) => {
+//       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+//       exec(cmd, (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//       });
+//     });
 
-    const stickerBuffer = fs.readFileSync(outputPath);
+//     const stickerBuffer = fs.readFileSync(outputPath);
 
-    await sock.sendMessage(from, {
-      sticker: stickerBuffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
+//     await sock.sendMessage(from, {
+//       sticker: stickerBuffer,
+//       mimetype: 'image/webp'
+//     }, { quoted: msg });
 
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
-  } catch (err) {
-    console.error('❌ stiker error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
-  }
-}
+//     fs.unlinkSync(inputPath);
+//     fs.unlinkSync(outputPath);
+//   } catch (err) {
+//     console.error('❌ stiker error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal membuat stiker!'
+//     }, { quoted: msg });
+//   }
+// }
 
-// === .addbrat ===
-if (text.startsWith('.addbrat ')) {
-  const teks = text.split('.addbrat ')[1].trim();
-  if (!teks) {
-    return sock.sendMessage(from, {
-      text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-    }, { quoted: msg });
-  }
+// // === .addbrat ===
+// if (text.startsWith('.addbrat ')) {
+//   const teks = text.split('.addbrat ')[1].trim();
+//   if (!teks) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const filename = Date.now();
-    const pngPath = `./${filename}.png`;
-    const webpPath = `./${filename}.webp`;
+//   try {
+//     const filename = Date.now();
+//     const pngPath = `./${filename}.png`;
+//     const webpPath = `./${filename}.webp`;
 
-    // Font besar dan kecil
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
-    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
+//     // Font besar dan kecil
+//     const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
+//     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+//     const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
 
-    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
-    const wrapAnomaliStyle = (text) => {
-      const words = text.trim().split(' ');
-      const lines = [];
-      let line = [];
+//     // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
+//     const wrapAnomaliStyle = (text) => {
+//       const words = text.trim().split(' ');
+//       const lines = [];
+//       let line = [];
 
-      for (let i = 0; i < words.length; i++) {
-        line.push(words[i]);
+//       for (let i = 0; i < words.length; i++) {
+//         line.push(words[i]);
 
-        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
-        if (line.length === 2 || i === words.length - 1) {
-          lines.push(line.join('     ')); // spasi antar kata
-          line = [];
-        }
-      }
-      return lines.join('\n');
-    };
+//         // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
+//         if (line.length === 2 || i === words.length - 1) {
+//           lines.push(line.join('     ')); // spasi antar kata
+//           line = [];
+//         }
+//       }
+//       return lines.join('\n');
+//     };
 
-    const wrappedText = wrapAnomaliStyle(teks);
+//     const wrappedText = wrapAnomaliStyle(teks);
 
-    // Cetak teks di tengah
-    image.print(
-      font,
-      0,
-      0,
-      {
-        text: wrappedText,
-        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-      },
-      512,
-      512
-    );
+//     // Cetak teks di tengah
+//     image.print(
+//       font,
+//       0,
+//       0,
+//       {
+//         text: wrappedText,
+//         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+//         alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+//       },
+//       512,
+//       512
+//     );
 
-    image.quality(100);
-    await image.writeAsync(pngPath);
+//     image.quality(100);
+//     await image.writeAsync(pngPath);
 
-    // Konversi PNG ke WebP
-    await new Promise((resolve, reject) => {
-      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-      exec(cmd, (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
+//     // Konversi PNG ke WebP
+//     await new Promise((resolve, reject) => {
+//       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
+//       exec(cmd, (err) => {
+//         if (err) return reject(err);
+//         resolve();
+//       });
+//     });
 
-    const buffer = fs.readFileSync(webpPath);
+//     const buffer = fs.readFileSync(webpPath);
 
-    await sock.sendMessage(from, {
-      sticker: buffer,
-      mimetype: 'image/webp'
-    }, { quoted: msg });
+//     await sock.sendMessage(from, {
+//       sticker: buffer,
+//       mimetype: 'image/webp'
+//     }, { quoted: msg });
 
-    // Hapus file sementara
-    fs.unlinkSync(pngPath);
-    fs.unlinkSync(webpPath);
-  } catch (err) {
-    console.error('❌ addbrat error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat stiker!'
-    }, { quoted: msg });
-  }
-}
+//     // Hapus file sementara
+//     fs.unlinkSync(pngPath);
+//     fs.unlinkSync(webpPath);
+//   } catch (err) {
+//     console.error('❌ addbrat error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal membuat stiker!'
+//     }, { quoted: msg });
+//   }
+// }
+const memberHandler = require('./member')
+await memberHandler(sock, msg, text, from)
 }
