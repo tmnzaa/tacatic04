@@ -3,6 +3,7 @@ const dbFile = './grup.json'
 const strikeFile = './strike.json'
 const Jimp = require('jimp')
 const path = require('path');
+const translate = require('@vitalets/google-translate-api');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
@@ -23,6 +24,7 @@ const kataKasar = [
   'bangsat',
   'goblok',
   'tai',
+  'bokep',
   // dst...
 ]
 
@@ -490,72 +492,34 @@ if (text.startsWith('.addbrat ')) {
   }
 }
 
-// === .removebg ===
-if (text === '.removebg') {
-  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+// .translate en | .translate id | dst
+if (text.startsWith('.translate')) {
+  const args = text.split(' ');
+  const toLang = args[1]; // misalnya 'en', 'id', 'ja'
+  const quotedText = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.conversation;
 
-  if (!mediaMessage) {
+  if (!toLang) {
     return sock.sendMessage(from, {
-      text: '❌ Kirim atau reply gambar dengan perintah *.removebg* untuk hapus background.'
+      text: '❌ Format salah!\nContoh: *.translate en* (balas pesan yang mau diterjemahkan)',
+    }, { quoted: msg });
+  }
+
+  if (!quotedText) {
+    return sock.sendMessage(from, {
+      text: '❌ Kamu harus reply pesan yang ingin diterjemahkan.',
     }, { quoted: msg });
   }
 
   try {
-    const buffer = await downloadMediaMessage(
-      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
-
-    if (!buffer || buffer.length < 10000) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Gambar gagal diambil. Kirim ulang dan jangan sebagai dokumen.'
-      }, { quoted: msg });
-    }
-
-    const filename = Date.now();
-    const inputPath = `./${filename}.png`;
-    const outputPath = `./${filename}-nobg.png`;
-
-    fs.writeFileSync(inputPath, buffer);
-    const image = await Jimp.read(inputPath);
-
-    const bgColor = Jimp.intToRGBA(image.getPixelColor(0, 0)); // ambil warna pojok kiri atas
-
-    image.scan(0, 0, image.bitmap.width, image.bitmap.height, function (x, y, idx) {
-      const red   = this.bitmap.data[idx + 0];
-      const green = this.bitmap.data[idx + 1];
-      const blue  = this.bitmap.data[idx + 2];
-
-      // jika warna mirip background, jadikan transparan
-      if (
-        Math.abs(red - bgColor.r) < 25 &&
-        Math.abs(green - bgColor.g) < 25 &&
-        Math.abs(blue - bgColor.b) < 25
-      ) {
-        this.bitmap.data[idx + 3] = 0; // alpha jadi transparan
-      }
-    });
-
-    await image.writeAsync(outputPath);
-
-    const result = fs.readFileSync(outputPath);
-    await sock.sendMessage(from, {
-      image: result,
-      caption: '✅ Background berhasil dihapus (basic remover)',
+    const result = await translate(quotedText, { to: toLang });
+    return sock.sendMessage(from, {
+      text: `📄 Hasil Terjemahan (${toLang}):\n\n${result.text}`
     }, { quoted: msg });
-
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
   } catch (err) {
-    console.error('❌ removebg error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal menghapus background.\n' + err.message
+    console.error('❌ translate error:', err);
+    return sock.sendMessage(from, {
+      text: '⚠️ Gagal menerjemahkan teks.'
     }, { quoted: msg });
   }
 }
-
-
 }
