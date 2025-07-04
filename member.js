@@ -3,7 +3,34 @@ const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
-const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key kamu
+const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
+
+const limitFile = './limit.json'
+if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
+
+const cekLimit = (from, sender, fitur) => {
+  const db = fs.readJsonSync(limitFile)
+  const today = new Date().toISOString().split('T')[0]
+
+  db[from] = db[from] || {}
+  db[from][sender] = db[from][sender] || {}
+  const user = db[from][sender][fitur] || { count: 0, date: today }
+
+  // Reset otomatis jika beda hari
+  if (user.date !== today) {
+    user.count = 0
+    user.date = today
+  }
+
+  // Jika sudah 2x, tolak
+  if (user.count >= 2) return false
+
+  // Tambah penggunaan
+  user.count += 1
+  db[from][sender][fitur] = user
+  fs.writeJsonSync(limitFile, db, { spaces: 2 })
+  return true
+}
 
 module.exports = async (sock, msg, text, from) => {
   const db = fs.readJsonSync('./grup.json');
@@ -40,7 +67,36 @@ module.exports = async (sock, msg, text, from) => {
   }, { quoted: msg });
 }
 
+if (text === '.limit') {
+  const db = fs.readJsonSync('./limit.json');
+  const today = new Date().toISOString().split('T')[0];
+  const senderData = db[from]?.[sender] || {};
+
+  // Daftar fitur yang dibatasi
+  const fiturList = ['stiker', 'hd', 'removebg', 'addbrat'];
+  let reply = '📊 *Sisa Limit Harian Kamu:*\n\n';
+
+  fiturList.forEach(fitur => {
+    const usage = senderData[fitur] || { count: 0, date: today };
+    const sisa = usage.date !== today ? 2 : Math.max(0, 2 - usage.count);
+    reply += `• ${fitur}: ${sisa}x\n`;
+  });
+
+  return sock.sendMessage(from, {
+    text: reply + `\n📆 Reset otomatis setiap hari jam 00:00.`,
+  }, { quoted: msg });
+}
+
  if (text === '.hd') {
+  // 💥 Batasi 2x per hari untuk member biasa
+  if (!isAdmin && !isOwner) {
+    if (!cekLimit(from, sender, 'hd')) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Batas penggunaan *.hd* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+      }, { quoted: msg });
+    }
+  }
+
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
 
@@ -72,7 +128,7 @@ module.exports = async (sock, msg, text, from) => {
     const hasil = fs.readFileSync(temp);
     await sock.sendMessage(from, {
       image: hasil,
-      caption: '✅ Ini gambar versi HD-nya ✨'
+      caption: '✅ Success'
     }, { quoted: msg });
 
     fs.unlinkSync(temp);
@@ -86,6 +142,15 @@ module.exports = async (sock, msg, text, from) => {
 
 // 🧼 .removebg
 if (text === '.removebg') {
+   // 💥 Batasi 2x per hari untuk member biasa
+  if (!isAdmin && !isOwner) {
+    if (!cekLimit(from, sender, 'removebg')) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Batas penggunaan *.removebg* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+      }, { quoted: msg });
+    }
+  }
+
   try {
     const context = msg.message?.extendedTextMessage?.contextInfo;
     const quoted = context?.quotedMessage?.imageMessage;
@@ -125,7 +190,7 @@ if (text === '.removebg') {
 
       await sock.sendMessage(from, {
         image: fs.readFileSync(tempOutput),
-        caption: '✅ Background berhasil dihapus!'
+        caption: '✅ Remove BG Success'
       }, { quoted: msg });
 
       fs.unlinkSync(tempInput);
@@ -143,6 +208,15 @@ if (text === '.removebg') {
 
   // 🖼️ .stiker
   if (text === '.stiker') {
+    // 💥 Batas 2x untuk member biasa
+  if (!isAdmin && !isOwner) {
+    if (!cekLimit(from, sender, 'stiker')) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+      }, { quoted: msg });
+    }
+  }
+
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
     if (!mediaMessage) {
@@ -181,6 +255,15 @@ if (text === '.removebg') {
 
   // 💬 .addbrat
   if (text.startsWith('.addbrat ')) {
+    // 💥 Batas 2x untuk member biasa
+  if (!isAdmin && !isOwner) {
+    if (!cekLimit(from, sender, 'addbrat')) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Batas penggunaan *.addbrat* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+      }, { quoted: msg });
+    }
+  }
+
     const teks = text.split('.addbrat ')[1].trim();
     if (!teks) {
       return sock.sendMessage(from, {
