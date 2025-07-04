@@ -99,23 +99,6 @@ module.exports = async (sock, msg) => {
 }
 
  const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
-
-const now = new Date()
-if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-  if (isCommand) {
-    // Boleh menampilkan notifikasi jika command termasuk fitur publik
-    if (fiturBolehMember.some(cmd => text.startsWith(cmd))) {
-      return sock.sendMessage(from, {
-        text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
-      })
-    }
-
-    // Semua command lainnya diabaikan
-    return
-  }
-}
-
- // 💡 Daftar fitur yang hanya bisa dipakai oleh admin atau owner
 const fiturHanyaAdmin = [
   '.antilink1 on', '.antilink1 off',
   '.antilink2 on', '.antilink2 off',
@@ -126,11 +109,41 @@ const fiturHanyaAdmin = [
   '.open', '.close', '.cekaktif'
 ]
 
-// Cek apakah perintah termasuk yang dibatasi dan pengirim bukan admin/owner
+const now = new Date()
+const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
+
+// 🔒 Blokir semua fitur kalau bot belum aktif KECUALI yang ada di fiturBolehMember
+if (!isBotAktif) {
+  if (isCommand && fiturBolehMember.some(cmd => text.startsWith(cmd))) {
+    return sock.sendMessage(from, {
+      text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
+    }, { quoted: msg })
+  }
+  if (isCommand) return // command lain diabaikan
+}
+
+// 🛡️ Cegah akses fitur admin oleh member
 if (isCommand && fiturHanyaAdmin.some(cmd => text.startsWith(cmd)) && !isAdmin && !isOwner) {
   return sock.sendMessage(from, {
     text: '⚠️ Fitur ini hanya bisa digunakan oleh *Admin Grup*!'
-  })
+  }, { quoted: msg })
+}
+
+// 🚫 Bot belum jadi admin, hanya blokir fitur admin
+if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
+  return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*, fitur dimatikan!' })
+}
+
+// ❌ Tolak command member kalau bukan fitur publik
+if (
+  isCommand &&
+  !isAdmin &&
+  !isOwner &&
+  !fiturBolehMember.some(cmd => text.startsWith(cmd))
+) {
+  return sock.sendMessage(from, {
+    text: '❌ Kamu tidak punya akses untuk perintah ini.'
+  }, { quoted: msg })
 }
 
 if (!isBotAdmin && isCommand && (isAdmin || isOwner)) {
@@ -383,13 +396,6 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
 
 // === .stiker ===
 if (text === '.stiker') {
-  const now = new Date()
-  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-    return sock.sendMessage(from, {
-      text: '❌ Bot belum aktif di grup ini.\n\nAktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen – khusus owner)'
-    }, { quoted: msg })
-  }
-
   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
@@ -440,13 +446,6 @@ if (text === '.stiker') {
 
 // === .addbrat ===
 if (text.startsWith('.addbrat ')) {
-  const now = new Date()
-  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-    return sock.sendMessage(from, {
-      text: '❌ Bot belum aktif di grup ini.\n\nAktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen – khusus owner)'
-    }, { quoted: msg })
-  }
-
   const teks = text.split('.addbrat ')[1].trim();
   if (!teks) {
     return sock.sendMessage(from, {
@@ -519,5 +518,6 @@ if (text.startsWith('.addbrat ')) {
     }, { quoted: msg });
   }
 }
+
 
 }
