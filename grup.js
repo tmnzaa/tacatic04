@@ -122,20 +122,12 @@ if (isBotAktif && !isBotAdmin) {
     '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
     '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
     '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat'
+    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd',
   ]
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
 
   const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
-  
-// 🚫 Hapus command mencurigakan (tidak dikenal tapi berisi konten terlarang)
-if (isCommand && !isCmdValid && isBotAktif && !isAdmin && !isOwner) {
-  if (isLink || isPromo || isToxic) {
-    await sock.sendMessage(from, { delete: msg.key });
-    console.log(`⚠️ Command tidak dikenal + mencurigakan dihapus: ${text}`);
-  }
-}
 
   if (!isBotAktif) {
     if (isCommand && fiturBolehMember.includes(cmdUtama)) {
@@ -161,6 +153,12 @@ if (isCommand && !isCmdValid && isBotAktif && !isAdmin && !isOwner) {
  const isLink = /(https?:\/\/|www\.|\.com|\.net|\.org|\.xyz|\.id|t\.me\/|chat\.whatsapp\.com)/i.test(text)
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
+
+if (fitur.antilink1 && isBotAktif && !isAdmin && !isOwner && (isLink || isPromo || isToxic)) {
+  await sock.sendMessage(from, { delete: msg.key });
+  console.log(`🚫 Pesan mencurigakan dihapus (termasuk command): ${text}`);
+  return;
+}
 
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
@@ -429,33 +427,28 @@ if (text === '.hd') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    const filename = Date.now();
-    const inputPath = `./${filename}.jpg`;
-    const outputPath = `./${filename}-hd.jpg`;
+    const filename = `./hd-${Date.now()}.jpg`;
+    fs.writeFileSync(filename, buffer);
 
-    fs.writeFileSync(inputPath, buffer);
-
-    const image = await Jimp.read(inputPath);
+    const image = await Jimp.read(filename);
     image
-      .resize(1024, Jimp.AUTO)      // Perbesar lebar ke 1024px, tinggi otomatis
-      .quality(90)                  // Kualitas tinggi tapi tetap cepat
-      .contrast(0.2)                // Tambah kontras
-      .sharpen()                    // Tajamkan gambar (pakai filter built-in Jimp)
+      .contrast(0.15)     // Tambah kontras
+      .brightness(0.1)    // Tambah sedikit terang
+      .quality(85);       // Simpan dengan kualitas cukup tinggi
 
-    await image.writeAsync(outputPath);
+    await image.writeAsync(filename);
 
-    const result = fs.readFileSync(outputPath);
+    const result = fs.readFileSync(filename);
     await sock.sendMessage(from, {
       image: result,
-      caption: '✅ Gambar berhasil di-HD-kan!'
+      caption: '✅ Ini versi HD ringan-nya ya!'
     }, { quoted: msg });
 
-    fs.unlinkSync(inputPath);
-    fs.unlinkSync(outputPath);
+    fs.unlinkSync(filename);
   } catch (err) {
     console.error('❌ HD error:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal mengubah gambar jadi HD!'
+      text: '⚠️ Gagal membuat versi HD ringan.'
     }, { quoted: msg });
   }
 }
