@@ -4,7 +4,6 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
-const makeExif = require('./exif'); // ✅ Tambahkan di sini
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -210,69 +209,52 @@ if (text === '.removebg') {
   }
 }
 
+  // 🖼️ .stiker
   if (text === '.stiker') {
-  // if (!isAdmin && !isOwner) {
-  //   if (!cekLimit(from, sender, 'stiker')) {
-  //     return sock.sendMessage(from, {
-  //       text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-  //     }, { quoted: msg });
-  //   }
-  // }
-
-  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
-
-  if (!mediaMessage) {
-    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan *.stiker*' }, { quoted: msg });
+    // 💥 Batas 2x untuk member biasa
+  if (!isAdmin && !isOwner) {
+    if (!cekLimit(from, sender, 'stiker')) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+      }, { quoted: msg });
+    }
   }
 
-  try {
-    const buffer = await downloadMediaMessage(
-      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
+    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+    const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+    if (!mediaMessage) {
+      return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .stiker' }, { quoted: msg });
+    }
 
-    const filename = `./${Date.now()}`;
-    const input = `${filename}.jpg`;
-    const output = `${filename}.webp`;
-    const final = `${filename}-final.webp`;
+    try {
+      const buffer = await downloadMediaMessage(
+        { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+        'buffer',
+        {},
+        { logger: console, reuploadRequest: sock.updateMediaMessage }
+      );
 
-    fs.writeFileSync(input, buffer);
+      const filename = `./${Date.now()}`;
+      const inputPath = `${filename}.jpg`;
+      const outputPath = `${filename}.webp`;
 
-    // 🔧 Convert ke WebP
-    exec(`ffmpeg -i ${input} -vf "scale=512:512:force_original_aspect_ratio=decrease,pad=512:512:-1:-1:color=white" -qscale 100 -y ${output}`, async (err) => {
-      if (err) {
-        fs.unlinkSync(input);
-        return sock.sendMessage(from, { text: '⚠️ Gagal convert gambar ke WebP' }, { quoted: msg });
-      }
+      fs.writeFileSync(inputPath, buffer);
 
-      // ✍️ Buat file exif dulu (pack & author)
-      await makeExif('Tam Storee', 'Tacatic Bot');
-
-      // 🔖 Tambahkan exif
-      exec(`webpmux -set exif exif.exif ${output} -o ${final}`, async (err2) => {
-        if (err2) {
-          fs.unlinkSync(input);
-          fs.unlinkSync(output);
-          return sock.sendMessage(from, { text: '⚠️ Gagal menambahkan info stiker' }, { quoted: msg });
-        }
-
-        const result = fs.readFileSync(final);
-        await sock.sendMessage(from, { sticker: result }, { quoted: msg });
-
-        // 🧹 Bersihkan file sementara
-        fs.unlinkSync(input);
-        fs.unlinkSync(output);
-        fs.unlinkSync(final);
+      await new Promise((resolve, reject) => {
+        const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+        exec(cmd, (err) => err ? reject(err) : resolve());
       });
-    });
-  } catch (e) {
-    console.log('⚠️ Error stiker:', e);
-    await sock.sendMessage(from, { text: '❌ Gagal membuat stiker.' }, { quoted: msg });
+
+      const stickerBuffer = fs.readFileSync(outputPath);
+      await sock.sendMessage(from, { sticker: stickerBuffer, mimetype: 'image/webp' }, { quoted: msg });
+
+      fs.unlinkSync(inputPath);
+      fs.unlinkSync(outputPath);
+    } catch (err) {
+      console.error(err);
+      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg });
+    }
   }
-}
 
   // 💬 .addbrat
   if (text.startsWith('.addbrat ')) {
