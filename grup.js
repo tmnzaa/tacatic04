@@ -257,7 +257,7 @@ for (let f of fiturList) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh mengaktifkan fitur *${f}*.`
-      });
+       }, { quoted: msg });
     }
 
     if (fitur[f]) {
@@ -283,7 +283,7 @@ for (let f of fiturList) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh menonaktifkan fitur *${f}*.`
-      });
+        }, { quoted: msg });
     }
 
     if (!fitur[f]) {
@@ -310,11 +310,11 @@ if (text.startsWith('.tagall')) {
   if (text.startsWith('.kick')) {
   if (!isAdmin && !isOwner) return sock.sendMessage(from, {
     text: '⚠️ Hanya admin grup yang bisa menendang member!'
-  })
+   }, { quoted: msg });
 
   if (!isBotAdmin) return sock.sendMessage(from, {
     text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
-  })
+    }, { quoted: msg });
 
   const context = msg.message?.extendedTextMessage?.contextInfo || {}
   const mentionTarget = context.mentionedJid
@@ -392,7 +392,7 @@ if (text.startsWith('.close')) {
 
   return sock.sendMessage(from, {
     text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired || 'Belum aktif'}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
-  })
+    }, { quoted: msg });
 }
 
 //   // 🚫 Batasi command hanya yang tersedia di bot
