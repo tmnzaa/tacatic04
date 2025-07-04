@@ -502,6 +502,7 @@ if (text === '.hd') {
   }
 
   try {
+    console.log('[.hd] Mulai download media...');
     const buffer = await downloadMediaMessage(
       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
       'buffer',
@@ -509,21 +510,33 @@ if (text === '.hd') {
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
+    if (!buffer || buffer.length < 10_000) {
+      console.error('[.hd] Buffer kosong atau terlalu kecil:', buffer?.length);
+      return sock.sendMessage(from, {
+        text: '⚠️ Gagal membaca gambar. Coba kirim ulang atau jangan pakai dokumen.'
+      }, { quoted: msg });
+    }
+
+    console.log('[.hd] Buffer OK:', buffer.length);
+
     const filename = Date.now();
     const inputPath = `./${filename}.jpg`;
     const outputPath = `./${filename}-hd.jpg`;
 
     fs.writeFileSync(inputPath, buffer);
+    console.log('[.hd] Input file disimpan:', inputPath);
 
     const image = await Jimp.read(inputPath);
+    console.log('[.hd] Gambar berhasil dibaca Jimp.');
 
     image
-      .resize(image.getWidth() * 2, image.getHeight() * 2) // Naikkan 2x ukuran
-      .quality(100) // kualitas tinggi
+      .resize(image.getWidth() * 2, image.getHeight() * 2)
+      .quality(100)
       .contrast(0.1)
       .normalize();
 
     await image.writeAsync(outputPath);
+    console.log('[.hd] Gambar HD disimpan:', outputPath);
 
     const hasilHD = fs.readFileSync(outputPath);
     await sock.sendMessage(from, {
@@ -534,11 +547,12 @@ if (text === '.hd') {
     fs.unlinkSync(inputPath);
     fs.unlinkSync(outputPath);
   } catch (err) {
-    console.error('❌ hd error:', err);
+    console.error('❌ ERROR saat .hd:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal meningkatkan kualitas gambar.'
+      text: '⚠️ Terjadi kesalahan saat proses HD.\n' + err.message
     }, { quoted: msg });
   }
 }
+
 
 }
