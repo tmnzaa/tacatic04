@@ -139,7 +139,7 @@ if (
   isCommand &&
   !isAdmin &&
   !isOwner &&
-  !fiturBolehMember.some(cmd => text.startsWith(cmd))
+  !fiturBolehMember.some(cmd => text.split(' ')[0] === cmd)
 ) {
   return sock.sendMessage(from, {
     text: '❌ Kamu tidak punya akses untuk perintah ini.'
