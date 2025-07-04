@@ -63,13 +63,13 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
       text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
-    });
+     }, { quoted: msg });
   }
 
   if (!isOwner) {
     return sock.sendMessage(from, {
       text: '⚠️ Hanya *Owner Bot* yang bisa mengaktifkan bot ini!'
-    });
+    }, { quoted: msg });
   }
 
   const now = new Date();
@@ -89,7 +89,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     if (!isOwner) {
       return sock.sendMessage(from, {
         text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!'
-      });
+       }, { quoted: msg });
     }
     fitur.permanen = true;
     fitur.expired = null;
@@ -261,17 +261,17 @@ for (let f of fiturList) {
     }
 
     if (fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` });
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁`  }, { quoted: msg });
     }
 
     if (f === 'antilink1' && fitur['antilink2']) {
       fitur['antilink2'] = false;
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` });
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.`  }, { quoted: msg });
     }
 
     if (f === 'antilink2' && fitur['antilink1']) {
       fitur['antilink1'] = false;
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` });
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.`  }, { quoted: msg });
     }
 
     fitur[f] = true;
@@ -287,7 +287,7 @@ for (let f of fiturList) {
     }
 
     if (!fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` });
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴`   }, { quoted: msg });
     }
 
     fitur[f] = false;
