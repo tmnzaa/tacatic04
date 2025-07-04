@@ -110,6 +110,13 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
   const fullCmd = text.trim().toLowerCase()
 
+  // ⛔ Blokir semua fitur jika bot sudah aktif tapi belum jadi admin
+if (isBotAktif && !isBotAdmin) {
+  return sock.sendMessage(from, {
+    text: '🚫 *Bot sudah aktif* di grup ini,\ntapi belum dijadikan *Admin Grup*.\n\nMohon jadikan aku admin dulu agar bisa menjalankan fitur-fitur keamanan dan otomatis!'
+  }, { quoted: msg });
+}
+
   const allowedCommands = [
     '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
     '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
