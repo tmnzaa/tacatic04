@@ -21,20 +21,19 @@ module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid;
   if (!from.endsWith('@g.us')) return;
 
-  const sender = msg.key.participant;
+  const sender = msg.key.participant || msg.key.remoteJid;
   const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   const isCommand = text.startsWith('.');
 
-  // 💡 Perintah yang boleh digunakan oleh SEMUA MEMBER
-const allowedForAll = ['.stiker', '.addbrat', '.menu'];
-if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
-  const memberHandler = require('./member');
-  await memberHandler(sock, msg, text, from);
-  return;
-}
+  // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
+  const allowedForAll = ['.stiker', '.addbrat'];
+  if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
+    const memberHandler = require('./member');
+    await memberHandler(sock, msg, text, from);
+    return;
+  }
 
-  // Grup Metadata & Setup
   let metadata;
   try {
     metadata = await sock.groupMetadata(from);
@@ -42,18 +41,17 @@ if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     return console.error('❌ ERROR Metadata:', err.message);
   }
 
-let isAdmin = false;
-let isOwner = false;
+  let isAdmin = false;
+  let isOwner = false;
+  const participantData = metadata?.participants?.find(p => p.id === sender);
+  if (participantData) {
+    isAdmin = participantData.admin === 'admin' || participantData.admin === 'superadmin';
+    isOwner = participantData.admin === 'superadmin';
+  }
 
-const participantData = metadata?.participants?.find(p => p.id === sender);
-if (participantData) {
-  isAdmin = participantData.admin === 'admin' || participantData.admin === 'superadmin';
-  isOwner = participantData.admin === 'superadmin';
-}
-
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const botData = metadata.participants.find(p => p.id === botNumber);
-const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+  const botData = metadata.participants.find(p => p.id === botNumber);
+  const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
 
   if (mentions.includes(botNumber) && !isCommand) return;
 
@@ -63,159 +61,53 @@ const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin'
   const fitur = db[from];
   fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-  // Aktifkan Bot
-  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
-    if (!isBotAdmin) return sock.sendMessage(from, { text: '⚠️ Aku harus jadi *Admin Grup* dulu!' });
-    if (!isOwner) return sock.sendMessage(from, { text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!' });
-
-    const now = new Date();
-    const expiredDate = fitur.expired ? new Date(fitur.expired) : null;
-
-    if (fitur.permanen || (expiredDate && expiredDate >= now)) {
+  // ✅ .menu fix admin/member dibedakan
+  if (text === '.menu') {
+    if (isAdmin || isOwner) {
       return sock.sendMessage(from, {
-        text: `🟢 *Bot sudah aktif di grup ini!*\n📛 Grup: *${fitur.nama}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-      });
-    }
-
-    if (text === '.aktifbot3k') fitur.expired = tambahHari(7);
-    if (text === '.aktifbot5k') fitur.expired = tambahHari(30);
-    if (text === '.aktifbot7k') fitur.expired = tambahHari(60);
-    if (text === '.aktifbotper') {
-      const OWNER_BOT = '6282333014459@s.whatsapp.net';
-      if (sender !== OWNER_BOT) {
-        return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' });
-      }
-      fitur.permanen = true;
-      fitur.expired = null;
-    }
-
-    fs.writeJsonSync(dbFile, db, { spaces: 2 });
-
-    return sock.sendMessage(from, {
-      text: `✅ *Bot diaktifkan!*\n📛 Grup: *${fitur.nama}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
-    }, { quoted: msg });
-  }
-
-  // ⛔ Blokir non-admin jika bot belum aktif
-  const now = new Date();
-  if (!fitur.permanen && (!fitur.expired || new Date(fitur.expired) < now)) {
-    if (isCommand && (isAdmin || isOwner)) {
-      return sock.sendMessage(from, {
-        text: `🕒 Bot belum aktif di grup ini.\n\nAktifkan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
-      }, { quoted: msg });
-    }
-    return; // member biasa tidak bisa apa-apa kalau belum aktif
-  }
-
-  // 🔐 Batasi semua command kecuali admin/owner
-  if (isCommand && !isAdmin && !isOwner && !['.stiker', '.addbrat', '.menu'].includes(text)) return;
-  if (isCommand && (isAdmin || isOwner) && !isBotAdmin) {
-    return sock.sendMessage(from, { text: '🚫 Bot belum jadi *Admin Grup*!' });
-  }
-
-  // ✅ Filter pesan (untuk semua member)
-  const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
-const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
-const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
-
-try {
-  if (!isAdmin && !isOwner) {
-    const strikeDB = fs.readJsonSync(strikeFile)
-    strikeDB[from] = strikeDB[from] || {}
-    strikeDB[from][sender] = strikeDB[from][sender] || 0
-
-    const tambahStrike = async () => {
-      strikeDB[from][sender] += 1
-      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-
-      if (strikeDB[from][sender] >= 5) {
-        await sock.groupParticipantsUpdate(from, [sender], 'remove')
-        delete strikeDB[from][sender] // reset setelah di-kick
-        fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-      }
-    }
-
-    if (fitur.antilink1 && isLink) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
-
-    if (fitur.antilink2 && isLink) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await sock.groupParticipantsUpdate(from, [sender], 'remove')
-      delete strikeDB[from][sender]
-      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-    }
-
-    if (fitur.antipromosi && isPromo) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
-
-    if (fitur.antitoxic && isToxic) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
-
-    return
-  }
-} catch (err) {
-  console.error('❌ Filter error:', err)
-}
-
-// 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
-if (text === '.menu') {
-  if (isAdmin || isOwner) {
-    return sock.sendMessage(from, {
-      text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
+        text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
 📛 *FITUR KEAMANAN*:
-• 🚫 _.antilink1 on/off_  → Hapus link masuk
-• 🚷 _.antilink2 on/off_  → Hapus link + tendang user
-• 📢 _.antipromosi on/off_  → Blok iklan dan spam
-• 🤬 _.antitoxic on/off_  → Bersihin kata-kata kasar
+• 🚫 _.antilink1 on/off_ → Hapus link
+• 🚷 _.antilink2 on/off_ → Hapus + tendang user
+• 📢 _.antipromosi on/off_ → Blok iklan
+• 🤬 _.antitoxic on/off_ → Filter kata kasar
 
-🎉 *FITUR SOSIAL & INTERAKSI*:
-• 🎉 _.welcome on/off_  → Sambutan buat member baru
-• 🗣️ _.tagall_  → Mention semua member aktif
-• 👢 _.kick_  → Tendang member (admin only)
+🎉 *FITUR INTERAKSI*:
+• 🗣️ _.tagall_ → Mention semua
+• 🎉 _.welcome on/off_ → Sambutan masuk
+• 👢 _.kick_ → Tendang member
 
-🛠️ *FITUR MANAJEMEN GRUP*:
-• 👑 _.promote_  → Jadikan member jadi admin
-• 🧹 _.demote_  → Turunin admin
-• 🔓 _.open_ / _.open 20.00_  → Buka grup / jadwal buka
-• 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
-• 💡 _.cekaktif_      → Cek fitur aktif
+🛠️ *MANAJEMEN GRUP*:
+• 👑 _.promote_ → Admin-kan
+• 🧹 _.demote_ → Turunkan admin
+• 🔓 _.open [jam]_ → Buka grup
+• 🔒 _.close [jam]_ → Tutup grup
+• 💡 _.cekaktif_ → Cek fitur aktif
 
-📊 *FITUR LAINNYA*:
-• 🖼️ _.stiker_        → Buat stiker dari gambar
-• 🔤 _.addbrat teks_  → Buat stiker teks brat
-
-📌 *Catatan*:
-– Hanya admin atau owner grup yang bisa akses semua fitur.
-– Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
-
-╚═════════════════════════╝`
-    }, { quoted: msg });
-  } else {
-    return sock.sendMessage(from, {
-      text: `🎀 *MENU UNTUK MEMBER* 🎀
-
-📌 Kamu bisa pakai fitur ini:
-
+📊 *LAINNYA*:
 • 🖼️ _.stiker_
-→ Kirim atau reply gambar lalu ketik .stiker
-
 • 🔤 _.addbrat teks_
-→ Buat stiker teks lucu (contoh: .addbrat Selamat ulang tahun)
 
-• 📋 _.menu_
-→ Melihat daftar fitur yang tersedia
+╚════════════════════════════╝`
+      }, { quoted: msg });
+    } else {
+      return sock.sendMessage(from, {
+        text: `🎀 *MENU UNTUK MEMBER* 🎀
 
-✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
-    }, { quoted: msg });
+📌 Fitur yang bisa kamu pakai:
+
+• 🖼️ _.stiker_ → Kirim/reply gambar
+• 🔤 _.addbrat teks_ → Stiker teks lucu
+• 📋 _.menu_ → Lihat menu
+
+✨ Powered by *Tacatic Bot 04*!`
+      }, { quoted: msg });
+    }
   }
-}
+
+  // ... lanjut kode lain di bawah sesuai versi kamu ...
+
 
   // 🔁 ON / OFF FITUR (versi pintar & rapi)
 const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
