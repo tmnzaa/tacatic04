@@ -4,6 +4,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
+const makeExif = require('./exif');
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -210,8 +211,7 @@ if (text === '.removebg') {
 }
 
   // 🖼️ .stiker
-  if (text === '.stiker') {
-    // 💥 Batas 2x untuk member biasa
+if (text === '.stiker') {
   if (!isAdmin && !isOwner) {
     if (!cekLimit(from, sender, 'stiker')) {
       return sock.sendMessage(from, {
@@ -220,41 +220,49 @@ if (text === '.removebg') {
     }
   }
 
-    const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-    const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
-    if (!mediaMessage) {
-      return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .stiker' }, { quoted: msg });
-    }
-
-    try {
-      const buffer = await downloadMediaMessage(
-        { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-        'buffer',
-        {},
-        { logger: console, reuploadRequest: sock.updateMediaMessage }
-      );
-
-      const filename = `./${Date.now()}`;
-      const inputPath = `${filename}.jpg`;
-      const outputPath = `${filename}.webp`;
-
-      fs.writeFileSync(inputPath, buffer);
-
-      await new Promise((resolve, reject) => {
-        const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-        exec(cmd, (err) => err ? reject(err) : resolve());
-      });
-
-      const stickerBuffer = fs.readFileSync(outputPath);
-      await sock.sendMessage(from, { sticker: stickerBuffer, mimetype: 'image/webp' }, { quoted: msg });
-
-      fs.unlinkSync(inputPath);
-      fs.unlinkSync(outputPath);
-    } catch (err) {
-      console.error(err);
-      await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg });
-    }
+  const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+  if (!mediaMessage) {
+    return sock.sendMessage(from, { text: '❌ Kirim atau reply gambar dengan .stiker' }, { quoted: msg });
   }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const filename = `./${Date.now()}`;
+    const inputPath = `${filename}.jpg`;
+    const outputPath = `${filename}.webp`;
+
+    fs.writeFileSync(inputPath, buffer);
+
+    await new Promise((resolve, reject) => {
+      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+      exec(cmd, (err) => err ? reject(err) : resolve());
+    });
+
+    // 🧠 Tambahkan Exif di sini
+    const makeExif = require('./exif'); // ← pastikan file ini ada
+    const exifBuffer = makeExif('Tacatic Pack', 'aditttt');
+    const webpBuffer = fs.readFileSync(outputPath);
+    const finalSticker = Buffer.concat([webpBuffer, exifBuffer]);
+
+    await sock.sendMessage(from, {
+      sticker: finalSticker,
+      mimetype: 'image/webp'
+    }, { quoted: msg });
+
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+  } catch (err) {
+    console.error(err);
+    await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker!' }, { quoted: msg });
+  }
+}
 
   // 💬 .addbrat
   if (text.startsWith('.addbrat ')) {
