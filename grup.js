@@ -233,44 +233,58 @@ module.exports = async (sock, msg) => {
   // ... lanjut kode lain di bawah sesuai versi kamu ...
 
 
-  // 🔁 ON / OFF FITUR (versi pintar & rapi)
+ // 🔁 ON / OFF FITUR (versi pintar & rapi)
 const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
 
-for (let f of fiturList) {
-  if (text === `.${f} on`) {
-    if (!isOwner) return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh mengaktifkan fitur *${f}*.` })
+const checkFitur = async () => {
+  for (const f of fiturList) {
+    if (text === `.${f} on`) {
+      if (!isOwner) {
+        return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh mengaktifkan fitur *${f}*.` })
+      }
 
-    if (fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` })
+      if (fitur[f]) {
+        return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁` })
+      }
+
+      // Anti double fitur antilink
+      if (f === 'antilink1' && fitur['antilink2']) {
+        fitur['antilink2'] = false
+        await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` })
+      }
+      if (f === 'antilink2' && fitur['antilink1']) {
+        fitur['antilink1'] = false
+        await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` })
+      }
+
+      fitur[f] = true
+      fs.writeJsonSync(dbFile, db, { spaces: 2 })
+      return sock.sendMessage(from, {
+        text: `✅ Fitur *${f}* berhasil diaktifkan!\nAku akan standby dan menjaga dengan baik~ 😼`
+      })
     }
 
-    // 🤖 Anti double: Matikan fitur antilink yang lain
-    if (f === 'antilink1' && fitur['antilink2']) {
-      fitur['antilink2'] = false
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.` })
+    if (text === `.${f} off`) {
+      if (!isOwner) {
+        return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh menonaktifkan fitur *${f}*.` })
+      }
+
+      if (!fitur[f]) {
+        return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` })
+      }
+
+      fitur[f] = false
+      fs.writeJsonSync(dbFile, db, { spaces: 2 })
+      return sock.sendMessage(from, {
+        text: `❌ Fitur *${f}* berhasil dimatikan.\nYasudah, aku istirahat dulu ya untuk bagian itu~ 💤`
+      })
     }
-    if (f === 'antilink2' && fitur['antilink1']) {
-      fitur['antilink1'] = false
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.` })
-    }
-
-    fitur[f] = true
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
-    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!\nAku akan standby dan menjaga dengan baik~ 😼` })
-  }
-
-  if (text === `.${f} off`) {
-    if (!isOwner) return sock.sendMessage(from, { text: `⚠️ Hanya *Owner Grup* yang boleh menonaktifkan fitur *${f}*.` })
-
-    if (!fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴` })
-    }
-
-    fitur[f] = false
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
-    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.\nYasudah, aku istirahat dulu ya untuk bagian itu~ 💤` })
   }
 }
+
+await (async () => {
+  await checkFitur()
+})()
 
   // 👮 .tagall tanpa tampil mention (silent mention)
 if (text.startsWith('.tagall')) {
