@@ -432,8 +432,8 @@ if (text === '.hd') {
 
     const image = await Jimp.read(filename);
     image
-      .contrast(0.15)     // Tambah kontras
-      .brightness(0.1)    // Tambah sedikit terang
+      .contrast(0.30)     // Tambah kontras
+      .brightness(1)    // Tambah sedikit terang
       .quality(85);       // Simpan dengan kualitas cukup tinggi
 
     await image.writeAsync(filename);
