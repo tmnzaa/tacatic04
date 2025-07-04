@@ -432,23 +432,25 @@ if (text === '.hd') {
 
     const image = await Jimp.read(filename);
     image
-      .contrast(0.20)     // Tambah kontras
-      .brightness(0.5)    // Tambah sedikit terang
-      .quality(85);       // Simpan dengan kualitas cukup tinggi
+      .contrast(0.20)       // Tambah kontras
+      .brightness(0.5)      // Tambah terang
+      .normalize()          // Normalisasi warna
+      .posterize(180)       // Sedikit tajamkan warna
+      .quality(90);         // Kualitas tinggi
 
     await image.writeAsync(filename);
 
     const result = fs.readFileSync(filename);
     await sock.sendMessage(from, {
       image: result,
-      caption: '✅ Success'
+      caption: '📸 Sudah aku-HD-kan! Lebih tajam dan cerah ✨'
     }, { quoted: msg });
 
     fs.unlinkSync(filename);
   } catch (err) {
     console.error('❌ HD error:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal membuat versi HD ringan.'
+      text: '⚠️ Gagal membuat versi HD foto.'
     }, { quoted: msg });
   }
 }
