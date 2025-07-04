@@ -407,8 +407,17 @@ if (text.startsWith('.close')) {
 // ]
 
 // Cek jika pesan dimulai titik tapi bukan command yang dikenali
-if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
-  return // abaikan command yang tidak dikenal
+const isCmdValid = allowedCommands.some(cmd => text.startsWith(cmd));
+
+// Jalankan command valid
+if (isCommand && isCmdValid) {
+  // lanjut proses handler command sesuai daftar yang dikenali (sudah ada di bawah)
+}
+
+// ❗ ABAIKAN command tak dikenal, TAPI tetap jalankan filter antilink/antitoxic/promosi
+if (isCommand && !isCmdValid) {
+  console.log(`⚠️ Command tidak dikenal: ${text}`);
+  // Jangan return! Biarkan filter di bawah tetap berjalan
 }
 
 // // === .stiker ===
