@@ -184,6 +184,7 @@ if (text === '.menu') {
 • 🧹 _.demote_  → Turunin admin
 • 🔓 _.open_ / _.open 20.00_  → Buka grup / jadwal buka
 • 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
+• 💡 _.cekaktif_      → Cek fitur aktif
 
 📊 *FITUR LAINNYA*:
 • 💡 _.cekaktif_      → Cek fitur aktif
@@ -496,15 +497,12 @@ if (text.startsWith('.addbrat ')) {
   if (!input) return sock.sendMessage(from, { text: 'Ketik: *.bratkeren kamu keren*' }, { quoted: msg });
 
   try {
-    const teks = '💥 ' + input;
-    const name = msg?.pushName || sender.split('@')[0];
-
-    // Ambil PP
+    const teks = input;
     let ppUrl;
     try {
       ppUrl = await sock.profilePictureUrl(sender, 'image');
     } catch {
-      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png'; // default PP
+      ppUrl = 'https://telegra.ph/file/0d06b9647a740249a4d8c.png';
     }
 
     const pp = await Jimp.read(ppUrl);
@@ -515,21 +513,26 @@ if (text.startsWith('.addbrat ')) {
     pp.mask(mask, 0, 0);
     bulat.composite(pp, 0, 0);
 
-    const canvas = new Jimp(512, 200, '#ffe5ec'); // latar pink soft
-    const fontText = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-    const fontName = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+    // Ukuran dinamis tergantung teks
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+    const textWidth = Jimp.measureText(font, teks);
+    const textHeight = Jimp.measureTextHeight(font, teks, 400);
+    const bubbleWidth = textWidth + 80;
+    const bubbleHeight = textHeight + 60;
 
-    const bubble = new Jimp(360, 100, '#ffffff');
-    bubble.print(fontText, 20, 25, teks);
+    const canvas = new Jimp(bubbleWidth + 110, bubbleHeight + 40, 0x00000000); // transparan
 
-    canvas.composite(bulat, 25, 50);
-    canvas.print(fontName, 25, 150, name);
-    canvas.composite(bubble, 130, 50);
+    const bubble = new Jimp(bubbleWidth, bubbleHeight, '#FFFFFF'); // warna bubble putih
+    bubble.roundCorners(30); // rounded bubble
 
-    const temp = './bratkeren.webp';
+    bubble.print(font, 40, 25, teks);
+
+    canvas.composite(bulat, 0, 10);
+    canvas.composite(bubble, 100, 0);
+
     await canvas.writeAsync('./bratkeren.png');
 
-    // Convert ke webp pakai sharp atau imagemagick
+    // Convert ke sticker
     await new Promise((resolve, reject) => {
       exec(`convert "./bratkeren.png" -resize 512x512 "./bratkeren.webp"`, (err) => {
         if (err) return reject(err);
@@ -537,14 +540,14 @@ if (text.startsWith('.addbrat ')) {
       });
     });
 
-    const buffer = fs.readFileSync(temp);
-    await sock.sendMessage(from, { sticker: buffer, mimetype: 'image/webp' }, { quoted: msg });
+    const buffer = fs.readFileSync('./bratkeren.webp');
+    await sock.sendMessage(from, { sticker: buffer }, { quoted: msg });
 
     fs.unlinkSync('./bratkeren.png');
     fs.unlinkSync('./bratkeren.webp');
-  } catch (err) {
-    console.error('bratkeren error:', err);
-    sock.sendMessage(from, { text: '⚠️ Gagal buat stiker.' }, { quoted: msg });
+  } catch (e) {
+    console.error('Gagal bratkeren:', e);
+    sock.sendMessage(from, { text: '❌ Gagal generate stiker bratkeren.' }, { quoted: msg });
   }
 }
 
