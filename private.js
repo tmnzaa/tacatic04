@@ -51,31 +51,40 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 🎨 *FITUR STIKER & BRAT*:
 • 🖼️ _.stiker_ – Kirim/reply gambar lalu ketik ini
 • 🔤 _.addbrat teks_ – Buat stiker teks brat
-• 😎 _.bratkeren teks_ – Stiker dengan foto profil dan teks lucu
 
 👾 Powered by *Tacatic 04*`
   }, { quoted: msg });
 }
 
-  // 💸 Info sewa bot + penjelasan
-  if (text === '.sewa') {
-    return sock.sendMessage(from, {
-      text: `🛡️ *SEBELUM SEWA BACA DULU YA!*\n\nBot ini bukan buat hiburan, bukan buat mainan sticker, fake reply, atau yang aneh-aneh 🙅‍♂️\n\nAku *Tacatic Bot 04*, adalah *Bot Penjaga Grup* 🧱.\nTugas utamaku adalah jadi *Security Bot*:\n- Hapus link & promosi\n- Tendang member spam/nakal\n- Jaga grup tetap aman & bersih ✨\n\nKalau kamu butuh penjaga grup yang kalem dan kerja keras, aku siap disewa 💼\n\n💰 *HARGA SEWA:*\n• 3K = 1 Minggu 🗓️\n• 5K = 1 Bulan 📆\n• 7K = 2 Bulan 📅\n\n📌 Ketik langsung di grup:\n_.aktifbot3k_ / _.aktifbot5k_ / _.aktifbot7k_\n\n⚠️ Aktivasi hanya bisa oleh *Owner Bot*\nTerima kasih udah tertarik pake jasa aku 🙏`
-    })
-  }
+  // 💸 Info sewa bot
+if (text === '.sewa') {
+  return sock.sendMessage(from, {
+    text: `📦 *SEWA TACATIC BOT 04*
+
+Bot ini punya fitur:
+• Auto hapus link & iklan
+• Auto tendang member toxic/spam
+• Welcome + stiker custom (.stiker, .addbrat)
+• Buka/tutup grup otomatis
+• Menu lengkap ketik: .menu
+
+💰 *Harga Sewa:*
+• 3K = 1 Minggu
+• 5K = 1 Bulan
+• 7K = 2 Bulan
+• 10K = Permanen
+
+📌 Ketik di grup untuk aktivasi:
+.aktifbot3k / .aktifbot5k / .aktifbot7k / .aktifbotper
+
+⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
+  })
+}
 
   // 👤 Owner info
   if (text === '.owner') {
     return sock.sendMessage(from, {
       text: `🙋‍♂️ *OWNER TACATIC BOT 04*\n\nKalau ada yang mau ditanyain, chat aja abangku:\n🌐 https://wa.me/${OWNER_NUM}\n\nJangan gombalin ya 🙈`
-    })
-  }
-
-  // ✨ Jawaban default kalau chat bukan perintah
-  const isCommand = ['.menu', '.fitur', '.sewa', '.owner'].includes(text.toLowerCase())
-  if (!isCommand) {
-    return sock.sendMessage(from, {
-      text: `👋 Hai! Aku *Tacatic Bot 04* siap bantu kamu!\n\nKetik *_.menu_* buat mulai~`
     })
   }
 }
