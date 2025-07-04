@@ -2,6 +2,8 @@ const fs = require('fs-extra');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 const Jimp = require('jimp');
+const axios = require('axios'); // ← Tambah ini
+const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key kamu
 
 module.exports = async (sock, msg, text, from) => {
   const db = fs.readJsonSync('./grup.json');
@@ -25,6 +27,7 @@ module.exports = async (sock, msg, text, from) => {
 • 📋 .menu
 • 🖼️ .stiker (kirim gambar, lalu ketik)
 • 🖼️ .hd (ubah gambar jadi lebih tajam)
+• 🖼️ .removebg (hapus bakground)
 • 💬 .addbrat teks
 
 Contoh:
@@ -76,6 +79,63 @@ Contoh:
     console.error('❌ HD Error:', err);
     await sock.sendMessage(from, {
       text: '⚠️ Gagal memproses gambar. Coba reply ulang gambarnya.'
+    }, { quoted: msg });
+  }
+}
+
+// 🧼 .removebg
+if (text === '.removebg') {
+  try {
+    const context = msg.message?.extendedTextMessage?.contextInfo;
+    const quoted = context?.quotedMessage?.imageMessage;
+
+    if (!quoted) {
+      return sock.sendMessage(from, {
+        text: '❌ Reply gambar lalu ketik *.removebg* untuk menghapus background.'
+      }, { quoted: msg });
+    }
+
+    const buffer = await downloadMediaMessage(
+      { message: { imageMessage: quoted } },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const tempInput = `./temp-in-${Date.now()}.jpg`;
+    const tempOutput = `./temp-out-${Date.now()}.png`;
+    fs.writeFileSync(tempInput, buffer);
+
+    const response = await axios({
+      method: 'post',
+      url: 'https://api.remove.bg/v1.0/removebg',
+      data: {
+        image_file_b64: buffer.toString('base64'),
+        size: 'auto'
+      },
+      headers: {
+        'X-Api-Key': removebgApiKey
+      },
+      responseType: 'arraybuffer'
+    });
+
+    if (response.data) {
+      fs.writeFileSync(tempOutput, response.data);
+
+      await sock.sendMessage(from, {
+        image: fs.readFileSync(tempOutput),
+        caption: '✅ Background berhasil dihapus!'
+      }, { quoted: msg });
+
+      fs.unlinkSync(tempInput);
+      fs.unlinkSync(tempOutput);
+    } else {
+      throw new Error('No data dari remove.bg');
+    }
+  } catch (err) {
+    console.error('❌ RemoveBG Error:', err.message);
+    return sock.sendMessage(from, {
+      text: '⚠️ Gagal menghapus background. Coba ulangi atau cek API Key.'
     }, { quoted: msg });
   }
 }
