@@ -27,7 +27,7 @@ module.exports = async (sock, msg) => {
   const isCommand = text.startsWith('.');
 
   // 💡 Perintah yang boleh digunakan oleh SEMUA MEMBER
-const allowedForAll = ['.stiker', '.addbrat']; // ⬅️ KAMU SUDAH HAPUS .menu DARI SINI
+const allowedForAll = ['.stiker', '.addbrat', '.menu'];
 if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
   const memberHandler = require('./member');
   await memberHandler(sock, msg, text, from);
