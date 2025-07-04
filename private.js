@@ -518,17 +518,17 @@ if (text === '.hd') {
     const image = await Jimp.read(inputPath);
 
     image
-      .resize(image.getWidth() * 2, image.getHeight() * 2) // naikkan 2x ukuran
-      .quality(90) // kualitas tinggi
-      .contrast(0.2) // kontras ditingkatkan
-      .normalize(); // normalkan warna
+      .resize(image.getWidth() * 2, image.getHeight() * 2) // Naikkan 2x ukuran
+      .quality(100) // kualitas tinggi
+      .contrast(0.1)
+      .normalize();
 
     await image.writeAsync(outputPath);
 
     const hasilHD = fs.readFileSync(outputPath);
     await sock.sendMessage(from, {
       image: hasilHD,
-      caption: '✅ Gambar sudah di-HD-kan!'
+      caption: '✅ Gambar berhasil di-HD-kan!'
     }, { quoted: msg });
 
     fs.unlinkSync(inputPath);
