@@ -1,71 +1,184 @@
-const fs = require('fs-extra');
-const dbFile = './grup.json';
-const strikeFile = './strike.json';
-const Jimp = require('jimp');
-const path = require('path');
-const { exec } = require('child_process');
-const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const fs = require('fs-extra')
+const dbFile = './grup.json'
+const strikeFile = './strike.json'
+const Jimp = require('jimp')
+const path = require('path')
+const { exec } = require('child_process')
+const { downloadMediaMessage } = require('@whiskeysockets/baileys')
 
-if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
-if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
+if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
+if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {})
 
 const tambahHari = (jumlah) => {
-  const date = new Date();
-  date.setDate(date.getDate() + jumlah);
-  return date.toISOString().split('T')[0];
-};
+  const date = new Date()
+  date.setDate(date.getDate() + jumlah)
+  return date.toISOString().split('T')[0]
+}
 
-const kataKasar = ['jancok', 'anjing', 'babi', 'kontol', 'brengsek', 'bangsat', 'goblok', 'tai', 'bokep'];
+const kataKasar = ['jancok','anjing','babi','kontol','brengsek','bangsat','goblok','tai','bokep']
 
 module.exports = async (sock, msg) => {
-  const from = msg.key.remoteJid;
-  if (!from.endsWith('@g.us')) return;
+  const from = msg.key.remoteJid
+  if (!from.endsWith('@g.us')) return
 
-  const sender = msg.key.participant || msg.key.remoteJid;
-  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
-  const isCommand = text.startsWith('.');
+  const sender = msg.key.participant
+  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || ''
+  const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || []
+  const isCommand = text.startsWith('.')
 
-  // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
-  const allowedForAll = ['.stiker', '.addbrat'];
-  if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
-    const memberHandler = require('./member');
-    await memberHandler(sock, msg, text, from);
-    return;
-  }
-
-  let metadata;
+  let metadata
   try {
-    metadata = await sock.groupMetadata(from);
+    metadata = await sock.groupMetadata(from)
   } catch (err) {
-    return console.error('❌ ERROR Metadata:', err.message);
+    return console.error('❌ ERROR Metadata:', err.message)
   }
 
-  let isAdmin = false;
-  let isOwner = false;
-  const participantData = metadata?.participants?.find(p => p.id === sender);
-  if (participantData) {
-    isAdmin = participantData.admin === 'admin' || participantData.admin === 'superadmin';
-    isOwner = participantData.admin === 'superadmin';
-  }
+  const isOwner = metadata.participants.find(p => p.id === sender && p.admin === 'superadmin')
+  const isAdmin = metadata.participants.find(p => p.id === sender)?.admin
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
 
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-  const botData = metadata.participants.find(p => p.id === botNumber);
-  const isBotAdmin = botData?.admin === 'admin' || botData?.admin === 'superadmin';
+  if (mentions.includes(botNumber) && !isCommand) return
 
-  if (mentions.includes(botNumber) && !isCommand) return;
+  const db = fs.readJsonSync(dbFile)
+  db[from] = db[from] || {}
+  db[from].nama = metadata.subject
+  const fitur = db[from]
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
-  const db = fs.readJsonSync(dbFile);
-  db[from] = db[from] || {};
-  db[from].nama = metadata.subject;
-  const fitur = db[from];
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+  if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
+    if (!isBotAdmin) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Aku harus jadi *Admin Grup* dulu sebelum bisa diaktifkan!'
+      })
+    }
 
-  // 📋 MENU KHUSUS UNTUK MEMBER / ADMIN / OWNER
-if (text === '.menu') {
-  if (isAdmin || isOwner) {
+    if (!isOwner) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Hanya *Owner Grup* yang bisa aktifkan bot!'
+      })
+    }
+
+    const now = new Date()
+    const expiredDate = fitur.expired ? new Date(fitur.expired) : null
+
+    if (fitur.permanen || (expiredDate && expiredDate >= now)) {
+      return sock.sendMessage(from, {
+        text: `🟢 *Bot sudah aktif di grup ini!*\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Aktif sampai: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+      })
+    }
+
+    if (text === '.aktifbot3k') fitur.expired = tambahHari(7)
+    if (text === '.aktifbot5k') fitur.expired = tambahHari(30)
+    if (text === '.aktifbot7k') fitur.expired = tambahHari(60)
+
+    if (text === '.aktifbotper') {
+      const OWNER_BOT = '6282333014459@s.whatsapp.net'
+      if (sender !== OWNER_BOT) {
+        return sock.sendMessage(from, { text: '❌ Hanya *Owner Bot* yang bisa aktifkan secara permanen!' })
+      }
+      fitur.permanen = true
+      fitur.expired = null
+    }
+
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+
     return sock.sendMessage(from, {
-      text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
+      text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
+    }, { quoted: msg })
+  }
+
+  const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
+  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif']
+
+  const now = new Date()
+  const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
+  const cmdUtama = text.trim().split(' ')[0].toLowerCase()
+  const fullCmd = text.trim().toLowerCase()
+
+  const allowedCommands = [
+    '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
+    '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
+    '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
+    '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
+    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat'
+  ]
+
+  if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
+
+  if (!isBotAktif) {
+    if (isCommand && fiturBolehMember.includes(cmdUtama)) {
+      return sock.sendMessage(from, {
+        text: `⚠️ Bot belum aktif di grup ini.\n\nMinta *Owner Grup* aktifkan dengan:\n• .aktifbot3k (1 minggu)\n• .aktifbot5k (1 bulan)\n• .aktifbot7k (2 bulan)\n• .aktifbotper (permanen)`
+      }, { quoted: msg })
+    }
+    if (isCommand) return
+  }
+
+  if (isCommand && fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) && !isAdmin && !isOwner) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Fitur ini hanya bisa digunakan oleh *Admin Grup*!'
+    }, { quoted: msg })
+  }
+
+  if (isCommand && (isAdmin || isOwner) && fiturHanyaAdmin.includes(cmdUtama.replace(/ .*/, '')) && !isBotAdmin) {
+    return sock.sendMessage(from, {
+      text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
+    }, { quoted: msg })
+  }
+
+  // 🔥 Filter Otomatis Link, Promo, Toxic
+  const isLink = /chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text)
+  const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
+  const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
+
+  try {
+    if (!isAdmin && !isOwner) {
+      const strikeDB = fs.readJsonSync(strikeFile)
+      strikeDB[from] = strikeDB[from] || {}
+      strikeDB[from][sender] = strikeDB[from][sender] || 0
+
+      const tambahStrike = async () => {
+        strikeDB[from][sender] += 1
+        fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+        if (strikeDB[from][sender] >= 5) {
+          await sock.groupParticipantsUpdate(from, [sender], 'remove')
+          delete strikeDB[from][sender]
+          fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+        }
+      }
+
+      if (fitur.antilink1 && isLink) {
+        await sock.sendMessage(from, { delete: msg.key })
+        await tambahStrike()
+      }
+
+      if (fitur.antilink2 && isLink) {
+        await sock.sendMessage(from, { delete: msg.key })
+        await sock.groupParticipantsUpdate(from, [sender], 'remove')
+        delete strikeDB[from][sender]
+        fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+      }
+
+      if (fitur.antipromosi && isPromo) {
+        await sock.sendMessage(from, { delete: msg.key })
+        await tambahStrike()
+      }
+
+      if (fitur.antitoxic && isToxic) {
+        await sock.sendMessage(from, { delete: msg.key })
+        await tambahStrike()
+      }
+    }
+  } catch (err) {
+    console.error('❌ Filter error:', err)
+  }
+
+  // 📋 MENU UTAMA KHUSUS MEMBER/ADMIN/OWNER
+  if (text === '.menu') {
+    if (isAdmin || isOwner) {
+      return sock.sendMessage(from, {
+        text: `╔═══🎀 *TACATIC BOT 04 - MENU FITUR* 🎀═══╗
 
 📛 *FITUR KEAMANAN*:
 • 🚫 _.antilink1 on/off_  → Hapus link masuk
@@ -94,10 +207,10 @@ if (text === '.menu') {
 – Pastikan bot sudah dijadikan admin supaya bisa bekerja maksimal.
 
 ╚═════════════════════════╝`
-    }, { quoted: msg });
-  } else {
-    return sock.sendMessage(from, {
-      text: `🎀 *MENU UNTUK MEMBER* 🎀
+      }, { quoted: msg })
+    } else {
+      return sock.sendMessage(from, {
+        text: `🎀 *MENU UNTUK MEMBER* 🎀
 
 📌 Kamu bisa pakai fitur ini:
 
@@ -111,9 +224,11 @@ if (text === '.menu') {
 → Melihat daftar fitur yang tersedia
 
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`
-    }, { quoted: msg });
+      }, { quoted: msg })
+    }
   }
 }
+
 
   // ... lanjut kode lain di bawah sesuai versi kamu ...
 
@@ -272,137 +387,136 @@ if (isCommand && !allowedCommands.some(cmd => text.startsWith(cmd))) {
   return // abaikan command yang tidak dikenal
 }
 
-// // === .stiker ===
-// if (text === '.stiker') {
-//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
+// === .stiker ===
+if (text === '.stiker') {
+  const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
+  const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
 
-//   if (!mediaMessage) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-//     }, { quoted: msg });
-//   }
+  if (!mediaMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
+    }, { quoted: msg });
+  }
 
-//   try {
-//     const buffer = await downloadMediaMessage(
-//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-//       'buffer',
-//       {},
-//       { logger: console, reuploadRequest: sock.updateMediaMessage }
-//     );
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
 
-//     const filename = `./${Date.now()}`;
-//     const inputPath = `${filename}.jpg`;
-//     const outputPath = `${filename}.webp`;
+    const filename = `./${Date.now()}`;
+    const inputPath = `${filename}.jpg`;
+    const outputPath = `${filename}.webp`;
 
-//     fs.writeFileSync(inputPath, buffer);
+    fs.writeFileSync(inputPath, buffer);
 
-//     // Resize dengan kualitas tinggi & center 512x512
-//     await new Promise((resolve, reject) => {
-//       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-//       exec(cmd, (err) => {
-//         if (err) return reject(err);
-//         resolve();
-//       });
-//     });
+    // Resize dengan kualitas tinggi & center 512x512
+    await new Promise((resolve, reject) => {
+      const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
 
-//     const stickerBuffer = fs.readFileSync(outputPath);
+    const stickerBuffer = fs.readFileSync(outputPath);
 
-//     await sock.sendMessage(from, {
-//       sticker: stickerBuffer,
-//       mimetype: 'image/webp'
-//     }, { quoted: msg });
+    await sock.sendMessage(from, {
+      sticker: stickerBuffer,
+      mimetype: 'image/webp'
+    }, { quoted: msg });
 
-//     fs.unlinkSync(inputPath);
-//     fs.unlinkSync(outputPath);
-//   } catch (err) {
-//     console.error('❌ stiker error:', err);
-//     await sock.sendMessage(from, {
-//       text: '⚠️ Gagal membuat stiker!'
-//     }, { quoted: msg });
-//   }
-// }
+    fs.unlinkSync(inputPath);
+    fs.unlinkSync(outputPath);
+  } catch (err) {
+    console.error('❌ stiker error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
+}
 
-// // === .addbrat ===
-// if (text.startsWith('.addbrat ')) {
-//   const teks = text.split('.addbrat ')[1].trim();
-//   if (!teks) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-//     }, { quoted: msg });
-//   }
+// === .addbrat ===
+if (text.startsWith('.addbrat ')) {
+  const teks = text.split('.addbrat ')[1].trim();
+  if (!teks) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
+    }, { quoted: msg });
+  }
 
-//   try {
-//     const filename = Date.now();
-//     const pngPath = `./${filename}.png`;
-//     const webpPath = `./${filename}.webp`;
+  try {
+    const filename = Date.now();
+    const pngPath = `./${filename}.png`;
+    const webpPath = `./${filename}.webp`;
 
-//     // Font besar dan kecil
-//     const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
-//     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-//     const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
+    // Font besar dan kecil
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
+    const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+    const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
 
-//     // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
-//     const wrapAnomaliStyle = (text) => {
-//       const words = text.trim().split(' ');
-//       const lines = [];
-//       let line = [];
+    // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
+    const wrapAnomaliStyle = (text) => {
+      const words = text.trim().split(' ');
+      const lines = [];
+      let line = [];
 
-//       for (let i = 0; i < words.length; i++) {
-//         line.push(words[i]);
+      for (let i = 0; i < words.length; i++) {
+        line.push(words[i]);
 
-//         // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
-//         if (line.length === 2 || i === words.length - 1) {
-//           lines.push(line.join('     ')); // spasi antar kata
-//           line = [];
-//         }
-//       }
-//       return lines.join('\n');
-//     };
+        // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
+        if (line.length === 2 || i === words.length - 1) {
+          lines.push(line.join('     ')); // spasi antar kata
+          line = [];
+        }
+      }
+      return lines.join('\n');
+    };
 
-//     const wrappedText = wrapAnomaliStyle(teks);
+    const wrappedText = wrapAnomaliStyle(teks);
 
-//     // Cetak teks di tengah
-//     image.print(
-//       font,
-//       0,
-//       0,
-//       {
-//         text: wrappedText,
-//         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-//         alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-//       },
-//       512,
-//       512
-//     );
+    // Cetak teks di tengah
+    image.print(
+      font,
+      0,
+      0,
+      {
+        text: wrappedText,
+        alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+        alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+      },
+      512,
+      512
+    );
 
-//     image.quality(100);
-//     await image.writeAsync(pngPath);
+    image.quality(100);
+    await image.writeAsync(pngPath);
 
-//     // Konversi PNG ke WebP
-//     await new Promise((resolve, reject) => {
-//       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-//       exec(cmd, (err) => {
-//         if (err) return reject(err);
-//         resolve();
-//       });
-//     });
+    // Konversi PNG ke WebP
+    await new Promise((resolve, reject) => {
+      const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
+      exec(cmd, (err) => {
+        if (err) return reject(err);
+        resolve();
+      });
+    });
 
-//     const buffer = fs.readFileSync(webpPath);
+    const buffer = fs.readFileSync(webpPath);
 
-//     await sock.sendMessage(from, {
-//       sticker: buffer,
-//       mimetype: 'image/webp'
-//     }, { quoted: msg });
+    await sock.sendMessage(from, {
+      sticker: buffer,
+      mimetype: 'image/webp'
+    }, { quoted: msg });
 
-//     // Hapus file sementara
-//     fs.unlinkSync(pngPath);
-//     fs.unlinkSync(webpPath);
-//   } catch (err) {
-//     console.error('❌ addbrat error:', err);
-//     await sock.sendMessage(from, {
-//       text: '⚠️ Gagal membuat stiker!'
-//     }, { quoted: msg });
-//   }
-// }
+    // Hapus file sementara
+    fs.unlinkSync(pngPath);
+    fs.unlinkSync(webpPath);
+  } catch (err) {
+    console.error('❌ addbrat error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal membuat stiker!'
+    }, { quoted: msg });
+  }
 }
