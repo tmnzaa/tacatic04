@@ -36,41 +36,49 @@ Contoh:
   }, { quoted: msg });
 }
 
- // 🖼️ .hd
-    if (text === '.hd') {
-      const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage?.imageMessage;
-      if (!quoted) {
-        return sock.sendMessage(from, {
-          text: '❌ Reply gambar lalu ketik *.hd* untuk membuat versi HD-nya.'
-        }, { quoted: msg });
-      }
+ if (text === '.hd') {
+  const context = msg.message?.extendedTextMessage?.contextInfo;
+  const quotedMsg = context?.quotedMessage;
 
-      const buffer = await downloadMediaMessage(
-        { message: { imageMessage: quoted } },
-        'buffer',
-        {},
-        { logger: console, reuploadRequest: sock.updateMediaMessage }
-      );
+  if (!quotedMsg || !quotedMsg.imageMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Reply gambar lalu ketik *.hd* untuk membuat versi HD-nya.'
+    }, { quoted: msg });
+  }
 
-      const filePath = `./temp-hd-${Date.now()}.jpg`;
-      fs.writeFileSync(filePath, buffer);
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: { imageMessage: quotedMsg.imageMessage } },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
 
-      const image = await Jimp.read(filePath);
-      image
-        .contrast(0.2)
-        .brightness(0.5)
-        .normalize()
-        .quality(90);
-      await image.writeAsync(filePath);
+    const temp = `./hd-${Date.now()}.jpg`;
+    fs.writeFileSync(temp, buffer);
 
-      const result = fs.readFileSync(filePath);
-      await sock.sendMessage(from, {
-        image: result,
-        caption: '✅ Ini gambar versi HD-nya ✨'
-      }, { quoted: msg });
+    const image = await Jimp.read(temp);
+    image
+      .contrast(0.2)
+      .brightness(0.5)
+      .normalize()
+      .quality(90);
+    await image.writeAsync(temp);
 
-      fs.unlinkSync(filePath);
-    }
+    const hasil = fs.readFileSync(temp);
+    await sock.sendMessage(from, {
+      image: hasil,
+      caption: '✅ Ini gambar versi HD-nya ✨'
+    }, { quoted: msg });
+
+    fs.unlinkSync(temp);
+  } catch (err) {
+    console.error('❌ HD Error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal memproses gambar. Coba reply ulang gambarnya.'
+    }, { quoted: msg });
+  }
+}
 
   // 🖼️ .stiker
   if (text === '.stiker') {
