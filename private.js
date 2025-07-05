@@ -48,11 +48,9 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 🔓 _.open / .open 20.00_ – Buka grup (otomatis juga bisa!)
 • 🔒 _.close / .close 22.00_ – Tutup grup (sesuai jam juga bisa!)
 
-🎨 *FITUR LAINNYA*: 
+🎨 *FITUR STIKER & BRAT*:
 • 🖼️ _.stiker_ – Kirim/reply gambar lalu ketik ini
 • 🔤 _.addbrat teks_ – Buat stiker teks brat
-• ✂️ _.removebg_ – Hapus background gambar (kirim/reply gambar lalu ketik ini)
-• 🔍 _.hd_ – Perbaiki kualitas gambar jadi HD (kirim/reply gambar lalu ketik ini)
 
 👾 Powered by *Tacatic 04*`
   }, { quoted: msg });
@@ -69,7 +67,6 @@ Bot ini punya fitur:
 • Welcome + stiker custom (.stiker, .addbrat)
 • Buka/tutup grup otomatis
 • Menu lengkap ketik: .menu
-• Bisa remove bg & hd
 
 💰 *Harga Sewa:*
 • 3K = 1 Minggu
@@ -77,10 +74,8 @@ Bot ini punya fitur:
 • 7K = 2 Bulan
 • 10K = Permanen
 
-📖 Agar bot aktif:
-1. Pastikan bot ada di grup dan wajib jadikan admin
-2. Chat owner untuk minta aktivasi bot
-3. Bot telah aktif
+📌 Ketik di grup untuk aktivasi:
+.aktifbot3k / .aktifbot5k / .aktifbot7k / .aktifbotper
 
 ⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
   })
@@ -92,4 +87,34 @@ Bot ini punya fitur:
       text: `🙋‍♂️ *OWNER TACATIC BOT 04*\n\nKalau ada yang mau ditanyain, chat aja abangku:\n🌐 https://wa.me/${OWNER_NUM}\n\nJangan gombalin ya 🙈`
     })
   }
+
+  // 💼 Cek semua grup yang aktif
+if (text === '.cekgrup') {
+  if (msg.key.participant !== `${OWNER_NUM}@s.whatsapp.net` && from !== `${OWNER_NUM}@s.whatsapp.net`) {
+    return sock.sendMessage(from, { text: '⚠️ Perintah ini hanya untuk *Owner Bot*!' }, { quoted: msg });
+  }
+
+  const grupDbPath = './grup.json';
+  if (!fs.existsSync(grupDbPath)) {
+    return sock.sendMessage(from, { text: '📁 Data grup belum tersedia.' });
+  }
+
+  const grupData = fs.readJsonSync(grupDbPath);
+  const now = new Date();
+
+  const aktifGrup = Object.entries(grupData)
+    .filter(([id, data]) => data.permanen || (data.expired && new Date(data.expired) > now))
+    .map(([id, data], index) => {
+      const nama = data.nama || 'Tidak diketahui';
+      const expired = data.permanen ? 'PERMANEN' : data.expired;
+      return `*${index + 1}.* ${nama}\n🆔 ID: ${id}\n📅 Aktif sampai: *${expired}*\n`;
+    });
+
+  const hasil = aktifGrup.length > 0
+    ? `📊 *DAFTAR GRUP AKTIF BOT*\n\n${aktifGrup.join('\n')}`
+    : '❌ Tidak ada grup aktif saat ini.';
+
+  return sock.sendMessage(from, { text: hasil }, { quoted: msg });
+}
+
 }
