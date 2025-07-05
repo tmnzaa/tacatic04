@@ -176,9 +176,10 @@ if (isBotAktif && !isBotAdmin) {
     }, { quoted: msg })
   }
 
-  const isPolling = !!msg.message?.pollCreationMessage;
-
- const isLink = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i.test(text) || isPolling
+const isPolling = !!msg.message?.pollCreationMessage;
+const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
+const isLink = linkRegex.test(text); // hanya teks/caption yang mengandung link
+const isPollingWithLink = isPolling && linkRegex.test(text); // polling + ada link di caption
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
@@ -208,18 +209,20 @@ if (isBotAktif && !isAdmin && !isOwner) {
     }
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
-    if (fitur.antilink1 && isLink) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
+if (fitur.antilink1 && (isLink || isPollingWithLink)) {
+  console.log('📛 Deteksi link atau polling mencurigakan!');
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+}
 
     // 🚫 AntiLink 2: Hapus pesan + langsung tendang
-    if (fitur.antilink2 && isLink) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await sock.groupParticipantsUpdate(from, [sender], 'remove')
-      delete strikeDB[from][sender]
-      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-    }
+if (fitur.antilink2 && (isLink || isPollingWithLink)) {
+  console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
+  await sock.sendMessage(from, { delete: msg.key });
+  await sock.groupParticipantsUpdate(from, [sender], 'remove');
+  delete strikeDB[from][sender];
+  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+}
 
     // 🚫 Anti Promosi
     if (fitur.antipromosi && isPromo) {
@@ -372,7 +375,6 @@ if (text.startsWith('.tagall')) {
   const mentionTarget = context.mentionedJid
   const replyTarget = context.participant
   const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
-  const isPolling = !!msg.message?.pollCreationMessage;
 
   if (!targets.length) {
     return sock.sendMessage(from, {
