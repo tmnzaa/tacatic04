@@ -22,7 +22,21 @@ module.exports = async (sock, msg) => {
   if (!from.endsWith('@g.us')) return
 
   const sender = msg.key.participant || msg.key.remoteJid;
-  const text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+  const getTextFromMsg = (msg) => {
+  const m = msg.message;
+  if (!m) return '';
+  return (
+    m.conversation ||
+    m.extendedTextMessage?.text ||
+    m.imageMessage?.caption ||
+    m.videoMessage?.caption ||
+    m.buttonsMessage?.contentText ||
+    m.templateMessage?.hydratedTemplate?.hydratedContentText ||
+    m.templateMessage?.hydratedTemplate?.hydratedButtons?.[0]?.buttonText?.displayText || 
+    ''
+  );
+};
+const text = getTextFromMsg(msg);
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   const isCommand = text.startsWith('.');
 
@@ -496,12 +510,6 @@ if (isCommand && !isCmdValid) {
       return;
     }
   }
-}
-
-if (fitur.antilink1 && isBotAktif && !isAdmin && !isOwner && (isLink || isPromo || isToxic)) {
-  await sock.sendMessage(from, { delete: msg.key });
-  console.log(`🚫 Pesan mencurigakan dihapus (termasuk command): ${text}`);
-  return;
 }
 
 // // === .stiker ===
