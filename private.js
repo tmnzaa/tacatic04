@@ -1,6 +1,5 @@
 const fs = require('fs-extra')
 const path = './data_user.json'
-const grupPath = './grup.json'
 if (!fs.existsSync(path)) fs.writeJsonSync(path, {})
 
 // 🎩 Nomor Owner Bot
@@ -49,9 +48,11 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 🔓 _.open / .open 20.00_ – Buka grup (otomatis juga bisa!)
 • 🔒 _.close / .close 22.00_ – Tutup grup (sesuai jam juga bisa!)
 
-🎨 *FITUR STIKER & BRAT*:
+🎨 *FITUR LAINNYA*:
 • 🖼️ _.stiker_ – Kirim/reply gambar lalu ketik ini
 • 🔤 _.addbrat teks_ – Buat stiker teks brat
+• ❌ _.removebg_ – Hapus background gambar otomatis
+• 📷 _.hd_ – Perjelas dan HD-kan gambar otomatis
 
 👾 Powered by *Tacatic 04*`
   }, { quoted: msg });
@@ -68,6 +69,7 @@ Bot ini punya fitur:
 • Welcome + stiker custom (.stiker, .addbrat)
 • Buka/tutup grup otomatis
 • Menu lengkap ketik: .menu
+• Bisa Remove bg & hd
 
 💰 *Harga Sewa:*
 • 3K = 1 Minggu
@@ -75,35 +77,54 @@ Bot ini punya fitur:
 • 7K = 2 Bulan
 • 10K = Permanen
 
-📌 Ketik di grup untuk aktivasi:
-.aktifbot3k / .aktifbot5k / .aktifbot7k / .aktifbotper
+🛠️ *Cara Aktifkan Bot:*
+1. Tambahkan bot ke grup
+2. Jadikan bot sebagai admin
+3. Chat owner untuk aktifkan bot
+4. Bot aktif
 
 ⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
   })
 }
 
-  // 👤 Owner info
-  if (text === '.owner') {
-    return sock.sendMessage(from, {
-      text: `🙋‍♂️ *OWNER TACATIC BOT 04*\n\nKalau ada yang mau ditanyain, chat aja abangku:\n🌐 https://wa.me/${OWNER_NUM}\n\nJangan gombalin ya 🙈`
-    })
-  }
+  // 👤 Kirim Kontak Owner
+if (text === '.owner') {
+  const vcard = `
+BEGIN:VCARD
+VERSION:3.0
+FN:Caa Owner Official
+ORG:TACATIC BOT 04;
+TEL;type=CELL;type=VOICE;waid=${OWNER_NUM}:${OWNER_NUM}
+END:VCARD`;
 
-    // 🔍 Cek grup aktif - hanya untuk OWNER
+  await sock.sendMessage(from, {
+    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`
+  }, { quoted: msg });
+
+  return sock.sendMessage(from, {
+    contacts: {
+      displayName: "Caa Owner Official",
+      contacts: [{ vcard }]
+    }
+  }, { quoted: msg });
+}
+
+  // 🔍 Cek grup aktif - hanya untuk OWNER
 if (text === '.cekgrup') {
   const sender = (msg.key.participant || from || '').split('@')[0]
-  if (sender !== OWNER_NUM) return
+  if (sender !== OWNER_NUM) return sock.sendMessage(from, { text: '❌ Fitur khusus Owner Bot.' })
 
+  const grupPath = './grup.json'
   if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
-  const grupDb = fs.readJsonSync(grupPath)
 
+  const grupDb = fs.readJsonSync(grupPath)
   let hasil = ''
   let no = 1
 
-  for (let id in grupDb) {
+  for (const id in grupDb) {
     const data = grupDb[id]
     if (data.expired || data.permanen) {
-      hasil += `\n${no++}. ${data.nama || 'Tanpa Nama'}\n🆔 ID: ${id}\n📅 Aktif sampai: ${data.permanen ? 'PERMANEN' : data.expired}`
+      hasil += `\n${no++}. ${data.nama || 'Tanpa Nama'}\n🆔 ${id}\n📅 Aktif: ${data.permanen ? 'PERMANEN' : data.expired}`
     }
   }
 
@@ -112,5 +133,6 @@ if (text === '.cekgrup') {
   return sock.sendMessage(from, {
     text: `📊 *Daftar Grup Aktif Tacatic Bot:*\n${hasil}`
   })
-} 
+}
+  
 }
