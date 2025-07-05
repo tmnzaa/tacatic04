@@ -477,7 +477,25 @@ if (isCommand && isCmdValid) {
 // ❗ ABAIKAN command tak dikenal, TAPI tetap jalankan filter antilink/antitoxic/promosi
 if (isCommand && !isCmdValid) {
   console.log(`⚠️ Command tidak dikenal: ${text}`);
-  // Jangan return! Biarkan filter di bawah tetap berjalan
+
+  // 🔥 Hapus command tidak dikenal jika mengandung hal mencurigakan
+  if (isBotAktif && !isAdmin && !isOwner) {
+    if (fitur.antilink1 && isLink) {
+      await sock.sendMessage(from, { delete: msg.key });
+      console.log(`🚫 [CMD] Link dihapus walau command tidak dikenal: ${text}`);
+      return;
+    }
+    if (fitur.antipromosi && isPromo) {
+      await sock.sendMessage(from, { delete: msg.key });
+      console.log(`🚫 [CMD] Promosi dihapus walau command tidak dikenal: ${text}`);
+      return;
+    }
+    if (fitur.antitoxic && isToxic) {
+      await sock.sendMessage(from, { delete: msg.key });
+      console.log(`🚫 [CMD] Toxic dihapus walau command tidak dikenal: ${text}`);
+      return;
+    }
+  }
 }
 
 if (fitur.antilink1 && isBotAktif && !isAdmin && !isOwner && (isLink || isPromo || isToxic)) {
