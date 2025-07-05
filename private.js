@@ -66,9 +66,10 @@ if (text === '.sewa') {
 Bot ini punya fitur:
 • Auto hapus link & iklan
 • Auto tendang member toxic/spam
-• Welcome + stiker custom (.stiker, .addbrat)
+• Stiker custom (.stiker, .addbrat)
 • Buka/tutup grup otomatis
 • Menu lengkap ketik: .menu
+• Hd & Remove Background
 
 💰 *Harga Sewa:*
 • 3K = 1 Minggu
