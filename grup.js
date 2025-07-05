@@ -149,6 +149,7 @@ if (isBotAktif && !isBotAdmin) {
     '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
     '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
     '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
+    '.setwelcome', '.setdesc',
   ]
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -203,14 +204,14 @@ if (isBotAktif && !isAdmin && !isOwner) {
 
    const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
 
-   console.log('📥 Pesan Diterima:', text)
-console.log('• isLink:', isLink)
-console.log('• isAfkLink:', isAfkLink)
-console.log('• isPollingWithLink:', isPollingWithLink)
+  //  console.log('📥 Pesan Diterima:', text)
+// console.log('• isLink:', isLink)
+// console.log('• isAfkLink:', isAfkLink)
+// console.log('• isPollingWithLink:', isPollingWithLink)
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && (isLink || isAfkLink || isPollingWithLink)) {
-      console.log('📛 Deteksi link atau polling mencurigakan!');
+      // console.log('📛 Deteksi link atau polling mencurigakan!');
       await sock.sendMessage(from, { delete: msg.key });
       await tambahStrike();
       return;
@@ -218,7 +219,7 @@ console.log('• isPollingWithLink:', isPollingWithLink)
 
     // 🚫 AntiLink 2: Hapus pesan + langsung tendang
     if (fitur.antilink2 && (isLink || isAfkLink || isPollingWithLink)) {
-      console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
+      // console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
       await sock.sendMessage(from, { delete: msg.key });
       await sock.groupParticipantsUpdate(from, [sender], 'remove');
       delete strikeDB[from][sender];
@@ -451,6 +452,50 @@ if (text.startsWith('.close')) {
     text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired || 'Belum aktif'}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
     }, { quoted: msg });
 }
+
+if (text.startsWith('.setwelcome')) {
+  if (!isAdmin && !isOwner) {
+    return sock.sendMessage(from, { text: '⚠️ Hanya admin yang bisa mengatur sambutan.' }, { quoted: msg });
+  }
+
+  const isi = text.split('.setwelcome')[1]?.trim();
+  if (!isi) {
+    return sock.sendMessage(from, {
+      text: '❌ Format salah.\nContoh: *.setwelcome Selamat datang @name di @grup!*'
+    }, { quoted: msg });
+  }
+
+  fitur.welcomeText = isi;
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+  return sock.sendMessage(from, { text: '✅ Teks sambutan berhasil disimpan!' }, { quoted: msg });
+}
+
+if (text.startsWith('.setdesc')) {
+  if (!isAdmin && !isOwner) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Hanya admin yang bisa mengatur deskripsi grup!'
+    }, { quoted: msg });
+  }
+
+  const desc = text.split('.setdesc')[1]?.trim();
+  if (!desc) {
+    return sock.sendMessage(from, {
+      text: '❌ Format salah.\nContoh: *.setdesc Ini grup keren banget!*'
+    }, { quoted: msg });
+  }
+
+  try {
+    await sock.groupUpdateDescription(from, desc);
+    return sock.sendMessage(from, {
+      text: '✅ Deskripsi grup berhasil diubah!'
+    }, { quoted: msg });
+  } catch (err) {
+    return sock.sendMessage(from, {
+      text: '❌ Gagal mengubah deskripsi grup.'
+    }, { quoted: msg });
+  }
+}
+
 
 // if (text === '.hd') {
 //   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
