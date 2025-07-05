@@ -88,33 +88,31 @@ Bot ini punya fitur:
     })
   }
 
-  // 💼 Cek semua grup yang aktif
-if (text === '.cekgrup') {
-  if (msg.key.participant !== `${OWNER_NUM}@s.whatsapp.net` && from !== `${OWNER_NUM}@s.whatsapp.net`) {
-    return sock.sendMessage(from, { text: '⚠️ Perintah ini hanya untuk *Owner Bot*!' }, { quoted: msg });
+    // 🔍 Cek grup aktif - hanya untuk OWNER
+  if (text === '.cekgrup') {
+    const sender = msg.key.participant || msg.key.remoteJid
+    if (sender.split('@')[0] !== OWNER_NUM) return
+
+    const grupPath = './grup.json'
+    if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
+
+    const grupDb = fs.readJsonSync(grupPath)
+    let hasil = ''
+    let no = 1
+
+    for (let id in grupDb) {
+      const data = grupDb[id]
+      if (data.expired || data.permanen) {
+        hasil += `\n${no++}. ${data.nama || 'Tanpa Nama'}\n🆔 ID: ${id}\n📅 Aktif sampai: ${data.permanen ? 'PERMANEN' : data.expired}\n`
+      }
+    }
+
+    if (!hasil) hasil = '📭 Tidak ada grup aktif terdaftar.'
+
+    return sock.sendMessage(from, {
+      text: `📊 *Daftar Grup Aktif Tacatic Bot:*\n${hasil}`
+    })
   }
 
-  const grupDbPath = './grup.json';
-  if (!fs.existsSync(grupDbPath)) {
-    return sock.sendMessage(from, { text: '📁 Data grup belum tersedia.' });
-  }
-
-  const grupData = fs.readJsonSync(grupDbPath);
-  const now = new Date();
-
-  const aktifGrup = Object.entries(grupData)
-    .filter(([id, data]) => data.permanen || (data.expired && new Date(data.expired) > now))
-    .map(([id, data], index) => {
-      const nama = data.nama || 'Tidak diketahui';
-      const expired = data.permanen ? 'PERMANEN' : data.expired;
-      return `*${index + 1}.* ${nama}\n🆔 ID: ${id}\n📅 Aktif sampai: *${expired}*\n`;
-    });
-
-  const hasil = aktifGrup.length > 0
-    ? `📊 *DAFTAR GRUP AKTIF BOT*\n\n${aktifGrup.join('\n')}`
-    : '❌ Tidak ada grup aktif saat ini.';
-
-  return sock.sendMessage(from, { text: hasil }, { quoted: msg });
-}
-
+  
 }
