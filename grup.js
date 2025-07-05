@@ -176,7 +176,7 @@ if (isBotAktif && !isBotAdmin) {
     }, { quoted: msg })
   }
 
- const isLink = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i.test(text)
+ const isLink = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i.test(text) || isPolling
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
@@ -370,6 +370,7 @@ if (text.startsWith('.tagall')) {
   const mentionTarget = context.mentionedJid
   const replyTarget = context.participant
   const targets = mentionTarget?.length ? mentionTarget : replyTarget ? [replyTarget] : []
+  const isPolling = !!msg.message?.pollCreationMessage;
 
   if (!targets.length) {
     return sock.sendMessage(from, {
