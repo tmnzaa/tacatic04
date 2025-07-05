@@ -105,7 +105,6 @@ sock.ev.on('group-participants.update', async (update) => {
         // Kirim gambar + teks sambutan
         await sock.sendMessage(update.id, {
           image: { url: pp },
-          caption: `${teks}\n\nhttps://whatsapp.com`,
           mentions: [jid]
         })
       }
