@@ -79,7 +79,7 @@ async function startBot() {
     }
   })
 
-  // 👋 WELCOME Feature: PP user + Custom teks + Preview WhatsApp
+  // 👋 WELCOME Feature dengan PP user dan teks custom
 sock.ev.on('group-participants.update', async (update) => {
   const db = fs.readJsonSync(dbFile)
   const fitur = db[update.id]
@@ -91,20 +91,24 @@ sock.ev.on('group-participants.update', async (update) => {
       if (update.action === 'add') {
         const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
         const groupName = metadata.subject
-        const pp = await sock.profilePictureUrl(jid, 'image').catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
 
-        // Teks welcome dari pengaturan
-        let teks = fitur.welcomeText || `hello @user welcome to *@grup*`
+        // Ambil foto profil user yang join
+        const pp = await sock.profilePictureUrl(jid, 'image')
+          .catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
 
-        // Ganti placeholder
+        // Ambil teks sambutan dari database atau default
+        let teks = fitur.welcomeText || `👋 Selamat datang @name di grup *@grup*! Jangan lupa perkenalan ya~ ✨`
+
+        // Replace placeholder
         teks = teks
           .replace(/@user/g, `@${jid.split('@')[0]}`)
           .replace(/@name/g, name)
           .replace(/@grup/g, groupName)
 
-        // Kirim gambar + teks sambutan
+        // Kirim foto profil + sambutan + tag user
         await sock.sendMessage(update.id, {
           image: { url: pp },
+          caption: teks,
           mentions: [jid]
         })
       }
