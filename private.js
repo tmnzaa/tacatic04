@@ -48,9 +48,11 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 🔓 _.open / .open 20.00_ – Buka grup (otomatis juga bisa!)
 • 🔒 _.close / .close 22.00_ – Tutup grup (sesuai jam juga bisa!)
 
-🎨 *FITUR STIKER & BRAT*:
+🎨 *FITUR LAINNYA*:
 • 🖼️ _.stiker_ – Kirim/reply gambar lalu ketik ini
 • 🔤 _.addbrat teks_ – Buat stiker teks brat
+• 🧼 _.removebg_ – Hapus background gambar
+• 💎 _.hd_ – Jadikan gambar lebih tajam/HD
 
 👾 Powered by *Tacatic 04*`
   }, { quoted: msg });
