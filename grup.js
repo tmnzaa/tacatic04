@@ -176,6 +176,8 @@ if (isBotAktif && !isBotAdmin) {
     }, { quoted: msg })
   }
 
+  const isPolling = !!msg.message?.pollCreationMessage;
+
  const isLink = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i.test(text) || isPolling
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
