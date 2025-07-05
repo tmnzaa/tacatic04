@@ -77,8 +77,11 @@ Bot ini punya fitur:
 • 7K = 2 Bulan
 • 10K = Permanen
 
-📌 Ketik di grup untuk aktivasi:
-.aktifbot3k / .aktifbot5k / .aktifbot7k / .aktifbotper
+📌 Cara aktifkan bot:
+1. Chat owner bot
+2. Admin kan bot
+3. Owner aktifkan bot
+4. Bot telah aktif
 
 ⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
   })
