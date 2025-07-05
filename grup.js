@@ -25,16 +25,28 @@ module.exports = async (sock, msg) => {
   const getTextFromMsg = (msg) => {
   const m = msg.message;
   if (!m) return '';
-  return (
-    m.conversation ||
-    m.extendedTextMessage?.text ||
-    m.imageMessage?.caption ||
-    m.videoMessage?.caption ||
-    m.buttonsMessage?.contentText ||
-    m.templateMessage?.hydratedTemplate?.hydratedContentText ||
-    m.templateMessage?.hydratedTemplate?.hydratedButtons?.[0]?.buttonText?.displayText || 
-    ''
-  );
+
+  if (m.conversation) return m.conversation;
+  if (m.extendedTextMessage?.text) return m.extendedTextMessage.text;
+  if (m.imageMessage?.caption) return m.imageMessage.caption;
+  if (m.videoMessage?.caption) return m.videoMessage.caption;
+  if (m.buttonsMessage?.contentText) return m.buttonsMessage.contentText;
+  if (m.templateMessage?.hydratedTemplate?.hydratedContentText)
+    return m.templateMessage.hydratedTemplate.hydratedContentText;
+
+  // ✳️ Ini penting untuk .afk tombol (inline button / hydrated buttons)
+  if (
+    m.templateMessage?.hydratedTemplate?.hydratedButtons &&
+    Array.isArray(m.templateMessage.hydratedTemplate.hydratedButtons)
+  ) {
+    for (const btn of m.templateMessage.hydratedTemplate.hydratedButtons) {
+      if (btn?.buttonText?.displayText) {
+        return btn.buttonText.displayText;
+      }
+    }
+  }
+
+  return '';
 };
 const text = getTextFromMsg(msg);
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
@@ -167,6 +179,13 @@ if (isBotAktif && !isBotAdmin) {
  const isLink = /(https?:\/\/|www\.|\.com|\.net|\.org|\.xyz|\.id|t\.me\/|chat\.whatsapp\.com)/i.test(text)
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
+
+const isAfkLink = text.startsWith('.afk') && isLink;
+if (isAfkLink && isBotAktif && !isAdmin && !isOwner && fitur.antilink1) {
+  await sock.sendMessage(from, { delete: msg.key });
+  console.log(`🚫 Pesan .afk berisi link dihapus: ${text}`);
+  return;
+}
 
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
