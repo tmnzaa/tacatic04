@@ -258,7 +258,7 @@ if (text === '.menu') {
 
 🎉 *FITUR SOSIAL & INTERAKSI*:
 • 🎉 _.welcome on/off_  → Sambutan buat member baru
-• 📴 _.leave on_ / _.leave off_ → Kirim pesan saat user keluar
+• 📴 _.leave on/off_ → Kirim pesan saat member keluar
 • 🗣️ _.tagall_  → Mention semua member aktif
 • 👢 _.kick_  → Tendang member (admin only)
 
