@@ -154,12 +154,6 @@ if (isBotAktif && !isBotAdmin) {
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
-if (fitur.antilink1 && isBotAktif && !isAdmin && !isOwner && (isLink || isPromo || isToxic)) {
-  await sock.sendMessage(from, { delete: msg.key });
-  console.log(`🚫 Pesan mencurigakan dihapus (termasuk command): ${text}`);
-  return;
-}
-
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
   try {
@@ -484,6 +478,12 @@ if (isCommand && isCmdValid) {
 if (isCommand && !isCmdValid) {
   console.log(`⚠️ Command tidak dikenal: ${text}`);
   // Jangan return! Biarkan filter di bawah tetap berjalan
+}
+
+if (fitur.antilink1 && isBotAktif && !isAdmin && !isOwner && (isLink || isPromo || isToxic)) {
+  await sock.sendMessage(from, { delete: msg.key });
+  console.log(`🚫 Pesan mencurigakan dihapus (termasuk command): ${text}`);
+  return;
 }
 
 // // === .stiker ===
