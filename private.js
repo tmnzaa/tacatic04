@@ -134,26 +134,5 @@ if (text === '.cekgrup') {
     text: `📊 *Daftar Grup Aktif Tacatic Bot:*\n${hasil}`
   })
 }
-
-if (text.startsWith('.hapusgrup ')) {
-  const sender = (msg.key.participant || from || '').split('@')[0]
-  if (sender !== OWNER_NUM) return
-
-  const idHapus = text.split(' ')[1]
-  if (!idHapus) return sock.sendMessage(from, { text: '⚠️ Mohon sertakan ID grup yang ingin dihapus.' })
-
-  if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
-  const grupDb = fs.readJsonSync(grupPath)
-
-  if (!grupDb[idHapus]) {
-    return sock.sendMessage(from, { text: `❌ Grup dengan ID ${idHapus} tidak ditemukan.` })
-  }
-
-  delete grupDb[idHapus]
-  fs.writeJsonSync(grupPath, grupDb, { spaces: 2 })
-
-  return sock.sendMessage(from, { text: `✅ Grup dengan ID ${idHapus} berhasil dihapus dari database.` })
-}
-
   
 }
