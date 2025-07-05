@@ -1,6 +1,7 @@
 const fs = require('fs-extra');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const fetch = require('node-fetch');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
@@ -67,27 +68,32 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
   }, { quoted: msg });
 }
 
-if (text.toLowerCase().trim() === '.limit') {
-  const limitFile = './limit.json';
-  if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {});
-  
-  const db = fs.readJsonSync(limitFile);
-  const today = new Date().toISOString().split('T')[0];
-  const sender = msg.key.participant || msg.key.remoteJid;
-  const senderData = db[from]?.[sender] || {};
+if (text.startsWith('.tiktok ')) {
+  const url = text.split('.tiktok ')[1].trim();
+  if (!url.startsWith('http')) {
+    return sock.sendMessage(from, {
+      text: '❌ Link TikTok tidak valid. Contoh:\n.tiktok https://vt.tiktok.com/xxx'
+    }, { quoted: msg });
+  }
 
-  const fiturList = ['stiker', 'hd', 'removebg', 'addbrat'];
-  let reply = '📊 *Sisa Limit Harian Kamu:*\n\n';
+  try {
+    const res = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`);
+    const videoUrl = res.data?.video?.no_watermark;
 
-  fiturList.forEach(fitur => {
-    const usage = senderData[fitur] || { count: 0, date: today };
-    const sisa = usage.date !== today ? 2 : Math.max(0, 2 - usage.count);
-    reply += `• ${fitur}: ${sisa}x\n`;
-  });
+    if (!videoUrl) throw new Error('Gagal ambil video');
 
-  return sock.sendMessage(from, {
-    text: reply + `\n📆 Reset otomatis setiap hari jam 00:00.`,
-  }, { quoted: msg });
+    const { data: videoBuffer } = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+    await sock.sendMessage(from, {
+      video: videoBuffer,
+      caption: `✅ Video tanpa watermark\n🎬 ${res.data.desc || 'Tanpa deskripsi'}\n👤 @${res.data.author || 'unknown'}`,
+      mimetype: 'video/mp4'
+    }, { quoted: msg });
+  } catch (err) {
+    console.error('❌ TikTok Error:', err.message);
+    return sock.sendMessage(from, {
+      text: '⚠️ Gagal download video. Pastikan link valid dan coba lagi.'
+    }, { quoted: msg });
+  }
 }
 
  if (text === '.hd') {
