@@ -1,5 +1,6 @@
 const fs = require('fs-extra')
 const path = './data_user.json'
+const grupPath = './grup.json'
 if (!fs.existsSync(path)) fs.writeJsonSync(path, {})
 
 // 🎩 Nomor Owner Bot
@@ -89,30 +90,27 @@ Bot ini punya fitur:
   }
 
     // 🔍 Cek grup aktif - hanya untuk OWNER
-  if (text === '.cekgrup') {
-    const sender = msg.key.participant || msg.key.remoteJid
-    if (sender.split('@')[0] !== OWNER_NUM) return
+if (text === '.cekgrup') {
+  const sender = (msg.key.participant || from || '').split('@')[0]
+  if (sender !== OWNER_NUM) return
 
-    const grupPath = './grup.json'
-    if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
+  if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
+  const grupDb = fs.readJsonSync(grupPath)
 
-    const grupDb = fs.readJsonSync(grupPath)
-    let hasil = ''
-    let no = 1
+  let hasil = ''
+  let no = 1
 
-    for (let id in grupDb) {
-      const data = grupDb[id]
-      if (data.expired || data.permanen) {
-        hasil += `\n${no++}. ${data.nama || 'Tanpa Nama'}\n🆔 ID: ${id}\n📅 Aktif sampai: ${data.permanen ? 'PERMANEN' : data.expired}\n`
-      }
+  for (let id in grupDb) {
+    const data = grupDb[id]
+    if (data.expired || data.permanen) {
+      hasil += `\n${no++}. ${data.nama || 'Tanpa Nama'}\n🆔 ID: ${id}\n📅 Aktif sampai: ${data.permanen ? 'PERMANEN' : data.expired}`
     }
-
-    if (!hasil) hasil = '📭 Tidak ada grup aktif terdaftar.'
-
-    return sock.sendMessage(from, {
-      text: `📊 *Daftar Grup Aktif Tacatic Bot:*\n${hasil}`
-    })
   }
 
-  
+  if (!hasil) hasil = '📭 Tidak ada grup aktif terdaftar.'
+
+  return sock.sendMessage(from, {
+    text: `📊 *Daftar Grup Aktif Tacatic Bot:*\n${hasil}`
+  })
+} 
 }
