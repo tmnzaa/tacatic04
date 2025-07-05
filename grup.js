@@ -306,27 +306,29 @@ for (let f of fiturList) {
     fitur[f] = true;
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
-    // Ambil foto profil & kirim dengan caption branding
+    // Ambil pp user (thumbnail style)
     const pfp = await sock.profilePictureUrl(sender, 'image').catch(() => null);
+    const caption = `╭───〔 *Tacatic 04* 〕───⬣
+│👤 *Fitur:* ${f}
+│✅ *Status:* Diaktifkan
+│🕹️ *Akses:* Admin/Owner
+╰───────⬣
+
+✨ *TACA 04 OFFICIAL*
+© Tacatic Generation 04`;
+
     if (pfp) {
       await sock.sendMessage(from, {
         image: { url: pfp },
-        caption: `WhatsApp Business ✅ · Status
-TACA 𝟘𝟜 𝙊𝙁𝙁𝙄𝘾𝙄𝘼𝙇 🔥
-
-Tacatic 04
-© Tacatic Generation 04
-
-✅ Fitur *${f}* berhasil diaktifkan!`
+        caption: caption
       }, { quoted: msg });
     } else {
       await sock.sendMessage(from, {
-        text: `✅ Fitur *${f}* berhasil diaktifkan!\n\n(⚠️ Gagal mengambil foto profil)`
+        text: caption + `\n\n⚠️ Foto profil tidak ditemukan.`
       }, { quoted: msg });
     }
   }
 
-  // ==== OFF ====
   if (text === `.${f} off`) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
@@ -344,24 +346,28 @@ Tacatic 04
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
     const pfp = await sock.profilePictureUrl(sender, 'image').catch(() => null);
+    const caption = `╭───〔 *Tacatic 04* 〕───⬣
+│👤 *Fitur:* ${f}
+│❌ *Status:* Dimatikan
+│🕹️ *Akses:* Admin/Owner
+╰───────⬣
+
+✨ *TACA 04 OFFICIAL*
+© Tacatic Generation 04`;
+
     if (pfp) {
       await sock.sendMessage(from, {
         image: { url: pfp },
-        caption: `WhatsApp Business ✅ · Status
-TACA 𝟘𝟜 𝙊𝙁𝙁𝙄𝘾𝙄𝘼𝙇 🔥
-
-Tacatic 04
-© Tacatic Generation 04
-
-❌ Fitur *${f}* berhasil dimatikan.`
+        caption: caption
       }, { quoted: msg });
     } else {
       await sock.sendMessage(from, {
-        text: `❌ Fitur *${f}* berhasil dimatikan.\n\n(⚠️ Gagal mengambil foto profil)`
+        text: caption + `\n\n⚠️ Foto profil tidak ditemukan.`
       }, { quoted: msg });
     }
   }
 }
+
 
   // 👮 .tagall tanpa tampil mention (silent mention)
 if (text.startsWith('.tagall')) {
