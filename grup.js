@@ -201,8 +201,12 @@ if (isBotAktif && !isAdmin && !isOwner) {
       }
     }
 
-    const isAfk = text.startsWith('.afk')
-    const isAfkLink = isAfk && isLink
+   const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
+
+   console.log('📥 Pesan Diterima:', text)
+console.log('• isLink:', isLink)
+console.log('• isAfkLink:', isAfkLink)
+console.log('• isPollingWithLink:', isPollingWithLink)
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && (isLink || isAfkLink || isPollingWithLink)) {
