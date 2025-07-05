@@ -79,7 +79,7 @@ async function startBot() {
     }
   })
 
-  // 👋 WELCOME Feature dengan Preview Link WhatsApp + Custom Teks
+  // 👋 WELCOME Feature: PP user + Custom teks + Preview WhatsApp
 sock.ev.on('group-participants.update', async (update) => {
   const db = fs.readJsonSync(dbFile)
   const fitur = db[update.id]
@@ -91,18 +91,21 @@ sock.ev.on('group-participants.update', async (update) => {
       if (update.action === 'add') {
         const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
         const groupName = metadata.subject
+        const pp = await sock.profilePictureUrl(jid, 'image').catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
 
-        // Ambil teks welcome dari pengaturan atau default
-        let teks = fitur.welcomeText || `Hay @user welcome to *@grup*`
+        // Teks welcome dari pengaturan
+        let teks = fitur.welcomeText || `hello @user welcome to *@grup*`
 
-        // Replace placeholder
+        // Ganti placeholder
         teks = teks
           .replace(/@user/g, `@${jid.split('@')[0]}`)
           .replace(/@name/g, name)
           .replace(/@grup/g, groupName)
 
+        // Kirim gambar + teks sambutan
         await sock.sendMessage(update.id, {
-          text: `https://whatsapp.com\n\n${teks}`,
+          image: { url: pp },
+          caption: `${teks}\n\nhttps://whatsapp.com`,
           mentions: [jid]
         })
       }
