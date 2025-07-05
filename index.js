@@ -111,7 +111,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
       // LEAVE
       if (update.action === 'remove' && fitur.leave) {
-        const teks = `👋 @${jid.split('@')[0]} telah keluar dari *${groupName}*.`
+        const teks = `@${jid.split('@')[0]} yahh ko keluar si:) *${groupName}*.`
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
