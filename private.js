@@ -48,9 +48,11 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 🔓 _.open / .open 20.00_ – Buka grup (otomatis juga bisa!)
 • 🔒 _.close / .close 22.00_ – Tutup grup (sesuai jam juga bisa!)
 
-🎨 *FITUR STIKER & BRAT*:
+🎨 *FITUR LAINNYA*: 
 • 🖼️ _.stiker_ – Kirim/reply gambar lalu ketik ini
 • 🔤 _.addbrat teks_ – Buat stiker teks brat
+• ✂️ _.removebg_ – Hapus background gambar (kirim/reply gambar lalu ketik ini)
+• 🔍 _.hd_ – Perbaiki kualitas gambar jadi HD (kirim/reply gambar lalu ketik ini)
 
 👾 Powered by *Tacatic 04*`
   }, { quoted: msg });
@@ -67,6 +69,7 @@ Bot ini punya fitur:
 • Welcome + stiker custom (.stiker, .addbrat)
 • Buka/tutup grup otomatis
 • Menu lengkap ketik: .menu
+• Bisa remove bg & hd
 
 💰 *Harga Sewa:*
 • 3K = 1 Minggu
@@ -74,8 +77,10 @@ Bot ini punya fitur:
 • 7K = 2 Bulan
 • 10K = Permanen
 
-📌 Ketik di grup untuk aktivasi:
-.aktifbot3k / .aktifbot5k / .aktifbot7k / .aktifbotper
+📖 Agar bot aktif:
+1. Pastikan bot ada di grup dan wajib jadikan admin
+2. Chat owner untuk minta aktivasi bot
+3. Bot telah aktif
 
 ⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
   })
