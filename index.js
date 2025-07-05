@@ -8,18 +8,18 @@ const P = require('pino')
 const { Boom } = require('@hapi/boom')
 const schedule = require('node-schedule')
 const fs = require('fs-extra')
+const axios = require('axios')
 
+// === File Database ===
 const dbFile = './grup.json'
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
 
 let qrShown = false
 
-// 🔄 Reset semua fitur saat bot menyala ulang
 function resetFiturSaatRestart() {
   if (!fs.existsSync(dbFile)) return
   const db = fs.readJsonSync(dbFile)
   let totalReset = 0
-
   for (const id in db) {
     const fitur = db[id]
     fitur.antilink1 = false
@@ -29,9 +29,8 @@ function resetFiturSaatRestart() {
     fitur.welcome = false
     totalReset++
   }
-
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
-  console.log(`♻️ Semua fitur dinonaktifkan otomatis di ${totalReset} grup karena bot restart.`)
+  console.log(`♻️ Semua fitur dimatikan di ${totalReset} grup karena restart.`)
 }
 
 async function startBot() {
@@ -54,7 +53,7 @@ async function startBot() {
 
     if (connection === 'open') {
       console.log('✅ Bot berhasil terhubung ke WhatsApp!')
-      resetFiturSaatRestart() // 🔁 Reset fitur ketika koneksi terbuka
+      resetFiturSaatRestart()
     }
 
     if (connection === 'close') {
@@ -66,6 +65,7 @@ async function startBot() {
     }
   })
 
+  // 📥 Message handler
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const msg = messages[0]
     if (!msg.message) return
@@ -75,20 +75,50 @@ async function startBot() {
       require('./grup')(sock, msg)
       require('./private')(sock, msg)
     } catch (err) {
-      console.error('💥 Error saat handle pesan:', err)
+      console.error('💥 Error handle pesan:', err)
     }
   })
 
-  startScheduler(sock)
-}
+  // 👋 WELCOME Feature dengan PP user dan teks custom
+sock.ev.on('group-participants.update', async (update) => {
+  const db = fs.readJsonSync(dbFile)
+  const fitur = db[update.id]
+  if (!fitur || !fitur.welcome) return
 
-// 🔁 Scheduler buka/tutup otomatis
-function startScheduler(sock) {
+  try {
+    const metadata = await sock.groupMetadata(update.id)
+    for (const jid of update.participants) {
+      if (update.action === 'add') {
+        const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
+        const groupName = metadata.subject
+        const pp = await sock.profilePictureUrl(jid, 'image')
+          .catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
+
+        // Ambil teks welcome dari pengaturan atau default
+        let teks = fitur.welcomeText || `👋 Selamat datang @name di grup *@grup*! Semoga betah ya broo~ ✨`
+
+        // Replace placeholder
+        teks = teks
+          .replace(/@user/g, `@${jid.split('@')[0]}`)
+          .replace(/@name/g, name)
+          .replace(/@grup/g, groupName)
+
+        await sock.sendMessage(update.id, {
+          image: { url: pp },
+          caption: teks,
+          mentions: [jid]
+        })
+      }
+    }
+  } catch (err) {
+    console.error('❌ Error welcome:', err)
+  }
+})
+
+  // ⏰ AUTO OPEN & CLOSE GROUP
   schedule.scheduleJob('* * * * *', async () => {
     const now = new Date()
     const jam = now.toTimeString().slice(0, 5).replace(':', '.')
-
-    if (!fs.existsSync(dbFile)) return
     const db = fs.readJsonSync(dbFile)
 
     for (const id in db) {
@@ -107,8 +137,8 @@ function startScheduler(sock) {
           await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
           delete fitur.closeTime
         }
-      } catch (e) {
-        console.error(`❌ Gagal update setting grup:`, e)
+      } catch (err) {
+        console.error('❌ Gagal update setting:', err)
       }
     }
 
@@ -116,7 +146,7 @@ function startScheduler(sock) {
   })
 }
 
-// 🛠 Global error handler
+// 🛠 Global error
 process.on('unhandledRejection', err => {
   console.error('💥 Unhandled Rejection:', err)
 })
