@@ -27,6 +27,7 @@ function resetFiturSaatRestart() {
     fitur.antipromosi = false
     fitur.antitoxic = false
     fitur.welcome = false
+    fitur.leave = false
     totalReset++
   }
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
@@ -79,33 +80,38 @@ async function startBot() {
     }
   })
 
-  // 👋 WELCOME Feature dengan PP user dan teks custom
+  // 👋 WELCOME & LEAVE Feature: PP user + Custom teks + WhatsApp-style
 sock.ev.on('group-participants.update', async (update) => {
   const db = fs.readJsonSync(dbFile)
   const fitur = db[update.id]
-  if (!fitur || !fitur.welcome) return
+  if (!fitur) return
 
   try {
     const metadata = await sock.groupMetadata(update.id)
+
     for (const jid of update.participants) {
-      if (update.action === 'add') {
-        const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
-        const groupName = metadata.subject
+      const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
+      const groupName = metadata.subject
+      const pp = await sock.profilePictureUrl(jid, 'image').catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
 
-        // Ambil foto profil user yang join
-        const pp = await sock.profilePictureUrl(jid, 'image')
-          .catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
-
-        // Ambil teks sambutan dari database atau default
-        let teks = fitur.welcomeText || `👋 Selamat datang @name di grup *@grup*! Jangan lupa perkenalan ya~ ✨`
-
-        // Replace placeholder
+      // WELCOME
+      if (update.action === 'add' && fitur.welcome) {
+        let teks = fitur.welcomeText || `hello @name, selamat datang di *@grup*!`
         teks = teks
           .replace(/@user/g, `@${jid.split('@')[0]}`)
           .replace(/@name/g, name)
           .replace(/@grup/g, groupName)
 
-        // Kirim foto profil + sambutan + tag user
+        await sock.sendMessage(update.id, {
+          image: { url: pp },
+          caption: teks,
+          mentions: [jid]
+        })
+      }
+
+      // LEAVE
+      if (update.action === 'remove' && fitur.leave) {
+        const teks = `👋 @${jid.split('@')[0]} telah keluar dari *${groupName}*.`
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
@@ -114,7 +120,7 @@ sock.ev.on('group-participants.update', async (update) => {
       }
     }
   } catch (err) {
-    console.error('❌ Error welcome:', err)
+    console.error('❌ Error welcome/leave:', err)
   }
 })
 
