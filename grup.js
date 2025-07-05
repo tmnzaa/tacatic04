@@ -53,7 +53,7 @@ const text = getTextFromMsg(msg);
   const isCommand = text.startsWith('.');
 
   // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
-const allowedForAll = ['.stiker', '.addbrat', '.hd', '.removebg'];
+const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
   if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     const memberHandler = require('./member');
     await memberHandler(sock, msg, text, from);
@@ -128,7 +128,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   }, { quoted: msg });
 }
 
-const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd'];
+const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
   const now = new Date()
@@ -275,6 +275,7 @@ if (text === '.menu') {
 • 🔤 _.addbrat teks_  → Buat stiker teks brat
 • 📷 _.hd_            → Ubah gambar jadi HD
 • 🧼 _.removebg_      → Hapus background gambar
+• 🎵 _.tiktok <link>_ → Download video TikTok tanpa watermark
 
 📌 *Catatan*:
 – Hanya admin atau owner grup yang bisa akses semua fitur.
