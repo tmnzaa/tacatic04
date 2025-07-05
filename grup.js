@@ -183,13 +183,6 @@ const isPollingWithLink = isPolling && linkRegex.test(text); // polling + ada li
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
 const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
 
-const isAfkLink = text.startsWith('.afk') && isLink;
-if (isAfkLink && isBotAktif && !isAdmin && !isOwner && fitur.antilink1) {
-  await sock.sendMessage(from, { delete: msg.key });
-  console.log(`🚫 Pesan .afk berisi link dihapus: ${text}`);
-  return;
-}
-
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
   try {
@@ -208,21 +201,26 @@ if (isBotAktif && !isAdmin && !isOwner) {
       }
     }
 
+    const isAfk = text.startsWith('.afk')
+    const isAfkLink = isAfk && isLink
+
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
-if (fitur.antilink1 && (isLink || isPollingWithLink)) {
-  console.log('📛 Deteksi link atau polling mencurigakan!');
-  await sock.sendMessage(from, { delete: msg.key });
-  await tambahStrike();
-}
+    if (fitur.antilink1 && (isLink || isAfkLink || isPollingWithLink)) {
+      console.log('📛 Deteksi link atau polling mencurigakan!');
+      await sock.sendMessage(from, { delete: msg.key });
+      await tambahStrike();
+      return;
+    }
 
     // 🚫 AntiLink 2: Hapus pesan + langsung tendang
-if (fitur.antilink2 && (isLink || isPollingWithLink)) {
-  console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
-  await sock.sendMessage(from, { delete: msg.key });
-  await sock.groupParticipantsUpdate(from, [sender], 'remove');
-  delete strikeDB[from][sender];
-  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
-}
+    if (fitur.antilink2 && (isLink || isAfkLink || isPollingWithLink)) {
+      console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
+      await sock.sendMessage(from, { delete: msg.key });
+      await sock.groupParticipantsUpdate(from, [sender], 'remove');
+      delete strikeDB[from][sender];
+      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+      return;
+    }
 
     // 🚫 Anti Promosi
     if (fitur.antipromosi && isPromo) {
