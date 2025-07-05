@@ -128,8 +128,8 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   }, { quoted: msg });
 }
 
-  const fiturBolehMember = ['.menu', '.stiker', '.addbrat']
-  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif']
+const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd'];
+  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
   const now = new Date()
   const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
@@ -149,7 +149,7 @@ if (isBotAktif && !isBotAdmin) {
     '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
     '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
     '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
-    '.setwelcome', '.setdesc',
+    '.setdesc','.leave on', '.leave off',
   ]
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -258,6 +258,7 @@ if (text === '.menu') {
 
 🎉 *FITUR SOSIAL & INTERAKSI*:
 • 🎉 _.welcome on/off_  → Sambutan buat member baru
+• 📴 _.leave on_ / _.leave off_ → Kirim pesan saat user keluar
 • 🗣️ _.tagall_  → Mention semua member aktif
 • 👢 _.kick_  → Tendang member (admin only)
 
@@ -266,6 +267,7 @@ if (text === '.menu') {
 • 🧹 _.demote_  → Turunin admin
 • 🔓 _.open_ / _.open 20.00_  → Buka grup / jadwal buka
 • 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
+• 📄 _.setdesc_  → Ubah deskripsi grup
 • 💡 _.cekaktif_      → Cek fitur aktif
 
 📊 *FITUR LAINNYA*:
@@ -308,49 +310,61 @@ Contoh: _.addbrat Selamat ulang tahun_
 }
 
 
- const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome'];
+ const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave']
 
 for (let f of fiturList) {
   if (text === `.${f} on`) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh mengaktifkan fitur *${f}*.`
-       }, { quoted: msg });
+      }, { quoted: msg })
     }
 
     if (fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁`  }, { quoted: msg });
+      return sock.sendMessage(from, {
+        text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁`
+      }, { quoted: msg })
     }
 
     if (f === 'antilink1' && fitur['antilink2']) {
-      fitur['antilink2'] = false;
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.`  }, { quoted: msg });
+      fitur['antilink2'] = false
+      await sock.sendMessage(from, {
+        text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.`
+      }, { quoted: msg })
     }
 
     if (f === 'antilink2' && fitur['antilink1']) {
-      fitur['antilink1'] = false;
-      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.`  }, { quoted: msg });
+      fitur['antilink1'] = false
+      await sock.sendMessage(from, {
+        text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.`
+      }, { quoted: msg })
     }
 
-    fitur[f] = true;
-    fs.writeJsonSync(dbFile, db, { spaces: 2 });
-    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!`   }, { quoted: msg });
+    fitur[f] = true
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, {
+      text: `✅ Fitur *${f}* berhasil diaktifkan!`
+    }, { quoted: msg })
   }
 
   if (text === `.${f} off`) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh menonaktifkan fitur *${f}*.`
-        }, { quoted: msg });
+      }, { quoted: msg })
     }
 
     if (!fitur[f]) {
-      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴`   }, { quoted: msg });
+      return sock.sendMessage(from, {
+        text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴`
+      }, { quoted: msg })
     }
 
-    fitur[f] = false;
-    fs.writeJsonSync(dbFile, db, { spaces: 2 });
-    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.`  }, { quoted: msg });
+    fitur[f] = false
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    return sock.sendMessage(from, {
+      text: `❌ Fitur *${f}* berhasil dimatikan.`
+    }, { quoted: msg })
   }
 }
 
@@ -453,22 +467,22 @@ if (text.startsWith('.close')) {
     }, { quoted: msg });
 }
 
-if (text.startsWith('.setwelcome')) {
-  if (!isAdmin && !isOwner) {
-    return sock.sendMessage(from, { text: '⚠️ Hanya admin yang bisa mengatur sambutan.' }, { quoted: msg });
-  }
+// if (text.startsWith('.setwelcome')) {
+//   if (!isAdmin && !isOwner) {
+//     return sock.sendMessage(from, { text: '⚠️ Hanya admin yang bisa mengatur sambutan.' }, { quoted: msg });
+//   }
 
-  const isi = text.split('.setwelcome')[1]?.trim();
-  if (!isi) {
-    return sock.sendMessage(from, {
-      text: '❌ Format salah.\nContoh: *.setwelcome Selamat datang @name di @grup!*'
-    }, { quoted: msg });
-  }
+//   const isi = text.split('.setwelcome')[1]?.trim();
+//   if (!isi) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Format salah.\nContoh: *.setwelcome Selamat datang @name di @grup!*'
+//     }, { quoted: msg });
+//   }
 
-  fitur.welcomeText = isi;
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
-  return sock.sendMessage(from, { text: '✅ Teks sambutan berhasil disimpan!' }, { quoted: msg });
-}
+//   fitur.welcomeText = isi;
+//   fs.writeJsonSync(dbFile, db, { spaces: 2 });
+//   return sock.sendMessage(from, { text: '✅ Teks sambutan berhasil disimpan!' }, { quoted: msg });
+// }
 
 if (text.startsWith('.setdesc')) {
   if (!isAdmin && !isOwner) {
