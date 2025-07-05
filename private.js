@@ -13,14 +13,14 @@ module.exports = async (sock, msg) => {
   const db = fs.readJsonSync(path)
   db[from] = db[from] || {}
 
-  // 💌 Sambutan lucu pertama kali chat
-  if (!db[from].perkenalan) {
-    db[from].perkenalan = true
-    fs.writeJsonSync(path, db, { spaces: 2 })
-    return sock.sendMessage(from, {
-      text: `✨ Haii aku *Tacatic Bot 04* 🐣\n\nAku bot penjaga grup yang lucu nan sakti! ✨\n\n📌 Ketik *_.menu_* buat liat isi perutku~`
-    })
-  }
+  // 💌 Pesan sambutan pertama kali
+if (!db[from].perkenalan) {
+  db[from].perkenalan = true
+  fs.writeJsonSync(path, db, { spaces: 2 })
+  return sock.sendMessage(from, {
+    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
+  })
+}
 
   // 📋 Menu utama lucu
   if (text.toLowerCase() === '.menu') {
@@ -41,6 +41,8 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 📢 _.antipromosi on/off_ – Auto hapus iklan
 • 🤬 _.antitoxic on/off_ – Bersihin kata kasar
 • 🎉 _.welcome on/off_ – Sambutan lucu untuk member baru
+• 🔚 _.leave on/off_ – Aktifkan kirim pesan saat member keluar
+• 📄 _.setdesc_ – Ubah deskripsi grup
 • 🗣️ _.tagall_ – Panggil semua member
 • 👢 _.kick_ – Tendang member (sopan)
 • 👑 _.promote_ – Angkat jadi admin
