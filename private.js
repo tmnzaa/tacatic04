@@ -106,7 +106,7 @@ END:VCARD`;
       displayName: "Caa Owner Official",
       contacts: [{ vcard }]
     }
-  }, { quoted: msg });
+  });
 }
 
   // 🔍 Cek grup aktif - hanya untuk OWNER
