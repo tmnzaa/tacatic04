@@ -91,14 +91,14 @@ if (text.toLowerCase().trim() === '.limit') {
 }
 
  if (text === '.hd') {
-  // 💥 Batasi 2x per hari untuk member biasa
-  if (!isAdmin && !isOwner) {
-    if (!cekLimit(from, sender, 'hd')) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Batas penggunaan *.hd* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-      }, { quoted: msg });
-    }
-  }
+  // // 💥 Batasi 2x per hari untuk member biasa
+  // if (!isAdmin && !isOwner) {
+  //   if (!cekLimit(from, sender, 'hd')) {
+  //     return sock.sendMessage(from, {
+  //       text: '⚠️ Batas penggunaan *.hd* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+  //     }, { quoted: msg });
+  //   }
+  // }
 
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
@@ -145,14 +145,14 @@ if (text.toLowerCase().trim() === '.limit') {
 
 // 🧼 .removebg
 if (text === '.removebg') {
-   // 💥 Batasi 2x per hari untuk member biasa
-  if (!isAdmin && !isOwner) {
-    if (!cekLimit(from, sender, 'removebg')) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Batas penggunaan *.removebg* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-      }, { quoted: msg });
-    }
-  }
+  //  // 💥 Batasi 2x per hari untuk member biasa
+  // if (!isAdmin && !isOwner) {
+  //   if (!cekLimit(from, sender, 'removebg')) {
+  //     return sock.sendMessage(from, {
+  //       text: '⚠️ Batas penggunaan *.removebg* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+  //     }, { quoted: msg });
+  //   }
+  // }
 
   try {
     const context = msg.message?.extendedTextMessage?.contextInfo;
@@ -211,14 +211,14 @@ if (text === '.removebg') {
 
   // 🖼️ .stiker
   if (text === '.stiker') {
-    // 💥 Batas 2x untuk member biasa
-  if (!isAdmin && !isOwner) {
-    if (!cekLimit(from, sender, 'stiker')) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-      }, { quoted: msg });
-    }
-  }
+  //   // 💥 Batas 2x untuk member biasa
+  // if (!isAdmin && !isOwner) {
+  //   if (!cekLimit(from, sender, 'stiker')) {
+  //     return sock.sendMessage(from, {
+  //       text: '⚠️ Batas penggunaan *.stiker* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+  //     }, { quoted: msg });
+  //   }
+  // }
 
     const quoted = msg.message?.extendedTextMessage?.contextInfo?.quotedMessage;
     const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
@@ -258,14 +258,14 @@ if (text === '.removebg') {
 
   // 💬 .addbrat
   if (text.startsWith('.addbrat ')) {
-    // 💥 Batas 2x untuk member biasa
-  if (!isAdmin && !isOwner) {
-    if (!cekLimit(from, sender, 'addbrat')) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Batas penggunaan *.addbrat* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-      }, { quoted: msg });
-    }
-  }
+  //   // 💥 Batas 2x untuk member biasa
+  // if (!isAdmin && !isOwner) {
+  //   if (!cekLimit(from, sender, 'addbrat')) {
+  //     return sock.sendMessage(from, {
+  //       text: '⚠️ Batas penggunaan *.addbrat* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
+  //     }, { quoted: msg });
+  //   }
+  // }
 
     const teks = text.split('.addbrat ')[1].trim();
     if (!teks) {
