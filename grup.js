@@ -280,94 +280,44 @@ for (let f of fiturList) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh mengaktifkan fitur *${f}*.`
-      }, { quoted: msg });
+       }, { quoted: msg });
     }
 
     if (fitur[f]) {
-      return sock.sendMessage(from, {
-        text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁`
-      }, { quoted: msg });
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* sudah aktif dari tadi kok 😁`  }, { quoted: msg });
     }
 
     if (f === 'antilink1' && fitur['antilink2']) {
       fitur['antilink2'] = false;
-      await sock.sendMessage(from, {
-        text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.`
-      }, { quoted: msg });
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink2* dimatikan agar tidak bentrok dengan *antilink1*.`  }, { quoted: msg });
     }
 
     if (f === 'antilink2' && fitur['antilink1']) {
       fitur['antilink1'] = false;
-      await sock.sendMessage(from, {
-        text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.`
-      }, { quoted: msg });
+      await sock.sendMessage(from, { text: `⚠️ Fitur *antilink1* dimatikan agar tidak bentrok dengan *antilink2*.`  }, { quoted: msg });
     }
 
     fitur[f] = true;
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
-
-    // Ambil pp user (thumbnail style)
-    const pfp = await sock.profilePictureUrl(sender, 'image').catch(() => null);
-    const caption = `╭───〔 *Tacatic 04* 〕───⬣
-│👤 *Fitur:* ${f}
-│✅ *Status:* Diaktifkan
-│🕹️ *Akses:* Admin/Owner
-╰───────⬣
-
-✨ *TACA 04 OFFICIAL*
-© Tacatic Generation 04`;
-
-    if (pfp) {
-      await sock.sendMessage(from, {
-        image: { url: pfp },
-        caption: caption
-      }, { quoted: msg });
-    } else {
-      await sock.sendMessage(from, {
-        text: caption + `\n\n⚠️ Foto profil tidak ditemukan.`
-      }, { quoted: msg });
-    }
+    return sock.sendMessage(from, { text: `✅ Fitur *${f}* berhasil diaktifkan!`   }, { quoted: msg });
   }
 
   if (text === `.${f} off`) {
     if (!isAdmin && !isOwner) {
       return sock.sendMessage(from, {
         text: `⚠️ Hanya *Admin Grup* yang boleh menonaktifkan fitur *${f}*.`
-      }, { quoted: msg });
+        }, { quoted: msg });
     }
 
     if (!fitur[f]) {
-      return sock.sendMessage(from, {
-        text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴`
-      }, { quoted: msg });
+      return sock.sendMessage(from, { text: `ℹ️ Fitur *${f}* memang sudah nonaktif kok 😴`   }, { quoted: msg });
     }
 
     fitur[f] = false;
     fs.writeJsonSync(dbFile, db, { spaces: 2 });
-
-    const pfp = await sock.profilePictureUrl(sender, 'image').catch(() => null);
-    const caption = `╭───〔 *Tacatic 04* 〕───⬣
-│👤 *Fitur:* ${f}
-│❌ *Status:* Dimatikan
-│🕹️ *Akses:* Admin/Owner
-╰───────⬣
-
-✨ *TACA 04 OFFICIAL*
-© Tacatic Generation 04`;
-
-    if (pfp) {
-      await sock.sendMessage(from, {
-        image: { url: pfp },
-        caption: caption
-      }, { quoted: msg });
-    } else {
-      await sock.sendMessage(from, {
-        text: caption + `\n\n⚠️ Foto profil tidak ditemukan.`
-      }, { quoted: msg });
-    }
+    return sock.sendMessage(from, { text: `❌ Fitur *${f}* berhasil dimatikan.`  }, { quoted: msg });
   }
 }
-
 
   // 👮 .tagall tanpa tampil mention (silent mention)
 if (text.startsWith('.tagall')) {
