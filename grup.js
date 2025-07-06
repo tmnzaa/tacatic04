@@ -337,8 +337,7 @@ Contoh: _.addbrat Selamat ulang tahun_
 if (isBotAktif && isAfk) {
   const alasan = text.split('.afk')[1]?.trim() || 'AFK';
 
-  // Jika mengandung link atau polling → hapus
-  if (isLink || isPollingWithLink) {
+  if ((isLink || isPollingWithLink) && !isAdmin && !isOwner) {
     await sock.sendMessage(from, {
       text: '⚠️ Tidak boleh menyisipkan *link* atau *polling* saat AFK!',
     }, { quoted: msg });
@@ -354,7 +353,6 @@ if (isBotAktif && isAfk) {
 
   return;
 }
-
 
  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
 
