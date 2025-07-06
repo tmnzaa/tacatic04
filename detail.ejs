@@ -48,7 +48,13 @@
       <div class="card-body">
         <h5 class="card-title">📛 <%= nama %></h5>
         <p><strong>ID Grup:</strong> <code><%= id %></code></p>
-        <p><strong>Masa Aktif:</strong> <%= expired %></p>
+        <p><strong>Masa Aktif:</strong>
+  <% if (expired === 'permanent' || expired === null || expired === 'Permanen') { %>
+    <span class="badge bg-success">Permanen</span>
+  <% } else { %>
+    <%= expired %>
+  <% } %>
+</p>
         <p><strong>Status:</strong> <%= status %></p>
 
         <hr>
