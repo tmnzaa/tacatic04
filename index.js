@@ -67,18 +67,42 @@ async function startBot() {
   })
 
   // 📥 Message handler
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    const msg = messages[0]
-    if (!msg.message) return
-    if (!msg.key.remoteJid || msg.key.id.startsWith('BAE5') || msg.key.fromMe) return
+sock.ev.on('messages.upsert', async ({ messages }) => {
+  const msg = messages[0]
+  if (!msg.message) return
+  if (!msg.key.remoteJid || msg.key.id.startsWith('BAE5') || msg.key.fromMe) return
 
-    try {
-      require('./grup')(sock, msg)
-      require('./private')(sock, msg)
-    } catch (err) {
-      console.error('💥 Error handle pesan:', err)
-    }
-  })
+  const from = msg.key.remoteJid
+  const sender = msg.key.participant || msg.key.remoteJid
+  const db = fs.readJsonSync(dbFile)
+  const fitur = db[from]
+
+  // 🚫 Deteksi dan hapus polling
+  if (msg.message?.pollCreationMessage && fitur?.antipolling) {
+    await sock.sendMessage(from, {
+      text: `❌ Polling tidak diperbolehkan di grup ini!`,
+      mentions: [sender]
+    }, { quoted: msg })
+
+    // Hapus pesan polling
+    await sock.sendMessage(from, {
+      delete: {
+        remoteJid: from,
+        fromMe: false,
+        id: msg.key.id,
+        participant: sender
+      }
+    })
+    return // Stop lanjut ke handler lain
+  }
+
+  try {
+    require('./grup')(sock, msg)
+    require('./private')(sock, msg)
+  } catch (err) {
+    console.error('💥 Error handle pesan:', err)
+  }
+})
 
   // 👋 WELCOME & LEAVE Feature: PP user + Custom teks + WhatsApp-style
 sock.ev.on('group-participants.update', async (update) => {
