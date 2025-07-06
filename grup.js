@@ -524,22 +524,25 @@ if (text.startsWith('.close')) {
 }
 
  if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'dnd']
-  let aktif = ''
-  let mati = ''
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'dnd']
+  let aktif = ''
+  let mati = ''
 
-  for (let f of fiturList) {
-    if (fitur[f]) {
-      aktif += `✅ *${f}*\n`
-    } else {
-      mati += `❌ *${f}*\n`
-    }
-  }
+  for (let f of fiturList) {
+    if (fitur[f]) {
+      aktif += `✅ *${f}*\n`
+    } else {
+      mati += `❌ *${f}*\n`
+    }
+  }
 
-  return sock.sendMessage(from, {
-  text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired === 'permanent' ? 'Permanen' : (fitur.expired || 'Belum aktif')}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
-}, { quoted: msg });
- }
+  const masaAktif = fitur.permanen ? 'PERMANEN' : (fitur.expired || 'Belum aktif')
+
+  return sock.sendMessage(from, {
+    text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${masaAktif}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
+  }, { quoted: msg });
+}
+
 
 // if (text.startsWith('.setwelcome')) {
 //   if (!isAdmin && !isOwner) {
