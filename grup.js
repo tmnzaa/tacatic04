@@ -478,8 +478,8 @@ if (text.startsWith('.close')) {
   return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
 }
 
- if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
+if (text === '.cekaktif') {
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'antilinkafk']
   let aktif = ''
   let mati = ''
 
