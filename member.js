@@ -57,12 +57,7 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
 • 📷 _.hd_ – Jadikan gambar lebih tajam
 • 🧼 _.removebg_ – Hapus background gambar
 • 💬 _.addbrat teks_ – Buat stiker teks lucu
-
-📌 *Contoh penggunaan:*
-– Kirim gambar lalu ketik _.stiker_
-– Reply gambar lalu ketik _.hd_
-– .addbrat Selamat ulang tahun
-– Reply gambar lalu ketik _.removebg_
+• 💬 _.bratv2 teks_ – Buat stiker teks elegan
 
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`,
   }, { quoted: msg });
