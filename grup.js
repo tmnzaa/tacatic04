@@ -174,7 +174,7 @@ if (isBotAktif && !isBotAdmin) {
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
   '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
   '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
-   '.afk',
+   '.afk', '.dnd on', '.dnd off',  // <<-- pastikan disini ya
 ];
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
