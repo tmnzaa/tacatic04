@@ -447,13 +447,27 @@ for (let f of fiturList) {
   }
 }
 
-  // 👮 .tagall tanpa tampil mention (silent mention)
+ // 👮 .tagall bisa reply, atau pakai teks
 if (text.startsWith('.tagall')) {
-  const isi = text.split('.tagall')[1]?.trim()
+  const isiCmd = text.split('.tagall')[1]?.trim()
   const list = metadata.participants.map(p => p.id)
 
+  let teks = ''
+
+  // Ambil dari reply jika ada
+  if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
+    const quoted = msg.message.extendedTextMessage.contextInfo.quotedMessage
+    const qtype = Object.keys(quoted)[0]
+
+    // Ambil isi pesan dari reply
+    teks = quoted[qtype]?.text || quoted[qtype]?.caption || '[Tidak bisa ambil isi reply]'
+  }
+
+  // Override isi jika pengguna ketik teks setelah .tagall
+  if (isiCmd) teks = isiCmd
+
   return sock.sendMessage(from, {
-    text: isi || '', // kirim pesan kosong jika tidak ada teks (unicode blank)
+    text: teks || '', // tetap kirim pesan meskipun kosong
     mentions: list
   })
 }
