@@ -73,8 +73,9 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
 const isBotOwner = sender === OWNER_BOT;
-const isOwner = isBotOwner; // ✅ hanya owner bot yang dianggap owner
-const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
+const isOwner = isBotOwner || isGroupOwner;
+
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
