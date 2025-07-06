@@ -40,6 +40,7 @@ Aku bisa bantu kamu jagain grup dari yang nakal-nakal 😼:
 • 🚷 _.antilink2 on/off_ – Hapus + Tendang!
 • 📢 _.antipromosi on/off_ – Auto hapus iklan
 • 🤬 _.antitoxic on/off_ – Bersihin kata kasar
+• 🗳️ _.antipolling on/off_ – Auto hapus polling WhatsApp
 • 🎉 _.welcome on/off_ – Sambutan lucu untuk member baru
 • 🔚 _.leave on/off_ – Aktifkan kirim pesan saat member keluar
 • 📄 _.setdesc_ – Ubah deskripsi grup
