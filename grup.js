@@ -167,11 +167,10 @@ if (isBotAktif && !isBotAdmin) {
   '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
   '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
   '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
-  '.antipolling on', '.antipolling off',
-  '.antilinkafk on', '.antilinkafk off', // ✅ ini baris tambahan
+  '.antipolling on', '.antipolling off', // ✅ tambahkan ini
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
   '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
-  '.setdesc', '.leave on', '.leave off', '.polling on', '.polling off',
+  '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
 ];
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -223,24 +222,15 @@ if (isBotAktif && !isAdmin && !isOwner) {
       }
     }
 
-const isAfkLink = /^\.afk\s+(https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text) ||
-                  (text.startsWith('.afk') && text.includes('chat.whatsapp.com'));
+   const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
 
   //  console.log('📥 Pesan Diterima:', text)
 // console.log('• isLink:', isLink)
 // console.log('• isAfkLink:', isAfkLink)
 // console.log('• isPollingWithLink:', isPollingWithLink)
 
-   if (fitur.antilinkafk && isAfkLink) {
-  await sock.sendMessage(from, {
-  });
-  await sock.sendMessage(from, { delete: msg.key });
-  await tambahStrike();
-  return;
-}
-
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
-    if (fitur.antilink1 && (isLink || isAfkLink || isPollingWithLink)) {
+    if (fitur.antilink1 && (isLink || isPollingWithLink)) {
       // console.log('📛 Deteksi link atau polling mencurigakan!');
       await sock.sendMessage(from, { delete: msg.key });
       await tambahStrike();
@@ -248,7 +238,7 @@ const isAfkLink = /^\.afk\s+(https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/
     }
 
     // 🚫 AntiLink 2: Hapus pesan + langsung tendang
-    if (fitur.antilink2 && (isLink || isAfkLink || isPollingWithLink)) {
+    if (fitur.antilink2 && (isLink || isPollingWithLink)) {
       // console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
       await sock.sendMessage(from, { delete: msg.key });
       await sock.groupParticipantsUpdate(from, [sender], 'remove');
@@ -342,7 +332,7 @@ Contoh: _.addbrat Selamat ulang tahun_
 }
 
 
-const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'antilinkafk']
+ const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
 
 for (let f of fiturList) {
   if (text === `.${f} on`) {
@@ -481,8 +471,8 @@ if (text.startsWith('.close')) {
   return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
 }
 
-if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'antilinkafk']
+ if (text === '.cekaktif') {
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
   let aktif = ''
   let mati = ''
 
