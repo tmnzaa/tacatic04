@@ -54,7 +54,7 @@ const text = getTextFromMsg(msg);
   const isAfk = text.toLowerCase().startsWith('.afk');
 
   // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
-const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
+const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2'];
   if (isCommand && allowedForAll.some(cmd => text.startsWith(cmd))) {
     const memberHandler = require('./member');
     await memberHandler(sock, msg, text, from);
@@ -153,7 +153,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   }, { quoted: msg });
 }
 
-const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
+const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2'];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
