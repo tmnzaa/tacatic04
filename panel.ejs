@@ -69,7 +69,13 @@
             <tr>
               <td><%= grup.nama %></td>
               <td><code><%= grup.id %></code></td>
-              <td><%= grup.expired %></td>
+            <td>
+  <% if (grup.expired === 'permanent' || grup.expired === null || grup.expired === 'Permanen') { %>
+    <span class="badge bg-success">Permanen</span>
+  <% } else { %>
+    <%= grup.expired %>
+  <% } %>
+</td>
               <td><%= grup.status %></td>
               <td><a href="/grup/<%= grup.id %>" class="btn btn-sm btn-primary">Detail</a></td>
             </tr>
@@ -95,7 +101,9 @@
           <tr>
             <td>${nama}</td>
             <td><code>${id}</code></td>
-            <td>${g.expired || '-'}</td>
+            <td>${g.expired === 'permanent' || g.expired === null || g.expired === 'Permanen'
+  ? '<span class="badge bg-success">Permanen</span>'
+  : g.expired}</td>
             <td>${isAktif ? '✅ Aktif' : '❌ Tidak aktif'}</td>
             <td><a href="/grup/${id}" class="btn btn-sm btn-primary">Detail</a></td>
           </tr>
