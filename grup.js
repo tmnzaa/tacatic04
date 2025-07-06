@@ -447,33 +447,13 @@ for (let f of fiturList) {
   }
 }
 
- if (text.startsWith('.tagall')) {
-  const isiCmd = text.split('.tagall')[1]?.trim()
+  // 👮 .tagall tanpa tampil mention (silent mention)
+if (text.startsWith('.tagall')) {
+  const isi = text.split('.tagall')[1]?.trim()
   const list = metadata.participants.map(p => p.id)
 
-  let teks = ''
-
-  // Cek jika reply
-  const context = msg.message?.extendedTextMessage?.contextInfo
-  const quoted = context?.quotedMessage
-
-  if (quoted) {
-    const qtype = Object.keys(quoted)[0]
-    const qmsg = quoted[qtype]
-
-    // Deteksi semua kemungkinan tipe teks
-    teks = qmsg?.text ||
-           qmsg?.conversation ||
-           qmsg?.caption ||
-           qmsg?.description ||
-           `[Reply ke pesan tipe *${qtype}* tidak bisa dibaca.]`
-  }
-
-  // Jika ada teks setelah .tagall, itu akan override
-  if (isiCmd) teks = isiCmd
-
   return sock.sendMessage(from, {
-    text: teks || '',
+    text: isi || '', // kirim pesan kosong jika tidak ada teks (unicode blank)
     mentions: list
   })
 }
