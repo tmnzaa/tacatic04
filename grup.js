@@ -240,10 +240,23 @@ if (isBotAktif && !isAdmin && !isOwner) {
       await tambahStrike()
     }
 
-    // 🚫 Anti Polling
-if (fitur.antipolling && isPolling) {
-  await sock.sendMessage(from, { delete: msg.key })
-  await tambahStrike()
+   // 🚫 Anti Polling - Deteksi PollCreationMessage dan hapus jika fitur aktif
+if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
+  await sock.sendMessage(from, {
+    delete: msg.key
+  })
+  const strikeDB = fs.readJsonSync(strikeFile)
+  strikeDB[from] = strikeDB[from] || {}
+  strikeDB[from][sender] = strikeDB[from][sender] || 0
+  strikeDB[from][sender] += 1
+
+  if (strikeDB[from][sender] >= 5) {
+    await sock.groupParticipantsUpdate(from, [sender], 'remove')
+    delete strikeDB[from][sender]
+  }
+
+  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+  return
 }
 
   } catch (err) {
