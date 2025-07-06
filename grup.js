@@ -453,29 +453,23 @@ for (let f of fiturList) {
 
   let teks = ''
 
-  // Ambil isi reply jika ada
-  const contextInfo = msg.message?.extendedTextMessage?.contextInfo
-  const quoted = contextInfo?.quotedMessage
+  // Cek jika reply
+  const context = msg.message?.extendedTextMessage?.contextInfo
+  const quoted = context?.quotedMessage
 
   if (quoted) {
     const qtype = Object.keys(quoted)[0]
     const qmsg = quoted[qtype]
 
-    // Coba ambil isi reply (dari beberapa kemungkinan tipe)
-    if (qmsg?.text) {
-      teks = qmsg.text
-    } else if (qmsg?.conversation) {
-      teks = qmsg.conversation
-    } else if (qmsg?.caption) {
-      teks = qmsg.caption
-    } else if (qmsg?.description) {
-      teks = qmsg.description
-    } else {
-      teks = `[Reply ke pesan tipe *${qtype}* tidak bisa dibaca.]`
-    }
+    // Deteksi semua kemungkinan tipe teks
+    teks = qmsg?.text ||
+           qmsg?.conversation ||
+           qmsg?.caption ||
+           qmsg?.description ||
+           `[Reply ke pesan tipe *${qtype}* tidak bisa dibaca.]`
   }
 
-  // Override jika ada teks langsung setelah .tagall
+  // Jika ada teks setelah .tagall, itu akan override
   if (isiCmd) teks = isiCmd
 
   return sock.sendMessage(from, {
