@@ -70,18 +70,30 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
 
 if (text.startsWith('.tiktok ')) {
   const url = text.split(' ')[1];
+
+  if (!url || !url.includes('tiktok.com')) {
+    return sock.sendMessage(from, {
+      text: '❌ Link TikTok tidak valid. Contoh: .tiktok https://www.tiktok.com/@user/video/xxxx'
+    }, { quoted: msg });
+  }
+
   try {
     const apiUrl = `https://tikwm.com/api/?url=${encodeURIComponent(url)}`;
     const res = await axios.get(apiUrl);
 
-    const videoUrl = res.data?.data?.play || res.data?.data?.hdplay;
-    if (!videoUrl) throw new Error('Gagal ambil video.');
+    const data = res.data?.data;
+    if (!data || !data.play) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Gagal mengambil video. Link mungkin tidak valid atau private.'
+      }, { quoted: msg });
+    }
 
+    const videoUrl = data.play;
     const { data: buffer } = await axios.get(videoUrl, { responseType: 'arraybuffer' });
 
     await sock.sendMessage(from, {
       video: buffer,
-      caption: '✅ Berhasil download video TikTok tanpa watermark.'
+      caption: `✅ Berhasil download video TikTok.\n👤 @${data.author?.unique_id || '-'}\n🎬 ${data.title || '-'}`
     }, { quoted: msg });
 
   } catch (err) {
