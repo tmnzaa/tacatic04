@@ -230,6 +230,13 @@ if (isBotAktif && !isAdmin && !isOwner) {
 // console.log('• isAfkLink:', isAfkLink)
 // console.log('• isPollingWithLink:', isPollingWithLink)
 
+    // 🚫 AntiLinkAFK harus didahulukan
+if (fitur.antilinkafk && isAfkLink) {
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+  return;
+}
+
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && (isLink || isAfkLink || isPollingWithLink)) {
       // console.log('📛 Deteksi link atau polling mencurigakan!');
@@ -247,13 +254,6 @@ if (isBotAktif && !isAdmin && !isOwner) {
       fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
       return;
     }
-
-    // 🚫 AntiLinkAFK: .afk + link atau polling = hapus + strike
-if (fitur.antilinkafk && isAfkLink) {
-  await sock.sendMessage(from, { delete: msg.key });
-  await tambahStrike();
-  return;
-}
 
     // 🚫 Anti Promosi
     if (fitur.antipromosi && isPromo) {
