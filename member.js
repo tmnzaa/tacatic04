@@ -325,4 +325,44 @@ if (text === '.removebg') {
       await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker teks!' }, { quoted: msg });
     }
   }
+
+  if (text.startsWith('.bratv2 ')) {
+  const teks = text.split('.bratv2 ')[1].trim();
+  if (!teks) {
+    return sock.sendMessage(from, {
+      text: '❌ Masukkan teks setelah .bratv2\nContoh: .bratv2 happy birthday sayang'
+    }, { quoted: msg });
+  }
+
+  try {
+    const filename = Date.now();
+    const pngPath = `./${filename}.png`;
+    const webpPath = `./${filename}.webp`;
+
+    const font = await Jimp.loadFont('./brat.fnt');
+    const image = new Jimp(512, 512, 0xffffffff);
+    image.print(font, 0, 0, {
+      text: teks,
+      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
+    }, 512, 512);
+
+    image.quality(100);
+    await image.writeAsync(pngPath);
+
+    await new Promise((resolve, reject) => {
+      exec(`convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 "${webpPath}"`, err => err ? reject(err) : resolve());
+    });
+
+    const buffer = fs.readFileSync(webpPath);
+    await sock.sendMessage(from, { sticker: buffer, mimetype: 'image/webp' }, { quoted: msg });
+
+    fs.unlinkSync(pngPath);
+    fs.unlinkSync(webpPath);
+  } catch (err) {
+    console.error(err);
+    await sock.sendMessage(from, { text: '⚠️ Gagal membuat stiker teks brat!' }, { quoted: msg });
+  }
+}
+
 };
