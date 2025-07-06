@@ -223,7 +223,7 @@ if (isBotAktif && !isAdmin && !isOwner) {
       }
     }
 
-   const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
+const isAfkLink = /^\.afk\s+https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text);
 
   //  console.log('📥 Pesan Diterima:', text)
 // console.log('• isLink:', isLink)
