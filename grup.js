@@ -83,6 +83,7 @@ const db = fs.readJsonSync(dbFile);
 db[from] = db[from] || {};
 db[from].nama = metadata.subject;
 const fitur = db[from];
+db[from].dnd = db[from].dnd || false;
 fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
 const now = new Date();
@@ -177,7 +178,6 @@ if (isBotAktif && !isBotAdmin) {
 ];
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
-
   const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
 
   if (!isBotAktif) {
@@ -200,6 +200,18 @@ if (isBotAktif && !isBotAdmin) {
       text: '🚫 Bot belum jadi *Admin Grup*, fitur admin tidak bisa digunakan.'
     }, { quoted: msg })
   }
+
+  if (isCommand) {
+  if (db[from].dnd) {
+    if (!isAdmin && !isOwner) {
+      await sock.sendMessage(from, {
+        text: '⚠️ Mode *Do Not Disturb* sedang aktif.\nBot tidak akan merespon command dari member biasa.'
+      }, { quoted: msg });
+      return;
+    }
+  }
+  // lanjut proses command lainnya...
+}
 
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(text); // hanya teks/caption yang mengandung link
@@ -352,6 +364,23 @@ if (isBotAktif && isAfk) {
   }, { quoted: msg });
 
   return;
+}
+
+// Cek khusus fitur dnd dulu
+if (text === '.dnd on' || text === '.dnd off') {
+  if (!isAdmin && !isOwner) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Hanya *Admin Grup* yang bisa mengaktifkan/mematikan mode DND.'
+    }, { quoted: msg });
+  }
+
+  const onOff = text.endsWith('on');
+  fitur['dnd'] = onOff;
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+
+  return sock.sendMessage(from, {
+    text: `✅ Mode *Do Not Disturb* telah *${onOff ? 'diaktifkan' : 'dimatikan'}*.`
+  }, { quoted: msg });
 }
 
  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
