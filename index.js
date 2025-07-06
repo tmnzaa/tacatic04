@@ -93,11 +93,7 @@ async function startBot() {
       const reconnect = code !== DisconnectReason.loggedOut
       console.log('❌ Terputus. Reconnect:', reconnect)
       qrShown = false
-if (reconnect) {
-  setTimeout(() => {
-    startBot()
-  }, 5000) // kasih delay 5 detik biar nggak spam reconnect
-}
+      if (reconnect) startBot()
     }
   })
 
@@ -190,8 +186,7 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-// ⏰ AUTO OPEN & CLOSE GROUP — dengan delay awal
-setTimeout(() => {
+  // ⏰ AUTO OPEN & CLOSE GROUP
   schedule.scheduleJob('* * * * *', async () => {
     const now = new Date()
     const jam = now.toTimeString().slice(0, 5).replace(':', '.')
@@ -202,21 +197,6 @@ setTimeout(() => {
       if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
 
       try {
-  if (!sock?.ws?.readyState || sock.ws.readyState !== 1) {
-    console.log(`⚠️ WS belum siap untuk grup ${id}, lewati.`)
-    continue
-  }
-
-  const metadata = await sock.groupMetadata(id) // <= ini penting ditambahkan
-
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-  const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
-
-        if (!isAdmin) {
-          console.log(`⚠️ Bot bukan admin di grup "${metadata.subject}", lewati pengaturan.`)
-          continue
-        }
-
         if (fitur.openTime === jam) {
           await sock.groupSettingUpdate(id, 'not_announcement')
           await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
@@ -228,16 +208,14 @@ setTimeout(() => {
           await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
           delete fitur.closeTime
         }
-
       } catch (err) {
-        console.error(`❌ Gagal update setting grup ${id}:`, err.message)
+        console.error('❌ Gagal update setting:', err)
       }
     }
 
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
-    fs.copyFileSync(dbFile, backupFile)
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.copyFileSync(dbFile, backupFile)
   })
-}, 5000) // <- Delay 5 detik sebelum mulai schedule
 }
 
 // 🛠 Global error
