@@ -75,6 +75,7 @@ Bot ini punya fitur:
 • Buka/tutup grup otomatis
 • Menu lengkap ketik: .menu
 • Bisa Remove bg & hd
+• Fitur lengkap
 
 💰 *Harga Sewa:*
 • 3K = 1 Minggu
