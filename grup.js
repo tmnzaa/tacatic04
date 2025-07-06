@@ -144,13 +144,14 @@ if (isBotAktif && !isBotAdmin) {
 }
 
   const allowedCommands = [
-    '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
-    '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
-    '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
-    '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-    '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
-    '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
-  ]
+  '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
+  '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
+  '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
+  '.antipolling on', '.antipolling off', // ✅ tambahkan ini
+  '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
+  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
+  '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
+];
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
 
