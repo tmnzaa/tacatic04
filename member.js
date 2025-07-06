@@ -104,6 +104,25 @@ if (text.startsWith('.tiktok ')) {
   }
 }
 
+if (text.startsWith('.ai ')) {
+  const query = text.slice(4).trim();
+  if (!query) return sock.sendMessage(from, { text: '❌ Masukkan pertanyaan setelah .ai' }, { quoted: msg });
+
+  try {
+    const res = await axios.get(`https://aemt.me/gpt?text=${encodeURIComponent(query)}`);
+    const jawaban = res.data || '⚠️ Gagal mendapatkan jawaban.';
+    
+    await sock.sendMessage(from, {
+      text: `🤖 *Jawaban AI:*\n${jawaban}`
+    }, { quoted: msg });
+  } catch (err) {
+    console.error(err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal menghubungi AI. Coba beberapa saat lagi.'
+    }, { quoted: msg });
+  }
+}
+
  if (text === '.hd') {
   // // 💥 Batasi 2x per hari untuk member biasa
   // if (!isAdmin && !isOwner) {
