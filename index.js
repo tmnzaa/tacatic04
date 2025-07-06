@@ -62,7 +62,7 @@ function resetFiturSaatRestart() {
   }
 fs.writeJsonSync(dbFile, db, { spaces: 2 })
 fs.copyFileSync(dbFile, backupFile) // backup otomatis
-  console.log(`♻️ Semua fitur dimatikan di ${totalReset} grup karena restart.`)
+  console.log(♻️ Semua fitur dimatikan di ${totalReset} grup karena restart.)
 }
 
 async function startBot() {
@@ -113,7 +113,7 @@ sock.ev.on('messages.upsert', async ({ messages }) => {
     console.log('🚫 Deteksi polling dari:', sender)
 
     await sock.sendMessage(from, {
-      text: `❌ @${sender.split('@')[0]} dilarang kirim polling di grup ini.`,
+      text: ❌ @${sender.split('@')[0]} dilarang kirim polling di grup ini.,
       mentions: [sender]
     })
 
@@ -158,9 +158,9 @@ sock.ev.on('group-participants.update', async (update) => {
 
       // WELCOME
       if (update.action === 'add' && fitur.welcome) {
-        let teks = fitur.welcomeText || `hello @name, selamat datang di *@grup*!`
+        let teks = fitur.welcomeText || hello @name, selamat datang di *@grup*!
         teks = teks
-          .replace(/@user/g, `@${jid.split('@')[0]}`)
+          .replace(/@user/g, @${jid.split('@')[0]})
           .replace(/@name/g, name)
           .replace(/@grup/g, groupName)
 
@@ -173,7 +173,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
       // LEAVE
       if (update.action === 'remove' && fitur.leave) {
-        const teks = `@${jid.split('@')[0]} yahh ko keluar si:) *${groupName}*.`
+        const teks = @${jid.split('@')[0]} yahh ko keluar si:) *${groupName}*.
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
@@ -186,20 +186,17 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-// ⏰ AUTO OPEN & CLOSE GROUP
+  // ⏰ AUTO OPEN & CLOSE GROUP
   schedule.scheduleJob('* * * * *', async () => {
     const now = new Date()
     const jam = now.toTimeString().slice(0, 5).replace(':', '.')
     const db = fs.readJsonSync(dbFile)
 
-
-
     for (const id in db) {
       const fitur = db[id]
       if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
-    try {
-    try {
 
+      try {
         if (fitur.openTime === jam) {
           await sock.groupSettingUpdate(id, 'not_announcement')
           await sock.sendMessage(id, { text: ✅ Grup dibuka otomatis jam *${jam}* })
@@ -216,11 +213,10 @@ sock.ev.on('group-participants.update', async (update) => {
       }
     }
 
-
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
 fs.copyFileSync(dbFile, backupFile)
   })
-    }
+}
 
 // 🛠 Global error
 process.on('unhandledRejection', err => {
