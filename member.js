@@ -69,10 +69,11 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
 }
 
 if (text.startsWith('.tiktok ')) {
-  const url = text.split('.tiktok ')[1].trim();
-  if (!url.startsWith('http')) {
+  const url = text.trim().split(' ')[1];
+  
+  if (!/^https?:\/\//.test(url)) {
     return sock.sendMessage(from, {
-      text: '❌ Link TikTok tidak valid. Contoh:\n.tiktok https://vt.tiktok.com/xxx'
+      text: '❌ Link TikTok tidak valid.\nContoh: .tiktok https://vt.tiktok.com/xxxx'
     }, { quoted: msg });
   }
 
@@ -80,18 +81,24 @@ if (text.startsWith('.tiktok ')) {
     const res = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`);
     const videoUrl = res.data?.video?.no_watermark;
 
-    if (!videoUrl) throw new Error('Gagal ambil video');
+    if (!videoUrl) {
+      return sock.sendMessage(from, {
+        text: '⚠️ Gagal mengambil video. Coba lagi atau gunakan link lain.'
+      }, { quoted: msg });
+    }
 
     const { data: videoBuffer } = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+
     await sock.sendMessage(from, {
       video: videoBuffer,
-      caption: `✅ Video tanpa watermark\n🎬 ${res.data.desc || 'Tanpa deskripsi'}\n👤 @${res.data.author || 'unknown'}`,
+      caption: `✅ *Berhasil download!*\n🎬 ${res.data.desc || 'Tanpa deskripsi'}\n👤 ${res.data.author || 'Unknown'}`,
       mimetype: 'video/mp4'
     }, { quoted: msg });
+
   } catch (err) {
     console.error('❌ TikTok Error:', err.message);
-    return sock.sendMessage(from, {
-      text: '⚠️ Gagal download video. Pastikan link valid dan coba lagi.'
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal download video TikTok.\nCoba lagi atau cek apakah link-nya benar.'
     }, { quoted: msg });
   }
 }
