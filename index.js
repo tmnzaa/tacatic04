@@ -28,6 +28,7 @@ function resetFiturSaatRestart() {
     fitur.antitoxic = false
     fitur.welcome = false
     fitur.leave = false
+    fitur.antipolling = false
     totalReset++
   }
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
