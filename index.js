@@ -186,46 +186,48 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-  // ⏰ AUTO OPEN & CLOSE GROUP
- schedule.scheduleJob('* * * * *', async () => {
-  const now = new Date()
-  const jam = now.toTimeString().slice(0, 5).replace(':', '.')
-  const db = fs.readJsonSync(dbFile)
+// ⏰ AUTO OPEN & CLOSE GROUP — dengan delay awal
+setTimeout(() => {
+  schedule.scheduleJob('* * * * *', async () => {
+    const now = new Date()
+    const jam = now.toTimeString().slice(0, 5).replace(':', '.')
+    const db = fs.readJsonSync(dbFile)
 
-  for (const id in db) {
-    const fitur = db[id]
-    if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
+    for (const id in db) {
+      const fitur = db[id]
+      if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
 
-    try {
-      const metadata = await sock.groupMetadata(id)
-      const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-      const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
+      try {
+        const metadata = await sock.groupMetadata(id)
+        const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+        const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
 
-      if (!isAdmin) {
-        console.log(`⚠️ Bot bukan admin di grup "${metadata.subject}", lewati pengaturan.`)
-        continue
+        if (!isAdmin) {
+          console.log(`⚠️ Bot bukan admin di grup "${metadata.subject}", lewati pengaturan.`)
+          continue
+        }
+
+        if (fitur.openTime === jam) {
+          await sock.groupSettingUpdate(id, 'not_announcement')
+          await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
+          delete fitur.openTime
+        }
+
+        if (fitur.closeTime === jam) {
+          await sock.groupSettingUpdate(id, 'announcement')
+          await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
+          delete fitur.closeTime
+        }
+
+      } catch (err) {
+        console.error(`❌ Gagal update setting grup ${id}:`, err.message)
       }
-
-      if (fitur.openTime === jam) {
-        await sock.groupSettingUpdate(id, 'not_announcement')
-        await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
-        delete fitur.openTime
-      }
-
-      if (fitur.closeTime === jam) {
-        await sock.groupSettingUpdate(id, 'announcement')
-        await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
-        delete fitur.closeTime
-      }
-
-    } catch (err) {
-      console.error(`❌ Gagal update setting grup ${id}:`, err.message)
     }
-  }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
-  fs.copyFileSync(dbFile, backupFile)
-})
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    fs.copyFileSync(dbFile, backupFile)
+  })
+}, 5000) // <- Delay 5 detik sebelum mulai schedule
 }
 
 // 🛠 Global error
