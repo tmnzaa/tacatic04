@@ -93,7 +93,11 @@ async function startBot() {
       const reconnect = code !== DisconnectReason.loggedOut
       console.log('❌ Terputus. Reconnect:', reconnect)
       qrShown = false
-      if (reconnect) startBot()
+if (reconnect) {
+  setTimeout(() => {
+    startBot()
+  }, 5000) // kasih delay 5 detik biar nggak spam reconnect
+}
     }
   })
 
@@ -198,9 +202,15 @@ setTimeout(() => {
       if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
 
       try {
-        const metadata = await sock.groupMetadata(id)
-        const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-        const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
+  if (!sock?.ws?.readyState || sock.ws.readyState !== 1) {
+    console.log(`⚠️ WS belum siap untuk grup ${id}, lewati.`)
+    continue
+  }
+
+  const metadata = await sock.groupMetadata(id) // <= ini penting ditambahkan
+
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+  const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
 
         if (!isAdmin) {
           console.log(`⚠️ Bot bukan admin di grup "${metadata.subject}", lewati pengaturan.`)
