@@ -326,6 +326,7 @@ if (text === '.removebg') {
     }
   }
 
+    //brat2
   if (text.startsWith('.bratv2 ')) {
   const teks = text.split('.bratv2 ')[1].trim();
   if (!teks) {
@@ -341,11 +342,11 @@ if (text === '.removebg') {
 
     const font = await Jimp.loadFont('./brat.fnt');
     const image = new Jimp(512, 512, 0xffffffff);
-    image.print(font, 0, 0, {
-      text: teks,
-      alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-      alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-    }, 512, 512);
+    image.print(font, 0, 100, {
+  text: teks,
+  alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
+  alignmentY: Jimp.VERTICAL_ALIGN_TOP
+}, 512, 300); // Hanya pakai tengah atas
 
     image.quality(100);
     await image.writeAsync(pngPath);
