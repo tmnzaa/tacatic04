@@ -75,7 +75,7 @@ const isBotOwner = sender === OWNER_BOT;
 const isOwner = isBotOwner; // ✅ hanya owner bot yang dianggap owner
 const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const isPolling = !!msg.message?.pollCreationMessage;
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
 const db = fs.readJsonSync(dbFile);
 db[from] = db[from] || {};
