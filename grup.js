@@ -305,6 +305,7 @@ if (text === '.menu') {
 • 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
 • 📄 _.setdesc_  → Ubah deskripsi grup
 • 💡 _.cekaktif_      → Cek fitur aktif
+• 📴 _.dnd on/off_   → Bot tidak akan merespon perintah dari member biasa
 
 📊 *FITUR LAINNYA*:
 • 🖼️ _.stiker_        → Buat stiker dari gambar
