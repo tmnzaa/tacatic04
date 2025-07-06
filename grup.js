@@ -87,7 +87,6 @@ const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
-  console.log('📛 Polling terdeteksi dari', sender);
   await sock.sendMessage(from, { delete: msg.key });
 
   const strikeDB = fs.readJsonSync(strikeFile);
@@ -248,6 +247,13 @@ if (isBotAktif && !isAdmin && !isOwner) {
       return;
     }
 
+    // 🚫 AntiLinkAFK: .afk + link atau polling = hapus + strike
+if (fitur.antilinkafk && isAfkLink) {
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+  return;
+}
+
     // 🚫 Anti Promosi
     if (fitur.antipromosi && isPromo) {
       await sock.sendMessage(from, { delete: msg.key })
@@ -333,7 +339,7 @@ Contoh: _.addbrat Selamat ulang tahun_
 }
 
 
- const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
+const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'antilinkafk']
 
 for (let f of fiturList) {
   if (text === `.${f} on`) {
