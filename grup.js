@@ -447,27 +447,34 @@ for (let f of fiturList) {
   }
 }
 
- // 👮 .tagall bisa reply, atau pakai teks
-if (text.startsWith('.tagall')) {
+ if (text.startsWith('.tagall')) {
   const isiCmd = text.split('.tagall')[1]?.trim()
   const list = metadata.participants.map(p => p.id)
 
   let teks = ''
 
-  // Ambil dari reply jika ada
+  // Ambil isi reply jika ada
   if (msg.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
     const quoted = msg.message.extendedTextMessage.contextInfo.quotedMessage
     const qtype = Object.keys(quoted)[0]
+    const qmsg = quoted[qtype]
 
-    // Ambil isi pesan dari reply
-    teks = quoted[qtype]?.text || quoted[qtype]?.caption || '[Tidak bisa ambil isi reply]'
+    if (qmsg?.text) {
+      teks = qmsg.text
+    } else if (qmsg?.caption) {
+      teks = qmsg.caption
+    } else if (qmsg?.description) {
+      teks = qmsg.description
+    } else {
+      teks = '[Pesan tidak bisa dibaca atau bukan teks]'
+    }
   }
 
-  // Override isi jika pengguna ketik teks setelah .tagall
+  // Override isi jika user kirim teks setelah .tagall
   if (isiCmd) teks = isiCmd
 
   return sock.sendMessage(from, {
-    text: teks || '', // tetap kirim pesan meskipun kosong
+    text: teks || '',
     mentions: list
   })
 }
