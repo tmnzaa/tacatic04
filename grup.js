@@ -51,6 +51,7 @@ module.exports = async (sock, msg) => {
 const text = getTextFromMsg(msg);
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   const isCommand = text.startsWith('.');
+  const isAfk = text.toLowerCase().startsWith('.afk');
 
   // ⛔ Hapus .menu dari allowedForAll, biar .menu bisa dibedain member/admin
 const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
@@ -171,6 +172,7 @@ if (isBotAktif && !isBotAdmin) {
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
   '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
   '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
+   '.afk',
 ];
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -329,6 +331,27 @@ Contoh: _.addbrat Selamat ulang tahun_
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`,
     }, { quoted: msg });
   }
+}
+
+if (isBotAktif && isAfk) {
+  const alasan = text.split('.afk')[1]?.trim() || 'AFK';
+
+  // Jika mengandung link atau polling → hapus
+  if (isLink || isPollingWithLink) {
+    await sock.sendMessage(from, {
+      text: '⚠️ Tidak boleh menyisipkan *link* atau *polling* saat AFK!',
+    }, { quoted: msg });
+    await sock.sendMessage(from, { delete: msg.key });
+    return;
+  }
+
+  // Balas ke grup bahwa user AFK
+  await sock.sendMessage(from, {
+    text: `🛌 @${sender.split('@')[0]} sekarang sedang *AFK*.\n📝 Alasan: ${alasan}`,
+    mentions: [sender]
+  }, { quoted: msg });
+
+  return;
 }
 
 
