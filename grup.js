@@ -475,7 +475,7 @@ if (text.startsWith('.tagall')) {
 
   await sock.groupParticipantsUpdate(from, targets, 'remove')
   return sock.sendMessage(from, {
-    text: `👢 Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
+    text: `Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
     mentions: targets
   })
 }
