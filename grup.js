@@ -129,7 +129,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
 }
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
-  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
+  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
   const now = new Date()
   const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
@@ -149,7 +149,7 @@ if (isBotAktif && !isBotAdmin) {
     '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
     '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
     '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
-    '.setdesc','.leave on', '.leave off',
+    '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
   ]
 
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
@@ -457,8 +457,8 @@ if (text.startsWith('.close')) {
   return sock.sendMessage(from, { text: '🔒 Grup ditutup! Waktunya istirahat!' }) // <== tambahkan return
 }
 
-  if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome']
+ if (text === '.cekaktif') {
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
   let aktif = ''
   let mati = ''
 
