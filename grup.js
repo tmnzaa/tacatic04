@@ -75,15 +75,38 @@ const isBotOwner = sender === OWNER_BOT;
 const isOwner = isBotOwner; // ✅ hanya owner bot yang dianggap owner
 const isAdmin = metadata.participants.find(p => p.id === sender)?.admin;
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
-
-if (mentions.includes(botNumber) && !isCommand) return;
+const isPolling = !!msg.message?.pollCreationMessage;
 
 const db = fs.readJsonSync(dbFile);
 db[from] = db[from] || {};
 db[from].nama = metadata.subject;
 const fitur = db[from];
 fs.writeJsonSync(dbFile, db, { spaces: 2 });
+
+const now = new Date();
+const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
+
+if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
+  console.log('📛 Polling terdeteksi dari', sender);
+  await sock.sendMessage(from, { delete: msg.key });
+
+  const strikeDB = fs.readJsonSync(strikeFile);
+  strikeDB[from] = strikeDB[from] || {};
+  strikeDB[from][sender] = strikeDB[from][sender] || 0;
+  strikeDB[from][sender] += 1;
+
+  if (strikeDB[from][sender] >= 5) {
+    await sock.groupParticipantsUpdate(from, [sender], 'remove');
+    delete strikeDB[from][sender];
+  }
+
+  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+  return;
+}
+
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin;
+
+if (mentions.includes(botNumber) && !isCommand) return;
 
 if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)) {
   if (!isBotAdmin) {
@@ -131,8 +154,6 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok'];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
-  const now = new Date()
-  const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now)
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
   const fullCmd = text.trim().toLowerCase()
 
@@ -178,7 +199,6 @@ if (isBotAktif && !isBotAdmin) {
     }, { quoted: msg })
   }
 
-const isPolling = !!msg.message?.pollCreationMessage;
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(text); // hanya teks/caption yang mengandung link
 const isPollingWithLink = isPolling && linkRegex.test(text); // polling + ada link di caption
@@ -239,25 +259,6 @@ if (isBotAktif && !isAdmin && !isOwner) {
       await sock.sendMessage(from, { delete: msg.key })
       await tambahStrike()
     }
-
-   // 🚫 Anti Polling - Deteksi PollCreationMessage dan hapus jika fitur aktif
-if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
-  await sock.sendMessage(from, {
-    delete: msg.key
-  })
-  const strikeDB = fs.readJsonSync(strikeFile)
-  strikeDB[from] = strikeDB[from] || {}
-  strikeDB[from][sender] = strikeDB[from][sender] || 0
-  strikeDB[from][sender] += 1
-
-  if (strikeDB[from][sender] >= 5) {
-    await sock.groupParticipantsUpdate(from, [sender], 'remove')
-    delete strikeDB[from][sender]
-  }
-
-  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
-  return
-}
 
   } catch (err) {
     console.error('❌ Filter error:', err)
