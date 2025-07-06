@@ -172,7 +172,7 @@ if (isBotAktif && !isBotAdmin) {
   '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
   '.antipolling on', '.antipolling off', // ✅ tambahkan ini
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',
+  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',  '.bratv2',
   '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
    '.afk', '.dnd on', '.dnd off',  // <<-- pastikan disini ya
 ];
@@ -310,6 +310,7 @@ if (text === '.menu') {
 📊 *FITUR LAINNYA*:
 • 🖼️ _.stiker_        → Buat stiker dari gambar
 • 🔤 _.addbrat teks_  → Buat stiker teks brat
+• 🔤 _.bratv2 teks_  → Buat stiker teks brat
 • 📷 _.hd_            → Ubah gambar jadi HD
 • 🧼 _.removebg_      → Hapus background gambar
 • 🎵 _.tiktok <link>_ → Download video TikTok tanpa watermark
@@ -338,6 +339,10 @@ if (text === '.menu') {
 • 🔤 _.addbrat teks_  
 → Buat stiker teks lucu  
 Contoh: _.addbrat Selamat ulang tahun_
+
+• 🔤 _.bratv2 teks_  
+→ Buat stiker teks elegan 
+Contoh: _.bratv2 haloo gais_
 
 • 📋 _.menu_  
 → Lihat daftar fitur yang tersedia
