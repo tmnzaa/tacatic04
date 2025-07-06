@@ -537,9 +537,9 @@ if (text.startsWith('.close')) {
   }
 
   return sock.sendMessage(from, {
-    text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired || 'Belum aktif'}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
-    }, { quoted: msg });
-}
+  text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${fitur.expired === 'permanent' ? 'Permanen' : (fitur.expired || 'Belum aktif')}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
+}, { quoted: msg });
+
 
 // if (text.startsWith('.setwelcome')) {
 //   if (!isAdmin && !isOwner) {
