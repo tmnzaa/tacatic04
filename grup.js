@@ -524,7 +524,7 @@ if (text.startsWith('.close')) {
 }
 
  if (text === '.cekaktif') {
-  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
+  const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling', 'dnd']
   let aktif = ''
   let mati = ''
 
