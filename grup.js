@@ -239,6 +239,12 @@ if (isBotAktif && !isAdmin && !isOwner) {
       await tambahStrike()
     }
 
+    // 🚫 Anti Polling
+if (fitur.antipolling && isPolling) {
+  await sock.sendMessage(from, { delete: msg.key })
+  await tambahStrike()
+}
+
   } catch (err) {
     console.error('❌ Filter error:', err)
   }
@@ -255,6 +261,7 @@ if (text === '.menu') {
 • 🚷 _.antilink2 on/off_  → Hapus link + tendang user
 • 📢 _.antipromosi on/off_  → Blok iklan dan spam
 • 🤬 _.antitoxic on/off_  → Bersihin kata-kata kasar
+• 📊 _.antipolling on/off_ → Hapus polling yang dikirim
 
 🎉 *FITUR SOSIAL & INTERAKSI*:
 • 🎉 _.welcome on/off_  → Sambutan buat member baru
@@ -311,7 +318,7 @@ Contoh: _.addbrat Selamat ulang tahun_
 }
 
 
- const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave']
+ const fiturList = ['antilink1', 'antilink2', 'antipromosi', 'antitoxic', 'welcome', 'leave', 'antipolling']
 
 for (let f of fiturList) {
   if (text === `.${f} on`) {
