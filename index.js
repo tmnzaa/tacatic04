@@ -77,25 +77,32 @@ sock.ev.on('messages.upsert', async ({ messages }) => {
   const db = fs.readJsonSync(dbFile)
   const fitur = db[from]
 
-  // 🚫 Deteksi dan hapus polling
-  if (msg.message?.pollCreationMessage && fitur?.antipolling) {
-    await sock.sendMessage(from, {
-      text: `❌ Polling tidak diperbolehkan di grup ini!`,
-      mentions: [sender]
-    }, { quoted: msg })
+  // ✅ ANTIPOLLING
+  if (fitur?.antipolling && msg.message.pollCreationMessage) {
+    console.log('🚫 Deteksi polling dari:', sender)
 
-    // Hapus pesan polling
     await sock.sendMessage(from, {
-      delete: {
-        remoteJid: from,
-        fromMe: false,
-        id: msg.key.id,
-        participant: sender
-      }
+      text: `❌ @${sender.split('@')[0]} dilarang kirim polling di grup ini.`,
+      mentions: [sender]
     })
-    return // Stop lanjut ke handler lain
+
+    try {
+      await sock.sendMessage(from, {
+        delete: {
+          remoteJid: from,
+          fromMe: false,
+          id: msg.key.id,
+          participant: sender
+        }
+      })
+      console.log('✅ Polling berhasil dihapus.')
+    } catch (err) {
+      console.error('❌ Gagal hapus polling:', err)
+    }
+    return
   }
 
+  // Handler lain
   try {
     require('./grup')(sock, msg)
     require('./private')(sock, msg)
