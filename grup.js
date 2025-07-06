@@ -223,15 +223,17 @@ if (isBotAktif && !isAdmin && !isOwner) {
       }
     }
 
-const isAfkLink = /^\.afk\s+https:\/\/chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text);
+const isAfkLink = /^\.afk\s+(https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,}/i.test(text) ||
+                  (text.startsWith('.afk') && text.includes('chat.whatsapp.com'));
 
   //  console.log('📥 Pesan Diterima:', text)
 // console.log('• isLink:', isLink)
 // console.log('• isAfkLink:', isAfkLink)
 // console.log('• isPollingWithLink:', isPollingWithLink)
 
-    // 🚫 AntiLinkAFK harus didahulukan
-if (fitur.antilinkafk && isAfkLink) {
+   if (fitur.antilinkafk && isAfkLink) {
+  await sock.sendMessage(from, {
+  });
   await sock.sendMessage(from, { delete: msg.key });
   await tambahStrike();
   return;
