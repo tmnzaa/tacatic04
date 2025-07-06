@@ -188,34 +188,61 @@ sock.ev.on('group-participants.update', async (update) => {
 
   // ⏰ AUTO OPEN & CLOSE GROUP
   schedule.scheduleJob('* * * * *', async () => {
-    const now = new Date()
-    const jam = now.toTimeString().slice(0, 5).replace(':', '.')
-    const db = fs.readJsonSync(dbFile)
+  const now = new Date()
+  const jamSekarang = `${now.getHours().toString().padStart(2, '0')}.${now.getMinutes().toString().padStart(2, '0')}`
 
-    for (const id in db) {
-      const fitur = db[id]
-      if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
+  let db = {}
+  try {
+    db = fs.readJsonSync(dbFile)
+  } catch (err) {
+    console.error('❌ Gagal baca grup.json:', err.message)
+    return
+  }
 
-      try {
-        if (fitur.openTime === jam) {
-          await sock.groupSettingUpdate(id, 'not_announcement')
-          await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
-          delete fitur.openTime
-        }
+  for (const id in db) {
+    const fitur = db[id]
+    if (!fitur) continue
 
-        if (fitur.closeTime === jam) {
-          await sock.groupSettingUpdate(id, 'announcement')
-          await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
-          delete fitur.closeTime
-        }
-      } catch (err) {
-        console.error('❌ Gagal update setting:', err)
+    try {
+      const metadata = await sock.groupMetadata(id)
+      const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+      const isAdmin = metadata.participants.some(p => p.id === botNumber && p.admin)
+
+      if (!isAdmin) {
+        console.log(`⚠️ Bot bukan admin di grup "${metadata.subject}", skip.`)
+        continue
       }
-    }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
-fs.copyFileSync(dbFile, backupFile)
-  })
+      // OPEN GROUP
+      if (fitur.openTime && fitur.openTime <= jamSekarang) {
+        await sock.groupSettingUpdate(id, 'not_announcement')
+        await sock.sendMessage(id, {
+          text: `✅ Grup dibuka otomatis pada jam *${fitur.openTime}*`
+        })
+        delete fitur.openTime
+      }
+
+      // CLOSE GROUP
+      if (fitur.closeTime && fitur.closeTime <= jamSekarang) {
+        await sock.groupSettingUpdate(id, 'announcement')
+        await sock.sendMessage(id, {
+          text: `🔒 Grup ditutup otomatis pada jam *${fitur.closeTime}*`
+        })
+        delete fitur.closeTime
+      }
+
+    } catch (err) {
+      console.error(`❌ Error update grup ${id}:`, err.message)
+    }
+  }
+
+  try {
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    fs.copyFileSync(dbFile, backupFile)
+  } catch (err) {
+    console.error('❌ Gagal simpan ke file:', err.message)
+  }
+})
 }
 
 // 🛠 Global error
