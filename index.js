@@ -12,7 +12,36 @@ const axios = require('axios')
 
 // === File Database ===
 const dbFile = './grup.json'
-if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {})
+const backupFile = './backup_grup.json'
+
+// Pemulihan otomatis saat file hilang/rusak
+let db = {}
+if (!fs.existsSync(dbFile)) {
+  console.warn('⚠️ grup.json tidak ditemukan. Coba pulihkan dari backup...')
+  if (fs.existsSync(backupFile)) {
+    fs.copyFileSync(backupFile, dbFile)
+    db = fs.readJsonSync(dbFile)
+    console.log('✅ grup.json dipulihkan dari backup.')
+  } else {
+    console.warn('❌ Tidak ada backup. Membuat file kosong.')
+    fs.writeJsonSync(dbFile, {})
+    db = {}
+  }
+} else {
+  try {
+    db = fs.readJsonSync(dbFile)
+  } catch (err) {
+    console.error('❌ grup.json rusak! Pulihkan dari backup jika ada...')
+    if (fs.existsSync(backupFile)) {
+      fs.copyFileSync(backupFile, dbFile)
+      db = fs.readJsonSync(dbFile)
+      console.log('✅ grup.json dipulihkan dari backup.')
+    } else {
+      console.error('❌ Tidak ada backup. Grup dimulai kosong.')
+      db = {}
+    }
+  }
+}
 
 let qrShown = false
 
@@ -31,7 +60,8 @@ function resetFiturSaatRestart() {
     fitur.antipolling = false
     totalReset++
   }
-  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.copyFileSync(dbFile, backupFile) // backup otomatis
   console.log(`♻️ Semua fitur dimatikan di ${totalReset} grup karena restart.`)
 }
 
@@ -183,7 +213,8 @@ sock.ev.on('group-participants.update', async (update) => {
       }
     }
 
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+  fs.writeJsonSync(dbFile, db, { spaces: 2 })
+fs.copyFileSync(dbFile, backupFile)
   })
 }
 
