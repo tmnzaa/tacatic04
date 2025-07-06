@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
+const { v1 } = require('tiklydown-sanzy');
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -69,36 +70,24 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
 }
 
 if (text.startsWith('.tiktok ')) {
-  const url = text.trim().split(' ')[1];
-  
-  if (!/^https?:\/\//.test(url)) {
-    return sock.sendMessage(from, {
-      text: '❌ Link TikTok tidak valid.\nContoh: .tiktok https://vt.tiktok.com/xxxx'
-    }, { quoted: msg });
-  }
-
+  const url = text.split(' ')[1];
   try {
-    const res = await axios.get(`https://api.tiklydown.eu.org/api/download?url=${encodeURIComponent(url)}`);
-    const videoUrl = res.data?.video?.no_watermark;
+    const data = await v1(url);
+    const no_watermark = data.video?.no_watermark;
 
-    if (!videoUrl) {
-      return sock.sendMessage(from, {
-        text: '⚠️ Gagal mengambil video. Coba lagi atau gunakan link lain.'
-      }, { quoted: msg });
-    }
+    if (!no_watermark) throw new Error('Link video tidak ditemukan.');
 
-    const { data: videoBuffer } = await axios.get(videoUrl, { responseType: 'arraybuffer' });
+    const { data: buffer } = await axios.get(no_watermark, { responseType: 'arraybuffer' });
 
     await sock.sendMessage(from, {
-      video: videoBuffer,
-      caption: `✅ *Berhasil download!*\n🎬 ${res.data.desc || 'Tanpa deskripsi'}\n👤 ${res.data.author || 'Unknown'}`,
-      mimetype: 'video/mp4'
+      video: buffer,
+      caption: '✅ Video TikTok tanpa watermark berhasil diunduh.'
     }, { quoted: msg });
 
   } catch (err) {
     console.error('❌ TikTok Error:', err.message);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal download video TikTok.\nCoba lagi atau cek apakah link-nya benar.'
+      text: '⚠️ Gagal download video TikTok.\nPastikan link benar atau coba lagi nanti.'
     }, { quoted: msg });
   }
 }
