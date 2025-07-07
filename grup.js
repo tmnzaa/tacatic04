@@ -490,14 +490,16 @@ if (text.startsWith('.tagall')) {
   if (text.startsWith('.kick')) {
   if (!isAdmin && !isOwner) {
     return sock.sendMessage(from, {
-      text: '⚠️ Hanya admin grup yang bisa menendang member!'
-    }, { quoted: msg })
+      text: '⚠️ Hanya admin grup yang bisa menendang member!',
+      quoted: msg
+    })
   }
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
-      text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
-    }, { quoted: msg })
+      text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!',
+      quoted: msg
+    })
   }
 
   const context = msg.message?.extendedTextMessage?.contextInfo || {}
@@ -507,16 +509,25 @@ if (text.startsWith('.tagall')) {
 
   if (!targets.length) {
     return sock.sendMessage(from, {
-      text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
-    }, { quoted: msg })
+      text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.',
+      quoted: msg
+    })
   }
 
-  await sock.groupParticipantsUpdate(from, targets, 'remove')
+  try {
+    await sock.groupParticipantsUpdate(from, targets, 'remove')
 
-  return sock.sendMessage(from, {
-    text: '📢 *Sewa bot hanya 3k / 7 hari!*',
-    quoted: msg // ← ini bikin bot nge-reply ke pesan user
-  })
+    return sock.sendMessage(from, {
+      text: '📢 *Sewa bot hanya 3k / 7 hari!*',
+      quoted: msg // ini baru bener posisinya
+    })
+  } catch (err) {
+    console.error(err)
+    return sock.sendMessage(from, {
+      text: '❌ Gagal menendang member.',
+      quoted: msg
+    })
+  }
 }
 
   // 👑 Promote
