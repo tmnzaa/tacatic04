@@ -89,7 +89,50 @@ Bot ini punya fitur:
 3. Chat owner untuk aktifkan bot
 4. Bot aktif
 
-⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.`
+⚠️ Aktif hanya kalau bot jadi admin & owner grup aktifkan.
+🔑 Jika ingin sewa, ketik *.mausewa*`
+  })
+}
+
+// 💳 Info sistem transfer sewa bot
+if (text === '.mausewa') {
+  return sock.sendMessage(from, {
+    text: `💳 *SISTEM PEMBAYARAN SEWA BOT TACATIC 04*
+
+📦 Harga:
+• 3K = 1 Minggu
+• 5K = 1 Bulan
+• 7K = 2 Bulan
+• 10K = Permanen
+
+🔁 Transfer bisa via:
+• .Dana
+• .Gopay
+• .Qris
+
+Setelah transfer, ketik .owner untuk aktivasi bot.`
+  })
+}
+
+// 💰 DANA
+if (text === '.Dana') {
+  return sock.sendMessage(from, {
+    text: `💰 *PEMBAYARAN DANA*\n\nSilakan transfer ke:\n📲 08xxxxxxxxxx a.n Caa\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+  })
+}
+
+// 💰 GOPAY
+if (text === '.Gopay') {
+  return sock.sendMessage(from, {
+    text: `💰 *PEMBAYARAN GOPAY*\n\nSilakan transfer ke:\n📲 08xxxxxxxxxx a.n Caa\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+  })
+}
+
+// 📷 QRIS (dengan gambar opsional)
+if (text === '.Qris') {
+  await sock.sendMessage(from, {
+    image: { url: 'https://i.imgur.com/SlJp7XB.jpg' },
+    caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner* untuk aktivasi.`
   })
 }
 
@@ -104,7 +147,7 @@ TEL;type=CELL;type=VOICE;waid=${OWNER_NUM}:${OWNER_NUM}
 END:VCARD`;
 
   await sock.sendMessage(from, {
-    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan yaaaaa~`
+    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`
   }, { quoted: msg });
 
   return sock.sendMessage(from, {
