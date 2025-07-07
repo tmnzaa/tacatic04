@@ -694,6 +694,7 @@ if (text.startsWith('.setdesc')) {
 
 // Jalankan command valid
 if (isCommand && isCmdValid) {
+    await sock.sendPresenceUpdate('composing', from) // ⌨️ Bot mengetik    
   // lanjut proses handler command sesuai daftar yang dikenali (sudah ada di bawah)
 }
 
@@ -718,6 +719,32 @@ if (isCommand && !isCmdValid) {
       console.log(`🚫 [CMD] Toxic dihapus walau command tidak dikenal: ${text}`);
       return;
     }
+  }
+}
+
+// 🎭 Auto Reaction Emoji
+if (isBotAktif && !isCommand) {
+  const loveWords = ['love u',]
+  const angryWords = kataKasar
+
+  const lowerText = text.toLowerCase()
+
+  if (loveWords.some(k => lowerText.includes(k))) {
+    await sock.sendMessage(from, {
+      react: {
+        text: '❤️',
+        key: msg.key
+      }
+    })
+  }
+
+  if (angryWords.some(k => lowerText.includes(k))) {
+    await sock.sendMessage(from, {
+      react: {
+        text: '😡',
+        key: msg.key
+      }
+    })
   }
 }
 
