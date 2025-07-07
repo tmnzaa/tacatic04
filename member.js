@@ -100,52 +100,52 @@ if (text.startsWith('.tiktok ')) {
   }
 }
 
-// 📷 .hdv2 – tajam dan warna keluar
-if (text === '.hdv2') {
-  const context = msg.message?.extendedTextMessage?.contextInfo;
-  const quotedMsg = context?.quotedMessage;
+// // 📷 .hdv2 – tajam dan warna keluar
+// if (text === '.hdv2') {
+//   const context = msg.message?.extendedTextMessage?.contextInfo;
+//   const quotedMsg = context?.quotedMessage;
 
-  if (!quotedMsg || !quotedMsg.imageMessage) {
-    return sock.sendMessage(from, {
-      text: '❌ Reply gambar lalu ketik *.hdv2* untuk membuat versi lebih tajam dan jernih.'
-    }, { quoted: msg });
-  }
+//   if (!quotedMsg || !quotedMsg.imageMessage) {
+//     return sock.sendMessage(from, {
+//       text: '❌ Reply gambar lalu ketik *.hdv2* untuk membuat versi lebih tajam dan jernih.'
+//     }, { quoted: msg });
+//   }
 
-  try {
-    const buffer = await downloadMediaMessage(
-      { message: { imageMessage: quotedMsg.imageMessage } },
-      'buffer',
-      {},
-      { logger: console, reuploadRequest: sock.updateMediaMessage }
-    );
+//   try {
+//     const buffer = await downloadMediaMessage(
+//       { message: { imageMessage: quotedMsg.imageMessage } },
+//       'buffer',
+//       {},
+//       { logger: console, reuploadRequest: sock.updateMediaMessage }
+//     );
 
-    const tempPath = `./hdv2-${Date.now()}.jpg`;
-    fs.writeFileSync(tempPath, buffer);
+//     const tempPath = `./hdv2-${Date.now()}.jpg`;
+//     fs.writeFileSync(tempPath, buffer);
 
-    const image = await Jimp.read(tempPath);
-    image
-      .resize(600, Jimp.AUTO)         // kecil tapi tetap jernih
-      .contrast(0.2)                  // cukup tajam
-      .brightness(0.2)                // cukup terang
-      .normalize()                    // seimbangkan warna
-      .quality(93);                   // kualitas bagus, ukuran kecil
+//     const image = await Jimp.read(tempPath);
+//     image
+//       .resize(600, Jimp.AUTO)         // kecil tapi tetap jernih
+//       .contrast(0.2)                  // cukup tajam
+//       .brightness(0.2)                // cukup terang
+//       .normalize()                    // seimbangkan warna
+//       .quality(93);                   // kualitas bagus, ukuran kecil
 
-    await image.writeAsync(tempPath);
+//     await image.writeAsync(tempPath);
 
-    const hasil = fs.readFileSync(tempPath);
-    await sock.sendMessage(from, {
-      image: hasil,
-      caption: '✅ HDv2 selesai: jernih, tidak buram, warna keluar.'
-    }, { quoted: msg });
+//     const hasil = fs.readFileSync(tempPath);
+//     await sock.sendMessage(from, {
+//       image: hasil,
+//       caption: '✅ HDv2 selesai: jernih, tidak buram, warna keluar.'
+//     }, { quoted: msg });
 
-    fs.unlinkSync(tempPath);
-  } catch (err) {
-    console.error('❌ HDv2 Error:', err);
-    await sock.sendMessage(from, {
-      text: '⚠️ Gagal memproses gambar. Coba ulangi lagi.'
-    }, { quoted: msg });
-  }
-}
+//     fs.unlinkSync(tempPath);
+//   } catch (err) {
+//     console.error('❌ HDv2 Error:', err);
+//     await sock.sendMessage(from, {
+//       text: '⚠️ Gagal memproses gambar. Coba ulangi lagi.'
+//     }, { quoted: msg });
+//   }
+// }
 
  if (text === '.hd') {
   // // 💥 Batasi 2x per hari untuk member biasa
