@@ -497,7 +497,7 @@ if (text.startsWith('.tagall')) {
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
-      text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!',
+      text: '🚫 Bot belum jadi *Admin Grup*!',
       quoted: msg
     })
   }
@@ -509,7 +509,7 @@ if (text.startsWith('.tagall')) {
 
   if (!targets.length) {
     return sock.sendMessage(from, {
-      text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.',
+      text: '❌ Tag atau reply dulu member yang mau ditendang.',
       quoted: msg
     })
   }
@@ -517,14 +517,25 @@ if (text.startsWith('.tagall')) {
   try {
     await sock.groupParticipantsUpdate(from, targets, 'remove')
 
+    // 🔥 SOLUSI: Cloning full context agar bisa reply beneran
+    const quotedMessage = {
+      key: {
+        remoteJid: from,
+        fromMe: msg.key.fromMe,
+        id: msg.key.id,
+        participant: msg.key.participant || msg.participant
+      },
+      message: msg.message
+    }
+
     return sock.sendMessage(from, {
       text: '📢 *Sewa bot hanya 3k / 7 hari!*',
-      quoted: msg // ini baru bener posisinya
+      quoted: quotedMessage
     })
   } catch (err) {
-    console.error(err)
+    console.log('Gagal kick:', err)
     return sock.sendMessage(from, {
-      text: '❌ Gagal menendang member.',
+      text: '❌ Gagal kick member.',
       quoted: msg
     })
   }
