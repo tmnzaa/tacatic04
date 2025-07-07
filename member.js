@@ -127,9 +127,8 @@ if (text === '.hdv2') {
       .resize(600, Jimp.AUTO)         // kecil tapi tetap jernih
       .contrast(0.2)                  // cukup tajam
       .brightness(0.2)                // cukup terang
-      .color([{ apply: 'saturate', params: [25] }]) // warna lebih hidup
       .normalize()                    // seimbangkan warna
-      .quality(85);                   // kualitas bagus, ukuran kecil
+      .quality(93);                   // kualitas bagus, ukuran kecil
 
     await image.writeAsync(tempPath);
 
