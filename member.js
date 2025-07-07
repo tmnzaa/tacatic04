@@ -55,6 +55,7 @@ module.exports = async (sock, msg, text, from, sender, isAdmin, isOwner) => {
 • 📋 _.menu_ – Lihat daftar fitur
 • 🖼️ _.stiker_ – Buat stiker dari gambar
 • 📷 _.hd_ – Jadikan gambar lebih tajam
+• 📷 _.hdv2_ – Versi HD dengan warna vivid & kontras
 • 🧼 _.removebg_ – Hapus background gambar
 • 💬 _.addbrat teks_ – Buat stiker teks lucu
 • 💬 _.bratv2 teks_ – Buat stiker teks elegan
@@ -95,6 +96,54 @@ if (text.startsWith('.tiktok ')) {
     console.error('❌ TikTok Error:', err.message);
     await sock.sendMessage(from, {
       text: '⚠️ Gagal download video TikTok. Coba ulangi atau gunakan link berbeda.'
+    }, { quoted: msg });
+  }
+}
+
+// 📷 .hdv2 – versi lebih tajam & keren
+if (text === '.hdv2') {
+  const context = msg.message?.extendedTextMessage?.contextInfo;
+  const quotedMsg = context?.quotedMessage;
+
+  if (!quotedMsg || !quotedMsg.imageMessage) {
+    return sock.sendMessage(from, {
+      text: '❌ Reply gambar lalu ketik *.hdv2* untuk membuat versi lebih tajam dan vivid.'
+    }, { quoted: msg });
+  }
+
+  try {
+    const buffer = await downloadMediaMessage(
+      { message: { imageMessage: quotedMsg.imageMessage } },
+      'buffer',
+      {},
+      { logger: console, reuploadRequest: sock.updateMediaMessage }
+    );
+
+    const tempPath = `./hdv2-${Date.now()}.jpg`;
+    fs.writeFileSync(tempPath, buffer);
+
+    const image = await Jimp.read(tempPath);
+    image
+      .resize(720, Jimp.AUTO)       // perbesar ke 720px lebar
+      .contrast(0.4)                // lebih tajam kontras
+      .brightness(0.3)              // tambahkan kecerahan
+      .normalize()                  // normalisasi warna
+      .color([{ apply: 'saturate', params: [50] }]) // saturasi tinggi
+      .quality(95);                 // kualitas tinggi
+
+    await image.writeAsync(tempPath);
+
+    const hasil = fs.readFileSync(tempPath);
+    await sock.sendMessage(from, {
+      image: hasil,
+      caption: '✅ Gambar berhasil dipertajam dengan gaya HDv2.'
+    }, { quoted: msg });
+
+    fs.unlinkSync(tempPath);
+  } catch (err) {
+    console.error('❌ HDv2 Error:', err);
+    await sock.sendMessage(from, {
+      text: '⚠️ Gagal memproses gambar. Coba ulangi lagi.'
     }, { quoted: msg });
   }
 }
