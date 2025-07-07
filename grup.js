@@ -490,16 +490,14 @@ if (text.startsWith('.tagall')) {
   if (text.startsWith('.kick')) {
   if (!isAdmin && !isOwner) {
     return sock.sendMessage(from, {
-      text: '⚠️ Hanya admin grup yang bisa menendang member!',
-      quoted: msg
-    })
+      text: '⚠️ Hanya admin grup yang bisa menendang member!'
+    }, { quoted: msg })
   }
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, {
-      text: '🚫 Bot belum jadi *Admin Grup*!',
-      quoted: msg
-    })
+      text: '🚫 Bot belum jadi *Admin Grup*!'
+    }, { quoted: msg })
   }
 
   const context = msg.message?.extendedTextMessage?.contextInfo || {}
@@ -509,41 +507,23 @@ if (text.startsWith('.tagall')) {
 
   if (!targets.length) {
     return sock.sendMessage(from, {
-      text: '❌ Tag atau reply dulu member yang mau ditendang.',
-      quoted: msg
-    })
+      text: '❌ Tag atau reply dulu member yang mau ditendang.'
+    }, { quoted: msg })
   }
 
   try {
     await sock.groupParticipantsUpdate(from, targets, 'remove')
 
-    // 🔥 SOLUSI: Cloning full context agar bisa reply beneran
-    const quotedMessage = {
-  key: {
-    remoteJid: from,
-    fromMe: false,
-    id: msg.key.id,
-    participant: msg.participant || msg.key.participant
-  },
-  message: {
-    extendedTextMessage: {
-      text: text
-    }
+    return sock.sendMessage(from, {
+      text: '📢 *Sewa bot hanya 3k / 7 hari!*'
+    }, { quoted: msg }) // ✅ Ini reply ke .kick admin
+  } catch (err) {
+    return sock.sendMessage(from, {
+      text: '❌ Gagal kick member.'
+    }, { quoted: msg })
   }
 }
 
-    return sock.sendMessage(from, {
-      text: '📢 *Sewa bot hanya 3k / 7 hari!*',
-      quoted: quotedMessage
-    })
-  } catch (err) {
-    console.log('Gagal kick:', err)
-    return sock.sendMessage(from, {
-      text: '❌ Gagal kick member.',
-      quoted: msg
-    })
-  }
-}
 
   // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
