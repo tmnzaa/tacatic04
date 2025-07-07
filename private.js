@@ -128,10 +128,10 @@ if (text === '.Gopay') {
   })
 }
 
-// 📷 QRIS (dengan gambar opsional)
-if (text === '.Qris') {
+// 📷 QRIS (menggunakan file lokal)
+if (text.toLowerCase() === '.Qris') {
   await sock.sendMessage(from, {
-    image: { url: 'https://i.imgur.com/SlJp7XB.jpg' },
+    image: fs.readFileSync('./qris.png'),
     caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner* untuk aktivasi.`
   })
 }
