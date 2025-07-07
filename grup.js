@@ -153,7 +153,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
   }, { quoted: msg });
 }
 
-const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2'];
+const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
   const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
 
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
@@ -172,7 +172,7 @@ if (isBotAktif && !isBotAdmin) {
   '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
   '.antipolling on', '.antipolling off', // ✅ tambahkan ini
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.removebg',  '.bratv2',
+  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.hdv2', '.removebg',  '.bratv2',
   '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
    '.afk', '.dnd on', '.dnd off',  // <<-- pastikan disini ya
 ];
