@@ -100,14 +100,14 @@ if (text.startsWith('.tiktok ')) {
   }
 }
 
-// 📷 .hdv2 – versi lebih tajam & keren
+// 📷 .hdv2 – versi tajam seimbang
 if (text === '.hdv2') {
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
 
   if (!quotedMsg || !quotedMsg.imageMessage) {
     return sock.sendMessage(from, {
-      text: '❌ Reply gambar lalu ketik *.hdv2* untuk membuat versi lebih tajam dan vivid.'
+      text: '❌ Reply gambar lalu ketik *.hdv2* untuk membuat versi lebih tajam.'
     }, { quoted: msg });
   }
 
@@ -124,19 +124,19 @@ if (text === '.hdv2') {
 
     const image = await Jimp.read(tempPath);
     image
-      .resize(720, Jimp.AUTO)       // perbesar ke 720px lebar
-      .contrast(0.4)                // lebih tajam kontras
-      .brightness(0.3)              // tambahkan kecerahan
-      .normalize()                  // normalisasi warna
-      .color([{ apply: 'saturate', params: [50] }]) // saturasi tinggi
-      .quality(95);                 // kualitas tinggi
+      .resize(720, Jimp.AUTO)       // tetap perbesar ke 720px lebar
+      .contrast(0.2)                // kontras lebih ringan
+      .brightness(0.1)              // sedikit lebih cerah
+      .normalize()                  // normalisasi tetap
+      .color([{ apply: 'saturate', params: [20] }]) // saturasi ringan
+      .quality(90);                 // turunkan sedikit kualitas
 
     await image.writeAsync(tempPath);
 
     const hasil = fs.readFileSync(tempPath);
     await sock.sendMessage(from, {
       image: hasil,
-      caption: '✅ Gambar berhasil dipertajam dengan gaya HDv2.'
+      caption: '✅ Selesai: HDv2 versi natural.'
     }, { quoted: msg });
 
     fs.unlinkSync(tempPath);
