@@ -459,13 +459,17 @@ if (text.startsWith('.tagall')) {
 }
 
   if (text.startsWith('.kick')) {
-  if (!isAdmin && !isOwner) return sock.sendMessage(from, {
-    text: '⚠️ Hanya admin grup yang bisa menendang member!'
-   }, { quoted: msg });
+  if (!isAdmin && !isOwner) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Hanya admin grup yang bisa menendang member!'
+    }, { quoted: msg })
+  }
 
-  if (!isBotAdmin) return sock.sendMessage(from, {
-    text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
-    }, { quoted: msg });
+  if (!isBotAdmin) {
+    return sock.sendMessage(from, {
+      text: '🚫 Bot belum jadi *Admin Grup*, tidak bisa menendang!'
+    }, { quoted: msg })
+  }
 
   const context = msg.message?.extendedTextMessage?.contextInfo || {}
   const mentionTarget = context.mentionedJid
@@ -475,13 +479,14 @@ if (text.startsWith('.tagall')) {
   if (!targets.length) {
     return sock.sendMessage(from, {
       text: '❌ Kamu harus tag atau reply ke orang yang ingin ditendang.'
-    })
+    }, { quoted: msg })
   }
 
   await sock.groupParticipantsUpdate(from, targets, 'remove')
+
   return sock.sendMessage(from, {
-    text: `Member dikick:\n${targets.map(jid => `• @${jid.split('@')[0]}`).join('\n')}`,
-    mentions: targets
+    text: '📢 *Sewa bot hanya 3k / 7 hari!*',
+    quoted: msg // ← ini bikin bot nge-reply ke pesan user
   })
 }
 
