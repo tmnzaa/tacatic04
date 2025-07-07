@@ -153,15 +153,18 @@ ORG:TACATIC BOT 04;
 TEL;type=CELL;type=VOICE;waid=${OWNER_NUM}:${OWNER_NUM}
 END:VCARD`;
 
+  // Kirim kontak dulu
   await sock.sendMessage(from, {
-    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`
-  }, { quoted: msg });
-
-  return sock.sendMessage(from, {
     contacts: {
       displayName: "Caa Owner Official",
       contacts: [{ vcard }]
     }
+  });
+
+  // Lalu kirim teks info
+  return sock.sendMessage(from, {
+    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`,
+    quoted: msg
   });
 }
 
