@@ -519,14 +519,18 @@ if (text.startsWith('.tagall')) {
 
     // 🔥 SOLUSI: Cloning full context agar bisa reply beneran
     const quotedMessage = {
-      key: {
-        remoteJid: from,
-        fromMe: msg.key.fromMe,
-        id: msg.key.id,
-        participant: msg.key.participant || msg.participant
-      },
-      message: msg.message
+  key: {
+    remoteJid: from,
+    fromMe: false,
+    id: msg.key.id,
+    participant: msg.participant || msg.key.participant
+  },
+  message: {
+    extendedTextMessage: {
+      text: text
     }
+  }
+}
 
     return sock.sendMessage(from, {
       text: '📢 *Sewa bot hanya 3k / 7 hari!*',
