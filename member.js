@@ -124,22 +124,19 @@ if (text === '.hdv2') {
 
     const image = await Jimp.read(tempPath);
     image
-      .resize(720, Jimp.AUTO)        // resize agar tidak terlalu besar
-      .contrast(0.25)                // kontras lebih ringan
-      .brightness(0.15)              // sedikit kecerahan
-      .color([
-        { apply: 'saturate', params: [35] }, // warna lebih keluar tapi tidak lebay
-        { apply: 'hue', params: [5] }        // sedikit perubahan warna untuk efek hidup
-      ])
-      .normalize()                   // normalisasi warna
-      .quality(92);                  // kualitas tinggi tapi stabil
+      .resize(600, Jimp.AUTO)         // kecil tapi tetap jernih
+      .contrast(0.2)                  // cukup tajam
+      .brightness(0.2)                // cukup terang
+      .color([{ apply: 'saturate', params: [25] }]) // warna lebih hidup
+      .normalize()                    // seimbangkan warna
+      .quality(85);                   // kualitas bagus, ukuran kecil
 
     await image.writeAsync(tempPath);
 
     const hasil = fs.readFileSync(tempPath);
     await sock.sendMessage(from, {
       image: hasil,
-      caption: '✅ Selesai: HDv2 jernih dan warna hidup.'
+      caption: '✅ HDv2 selesai: jernih, tidak buram, warna keluar.'
     }, { quoted: msg });
 
     fs.unlinkSync(tempPath);
