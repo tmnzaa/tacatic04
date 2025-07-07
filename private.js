@@ -106,34 +106,41 @@ if (text === '.mausewa') {
 • 10K = Permanen
 
 🔁 Transfer bisa via:
-• .Dana
-• .Gopay
-• .Qris
+• .dana
+• .gopay
+• .qris
 
 Setelah transfer, ketik .owner untuk aktivasi bot.`
   })
 }
 
 // 💰 DANA
-if (text === '.Dana') {
+if (text === '.dana') {
   return sock.sendMessage(from, {
-    text: `💰 *PEMBAYARAN DANA*\n\nSilakan transfer ke:\n📲 08xxxxxxxxxx a.n Caa\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+    text: `💰 *PEMBAYARAN DANA*\n\nSilakan transfer ke:\n📲 081334715988 a.n -\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
   })
 }
 
 // 💰 GOPAY
-if (text === '.Gopay') {
+if (text === '.gopay') {
   return sock.sendMessage(from, {
-    text: `💰 *PEMBAYARAN GOPAY*\n\nSilakan transfer ke:\n📲 08xxxxxxxxxx a.n Caa\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
+    text: `💰 *PEMBAYARAN GOPAY*\n\nSilakan transfer ke:\n📲 0895398620405 a.n -\n\nSetelah transfer, ketik .owner untuk aktivasi bot.`
   })
 }
 
-// 📷 QRIS (menggunakan file lokal)
-if (text.toLowerCase() === '.Qris') {
-  await sock.sendMessage(from, {
-    image: fs.readFileSync('./qris.png'),
-    caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner* untuk aktivasi.`
-  })
+// Kirim QRIS saat user ketik .qris
+if (text.toLowerCase() === '.qris') {
+  const qrisPath = './qris.png'
+  if (fs.existsSync(qrisPath)) {
+    await sock.sendMessage(from, {
+      image: fs.readFileSync(qrisPath),
+      caption: `📷 *PEMBAYARAN VIA QRIS*\n\nSilakan scan QR di atas untuk membayar.\n\n✅ Setelah bayar, ketik *.owner* untuk aktivasi.`
+    })
+  } else {
+    await sock.sendMessage(from, {
+      text: `❌ File QRIS tidak ditemukan. Pastikan file *qris.png* ada di folder bot.`
+    })
+  }
 }
 
   // 👤 Kirim Kontak Owner
