@@ -218,14 +218,14 @@ sock.ev.on('group-participants.update', async (update) => {
         await sock.groupSettingUpdate(id, 'not_announcement')
         await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
         delete fitur.openTime
-        console.log(`✅ Grup ${id} dibuka otomatis jam ${jam}`)
+        // console.log(`✅ Grup ${id} dibuka otomatis jam ${jam}`)
       }
 
       if (fitur.closeTime === jam) {
         await sock.groupSettingUpdate(id, 'announcement')
         await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
         delete fitur.closeTime
-        console.log(`🔒 Grup ${id} ditutup otomatis jam ${jam}`)
+        // console.log(`🔒 Grup ${id} ditutup otomatis jam ${jam}`)
       }
 
     } catch (err) {
