@@ -559,8 +559,8 @@ if (text.startsWith('.open')) {
   }
 
   const metadata = await sock.groupMetadata(from)
-  const botNumber = sock.user.id
-  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa membuka grup.' })
@@ -588,8 +588,9 @@ if (text.startsWith('.close')) {
   }
 
   const metadata = await sock.groupMetadata(from)
-  const botNumber = sock.user.id
-  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
+
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa menutup grup.' })
