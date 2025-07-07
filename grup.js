@@ -548,13 +548,26 @@ if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?
  // 🔓 .open
 if (text.startsWith('.open')) {
   const jamInput = text.split(' ')[1]
-  const jam = jamInput?.replace(':', '.') // normalize format jadi "20.00"
+  const jam = jamInput?.replace(':', '.')
+
+  if (!db[from]) db[from] = {}
 
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
-    if (!db[from]) db[from] = {}
     db[from].openTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam.replace('.', ':')}*` })
+  }
+
+  const metadata = await sock.groupMetadata(from)
+  const botNumber = sock.user.id
+  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+
+  if (!isBotAdmin) {
+    return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa membuka grup.' })
+  }
+
+  if (!metadata.announce) {
+    return sock.sendMessage(from, { text: '✅ Grup sudah terbuka.' })
   }
 
   await sock.groupSettingUpdate(from, 'not_announcement')
@@ -566,11 +579,24 @@ if (text.startsWith('.close')) {
   const jamInput = text.split(' ')[1]
   const jam = jamInput?.replace(':', '.')
 
+  if (!db[from]) db[from] = {}
+
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
-    if (!db[from]) db[from] = {}
     db[from].closeTime = jam
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam.replace('.', ':')}*` })
+  }
+
+  const metadata = await sock.groupMetadata(from)
+  const botNumber = sock.user.id
+  const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+
+  if (!isBotAdmin) {
+    return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa menutup grup.' })
+  }
+
+  if (metadata.announce) {
+    return sock.sendMessage(from, { text: '🔒 Grup sudah tertutup.' })
   }
 
   await sock.groupSettingUpdate(from, 'announcement')
