@@ -726,36 +726,14 @@ if (isCommand && !isCmdValid) {
 if (isBotAktif && !isCommand) {
   const lowerText = text.toLowerCase()
 
+  // Daftar kata dan emoji yang ingin direaksikan
   const reactions = [
-  // 📛 FITUR KEAMANAN
-  { words: ['.menu'], emoji: '😪' },
-  { words: ['.antilink1', '.antilink2'], emoji: '🕵️' },
-  { words: ['.antipromosi'], emoji: '🙊' },
-  { words: ['.antitoxic'], emoji: '🧼' },
-  { words: ['.antipolling'], emoji: '🗑️' },
-
-  // 🎉 FITUR SOSIAL & INTERAKSI
-  { words: ['.welcome'], emoji: '🎊' },
-  { words: ['.leave'], emoji: '😢' },
-  { words: ['.tagall'], emoji: '📣' },
-  { words: ['.kick'], emoji: '🥾' },
-
-  // 🛠️ FITUR MANAJEMEN GRUP
-  { words: ['.promote'], emoji: '⬆️' },
-  { words: ['.demote'], emoji: '⬇️' },
-  { words: ['.open'], emoji: '🔓' },
-  { words: ['.close'], emoji: '🔒' },
-  { words: ['.setdesc'], emoji: '📝' },
-  { words: ['.cekaktif'], emoji: '🔍' },
-  { words: ['.dnd'], emoji: '🔕' },
-
-  // 📊 FITUR LAINNYA
-  { words: ['.stiker'], emoji: '🌟' },
-  { words: ['.addbrat', '.bratv2'], emoji: '👶' },
-  { words: ['.hd'], emoji: '🔍' },
-  { words: ['.removebg'], emoji: '🧽' },
-  { words: ['.tiktok'], emoji: '🕺' }
-]
+    { words: ['.menu'], emoji: '💤' },
+    { words: ['.an', 'lol', 'ngakak'], emoji: '' },
+    { words: ['pagi', 'good morning'], emoji: '' },
+    { words: ['malam', 'good night'], emoji: '' },
+    { words: ['keren', 'mantap', 'hebat'], emoji: '' },
+  ]
 
   for (const { words, emoji } of reactions) {
     if (words.some(word => lowerText.includes(word))) {
