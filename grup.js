@@ -48,7 +48,7 @@ module.exports = async (sock, msg) => {
 
   return '';
 };
-const text = getTextFromMsg(msg);
+let text = getTextFromMsg(msg);
   const mentions = msg.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
   const isCommand = text.startsWith('.');
   const isAfk = text.toLowerCase().startsWith('.afk');
