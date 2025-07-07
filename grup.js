@@ -723,49 +723,53 @@ if (isCommand && !isCmdValid) {
 }
 
 // 🎭 Auto Reaction Emoji
-if (isBotAktif) {
+if (isBotAktif && typeof text === 'string' && msg.key) {
   const lowerText = text.toLowerCase()
 
   const reactions = [
-  // 📛 FITUR KEAMANAN
-  { words: ['.menu'], emoji: '😪' },
-  { words: ['.antilink1', '.antilink2'], emoji: '🕵️' },
-  { words: ['.antipromosi'], emoji: '🙊' },
-  { words: ['.antitoxic'], emoji: '🧼' },
-  { words: ['.antipolling'], emoji: '🗑️' },
+    // 📛 FITUR KEAMANAN
+    { words: ['.menu'], emoji: '😪' },
+    { words: ['.antilink1', '.antilink2'], emoji: '🕵️' },
+    { words: ['.antipromosi'], emoji: '🙊' },
+    { words: ['.antitoxic'], emoji: '🧼' },
+    { words: ['.antipolling'], emoji: '🗑️' },
 
-  // 🎉 FITUR SOSIAL & INTERAKSI
-  { words: ['.welcome'], emoji: '🎊' },
-  { words: ['.leave'], emoji: '😢' },
-  { words: ['.tagall'], emoji: '📣' },
-  { words: ['.kick'], emoji: '🥾' },
+    // 🎉 FITUR SOSIAL & INTERAKSI
+    { words: ['.welcome'], emoji: '🎊' },
+    { words: ['.leave'], emoji: '😢' },
+    { words: ['.tagall'], emoji: '📣' },
+    { words: ['.kick'], emoji: '🥾' },
 
-  // 🛠️ FITUR MANAJEMEN GRUP
-  { words: ['.promote'], emoji: '⬆️' },
-  { words: ['.demote'], emoji: '⬇️' },
-  { words: ['.open'], emoji: '🔓' },
-  { words: ['.close'], emoji: '🔒' },
-  { words: ['.setdesc'], emoji: '📝' },
-  { words: ['.cekaktif'], emoji: '🔍' },
-  { words: ['.dnd'], emoji: '🔕' },
+    // 🛠️ FITUR MANAJEMEN GRUP
+    { words: ['.promote'], emoji: '⬆️' },
+    { words: ['.demote'], emoji: '⬇️' },
+    { words: ['.open'], emoji: '🔓' },
+    { words: ['.close'], emoji: '🔒' },
+    { words: ['.setdesc'], emoji: '📝' },
+    { words: ['.cekaktif'], emoji: '🔍' },
+    { words: ['.dnd'], emoji: '🔕' },
 
-  // 📊 FITUR LAINNYA
-  { words: ['.stiker'], emoji: '🌟' },
-  { words: ['.addbrat', '.bratv2'], emoji: '👶' },
-  { words: ['.hd'], emoji: '🔍' },
-  { words: ['.removebg'], emoji: '🧽' },
-  { words: ['.tiktok'], emoji: '🕺' }
-]
+    // 📊 FITUR LAINNYA
+    { words: ['.stiker'], emoji: '🌟' },
+    { words: ['.addbrat', '.bratv2'], emoji: '👶' },
+    { words: ['.hd'], emoji: '🔍' },
+    { words: ['.removebg'], emoji: '🧽' },
+    { words: ['.tiktok'], emoji: '🕺' }
+  ]
 
   for (const { words, emoji } of reactions) {
     if (words.some(word => lowerText.includes(word))) {
-      await sock.sendMessage(from, {
-        react: {
-          text: emoji,
-          key: msg.key
-        }
-      })
-      break // berhenti setelah satu emoji dikirim
+      try {
+        await sock.sendMessage(from, {
+          react: {
+            text: emoji,
+            key: msg.key
+          }
+        })
+      } catch (e) {
+        console.log('Gagal kirim reaksi:', e)
+      }
+      break // kirim satu emoji saja
     }
   }
 }
