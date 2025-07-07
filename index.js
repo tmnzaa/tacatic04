@@ -205,8 +205,9 @@ sock.ev.on('group-participants.update', async (update) => {
 
     try {
       const metadata = await sock.groupMetadata(id)
-      const botNumber = sock.user.id
-      const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
+      const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+      const botParticipant = metadata.participants.find(p => p.id === botNumber)
+      const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin'
 
       if (!isBotAdmin) {
         console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
