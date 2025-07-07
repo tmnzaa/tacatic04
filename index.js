@@ -154,9 +154,17 @@ sock.ev.on('group-participants.update', async (update) => {
     for (const jid of update.participants) {
       const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
       const groupName = metadata.subject
-      const pp = await sock.profilePictureUrl(jid, 'image').catch(() => 'https://i.ibb.co/dG6kR8k/avatar-group.png')
 
-      // WELCOME
+      // ✅ Gunakan fallback PP dari imgur (lebih stabil daripada i.ibb.co)
+      const fallbackPP = 'https://i.imgur.com/s6dqg4m.jpg'
+      let pp
+      try {
+        pp = await sock.profilePictureUrl(jid, 'image')
+      } catch (e) {
+        pp = fallbackPP
+      }
+
+      // 🟢 WELCOME
       if (update.action === 'add' && fitur.welcome) {
         let teks = fitur.welcomeText || `hello @name, selamat datang di *@grup*!`
         teks = teks
@@ -171,9 +179,9 @@ sock.ev.on('group-participants.update', async (update) => {
         })
       }
 
-      // LEAVE
+      // 🔴 LEAVE
       if (update.action === 'remove' && fitur.leave) {
-        const teks = `@${jid.split('@')[0]} yahh ko keluar si:) *${groupName}*.`
+        const teks = `@${jid.split('@')[0]} yahh ko keluar si :) *${groupName}*.`
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
@@ -186,36 +194,50 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-  // ⏰ AUTO OPEN & CLOSE GROUP
   schedule.scheduleJob('* * * * *', async () => {
-    const now = new Date()
-    const jam = now.toTimeString().slice(0, 5).replace(':', '.')
-    const db = fs.readJsonSync(dbFile)
+  const now = new Date()
+  const jam = now.toTimeString().slice(0, 5).replace(':', '.')
+  const db = fs.readJsonSync(dbFile)
 
-    for (const id in db) {
-      const fitur = db[id]
-      if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
+  for (const id in db) {
+    const fitur = db[id]
+    if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
 
-      try {
-        if (fitur.openTime === jam) {
-          await sock.groupSettingUpdate(id, 'not_announcement')
-          await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
-          delete fitur.openTime
-        }
+    try {
+      const metadata = await sock.groupMetadata(id)
+      const botNumber = sock.user.id
+      const isBotAdmin = metadata.participants.find(p => p.id === botNumber)?.admin
 
-        if (fitur.closeTime === jam) {
-          await sock.groupSettingUpdate(id, 'announcement')
-          await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
-          delete fitur.closeTime
-        }
-      } catch (err) {
-        console.error('❌ Gagal update setting:', err)
+      if (!isBotAdmin) {
+        console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
+        continue
       }
+
+      if (fitur.openTime === jam) {
+        await sock.groupSettingUpdate(id, 'not_announcement')
+        await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
+        delete fitur.openTime
+        console.log(`✅ Grup ${id} dibuka otomatis jam ${jam}`)
+      }
+
+      if (fitur.closeTime === jam) {
+        await sock.groupSettingUpdate(id, 'announcement')
+        await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
+        delete fitur.closeTime
+        console.log(`🔒 Grup ${id} ditutup otomatis jam ${jam}`)
+      }
+
+    } catch (err) {
+      console.error(`❌ Gagal update setting grup ${id}:`, err)
+      await sock.sendMessage(id, {
+        text: `❌ Gagal update setting grup: ${err.message || err}`
+      })
     }
+  }
 
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
-fs.copyFileSync(dbFile, backupFile)
-  })
+  fs.copyFileSync(dbFile, backupFile)
+})
 }
 
 // 🛠 Global error
