@@ -244,7 +244,7 @@ const combinedText = `${text}\n${replyText}`;
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(combinedText);
 const isPollingWithLink = isPolling && linkRegex.test(combinedText);
-const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral|sell apk|Aplikasi Bioskop|Aplikasi Premium|APK|SUNTIK|suntik sosmed|suntik|suntik followers|SUNTIK FOLLOWER|)/i.test(combinedText);
+const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral|sell apk|Aplikasi Bioskop|Aplikasi Premium|APK|apk)/i.test(combinedText);
 const isToxic = kataKasar.some(k => combinedText.toLowerCase().includes(k));
 
 
