@@ -213,7 +213,18 @@ if (isBotAktif && !isBotAdmin) {
   // lanjut proses command lainnya...
 }
 
-// Ambil teks dari pesan dan reply
+// Ambil isi teks dari pesan utama
+// Ambil isi teks dari pesan utama
+text = msg.message?.conversation ||
+  msg.message?.extendedTextMessage?.text ||
+  msg.message?.imageMessage?.caption ||
+  msg.message?.videoMessage?.caption ||
+  msg.message?.documentMessage?.caption ||
+  msg.message?.buttonsResponseMessage?.selectedButtonId ||
+  msg.message?.templateButtonReplyMessage?.selectedId ||
+  '';
+
+// Ambil teks dari pesan yang di-reply
 const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
 const quotedMsg = contextInfo?.quotedMessage;
 let replyText = '';
@@ -227,6 +238,7 @@ if (quotedMsg) {
 
 // Gabungkan isi text dan reply untuk analisis
 const combinedText = `${text}\n${replyText}`;
+
 
 // Cek deteksi terhadap link, polling dengan link, promo dan toxic
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
