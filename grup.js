@@ -213,11 +213,28 @@ if (isBotAktif && !isBotAdmin) {
   // lanjut proses command lainnya...
 }
 
+// Ambil teks dari pesan dan reply
+const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
+const quotedMsg = contextInfo?.quotedMessage;
+let replyText = '';
+
+if (quotedMsg) {
+  if (quotedMsg.conversation) replyText = quotedMsg.conversation;
+  else if (quotedMsg.extendedTextMessage?.text) replyText = quotedMsg.extendedTextMessage.text;
+  else if (quotedMsg.imageMessage?.caption) replyText = quotedMsg.imageMessage.caption;
+  else if (quotedMsg.videoMessage?.caption) replyText = quotedMsg.videoMessage.caption;
+}
+
+// Gabungkan isi text dan reply untuk analisis
+const combinedText = `${text}\n${replyText}`;
+
+// Cek deteksi terhadap link, polling dengan link, promo dan toxic
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
-const isLink = linkRegex.test(text); // hanya teks/caption yang mengandung link
-const isPollingWithLink = isPolling && linkRegex.test(text); // polling + ada link di caption
-const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral)/i.test(text)
-const isToxic = kataKasar.some(k => text.toLowerCase().includes(k))
+const isLink = linkRegex.test(combinedText);
+const isPollingWithLink = isPolling && linkRegex.test(combinedText);
+const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral|sell apk|Aplikasi Bioskop|Aplikasi Premium|APK|apk)/i.test(combinedText);
+const isToxic = kataKasar.some(k => combinedText.toLowerCase().includes(k));
+
 
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
