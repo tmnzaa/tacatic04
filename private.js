@@ -104,7 +104,7 @@ TEL;type=CELL;type=VOICE;waid=${OWNER_NUM}:${OWNER_NUM}
 END:VCARD`;
 
   await sock.sendMessage(from, {
-    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`
+    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan yaaaaa~`
   }, { quoted: msg });
 
   return sock.sendMessage(from, {
