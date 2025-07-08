@@ -61,12 +61,28 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  let metadata
-  try {
-    metadata = await sock.groupMetadata(from)
-  } catch (err) {
-    return console.error('❌ ERROR Metadata:', err.message)
+  const groupMetaCache = global.groupMetaCache || (global.groupMetaCache = {})
+
+async function getGroupMetadata(from, sock) {
+  const now = Date.now()
+
+  // Cache hanya 2 detik
+  if (groupMetaCache[from] && (now - groupMetaCache[from].timestamp < 2000)) {
+    return groupMetaCache[from].data
   }
+
+  try {
+    const metadata = await sock.groupMetadata(from)
+    groupMetaCache[from] = {
+      data: metadata,
+      timestamp: now
+    }
+    return metadata
+  } catch (err) {
+    console.error('❌ ERROR Metadata:', err.message)
+    return null
+  }
+}
 
  const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
 
@@ -90,6 +106,7 @@ const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
+  await new Promise(r => setTimeout(r, 1000)); // delay 1 detik
   await sock.sendMessage(from, { delete: msg.key });
 
   const strikeDB = fs.readJsonSync(strikeFile);
@@ -98,6 +115,7 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   strikeDB[from][sender] += 1;
 
   if (strikeDB[from][sender] >= 5) {
+    await new Promise(resolve => setTimeout(resolve, 2000)) // 2 detik
     await sock.groupParticipantsUpdate(from, [sender], 'remove');
     delete strikeDB[from][sender];
   }
@@ -728,7 +746,7 @@ if (text.startsWith('.setdesc')) {
 
 // Jalankan command valid
 if (isCommand && isCmdValid) {
-    await sock.sendPresenceUpdate('composing', from) // ⌨️ Bot mengetik    
+    // await sock.sendPresenceUpdate('composing', from) // ⌨️ Bot mengetik    
   // lanjut proses handler command sesuai daftar yang dikenali (sudah ada di bawah)
 }
 
