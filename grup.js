@@ -525,7 +525,7 @@ if (text.startsWith('.tagall')) {
 }
 
 
-  const OWNER_NUM = '6282333014459@s.whatsapp.net'; // Ganti dengan nomor kamu
+  const OWNER_NUM = '6282333014459@s.whatsapp.net';
 
 // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
@@ -535,7 +535,7 @@ if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo
   // Ambil info grup & pelaku
   const groupMetadata = await sock.groupMetadata(from);
   const groupName = groupMetadata.subject;
-  const pelaku = sender;
+  const pelaku = sender; // pengirim pesan
 
   // Kirim ke grup
   await sock.sendMessage(from, {
@@ -545,8 +545,8 @@ if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo
 
   // Kirim laporan ke owner
   await sock.sendMessage(OWNER_NUM, {
-    text: `📈 *[PROMOTE via BOT]*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
-    mentions: [pelaku, ...target]
+    text: `🔔 *LAPORAN PROMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
+    mentions: [pelaku, ...target],
   });
 }
 
@@ -567,8 +567,8 @@ if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?
 
   // Kirim laporan ke owner
   await sock.sendMessage(OWNER_NUM, {
-    text: `📉 *[DEMOTE via BOT]*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupMetadata.subject}\n🆔 ${from}`,
-    mentions: [pelaku, ...target]
+    text: `📢 *LAPORAN DEMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
+    mentions: [pelaku, ...target],
   });
 }
 
