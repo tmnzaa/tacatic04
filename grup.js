@@ -15,7 +15,7 @@ const tambahHari = (jumlah) => {
   return date.toISOString().split('T')[0];
 };
 
-const kataKasar = ['jancok','anjing','babi','kontol','brengsek','bangsat','goblok','tai','bokep']
+const kataKasar = ['jancok','anjing','babi','kontol','brengsek','bangsat','goblok','tai','bokep','suntik','bug jasa']
 
 module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
@@ -97,7 +97,7 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   strikeDB[from][sender] = strikeDB[from][sender] || 0;
   strikeDB[from][sender] += 1;
 
-  if (strikeDB[from][sender] >= 5) {
+  if (strikeDB[from][sender] >= 7) {
     await sock.groupParticipantsUpdate(from, [sender], 'remove');
     delete strikeDB[from][sender];
   }
@@ -244,7 +244,7 @@ const combinedText = `${text}\n${replyText}`;
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(combinedText);
 const isPollingWithLink = isPolling && linkRegex.test(combinedText);
-const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|viral|bokep|bokep viral|sell apk|Aplikasi Bioskop|Aplikasi Premium|APK|apk)/i.test(combinedText);
+const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|bokep( viral)?|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|suntik sosmed|suntik akun|jual akun sosmed|jual jasa bug|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep)/i.test(combinedText);
 const isToxic = kataKasar.some(k => combinedText.toLowerCase().includes(k));
 
 
@@ -259,7 +259,7 @@ if (isBotAktif && !isAdmin && !isOwner) {
       strikeDB[from][sender] += 1
       fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
 
-      if (strikeDB[from][sender] >= 5) {
+      if (strikeDB[from][sender] >= 7) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
         fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
