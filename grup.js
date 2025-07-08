@@ -5,8 +5,6 @@ const Jimp = require('jimp');
 const path = require('path');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
-const groupCache = {}; // cache untuk metadata grup
-
 
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
@@ -63,23 +61,12 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  let metadata;
-const cacheTime = 3000; // cache 3 detik aja biar gak berat
-
-if (groupCache[from] && (Date.now() - groupCache[from].timestamp < cacheTime)) {
-  metadata = groupCache[from].data;
-} else {
+  let metadata
   try {
-    metadata = await sock.groupMetadata(from);
-    groupCache[from] = {
-      data: metadata,
-      timestamp: Date.now()
-    };
+    metadata = await sock.groupMetadata(from)
   } catch (err) {
-    console.error('❌ ERROR Metadata:', err.message);
-    return;
+    return console.error('❌ ERROR Metadata:', err.message)
   }
-}
 
  const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
 
@@ -571,8 +558,9 @@ if (text.startsWith('.open')) {
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam.replace('.', ':')}*` })
   }
 
-// const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-// const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
+  const metadata = await sock.groupMetadata(from)
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa membuka grup.' })
@@ -599,8 +587,9 @@ if (text.startsWith('.close')) {
     return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam.replace('.', ':')}*` })
   }
 
-// const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-// const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
+  const metadata = await sock.groupMetadata(from)
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
 
 
   if (!isBotAdmin) {
