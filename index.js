@@ -239,6 +239,29 @@ sock.ev.on('group-participants.update', async (update) => {
   fs.writeJsonSync(dbFile, db, { spaces: 2 })
   fs.copyFileSync(dbFile, backupFile)
 })
+
+sock.ev.on('group-participants.update', async (update) => {
+  const { id, participants, action, actor } = update;
+  if (!['promote', 'demote'].includes(action)) return;
+
+  try {
+    const groupMetadata = await sock.groupMetadata(id);
+    const groupName = groupMetadata.subject;
+
+    const teks = (action === 'promote' ? '📈 *[PROMOTE]*' : '📉 *[DEMOTE]*') +
+      `\n👤 *Pelaku:* @${actor.split('@')[0]}` +
+      `\n🎯 *Target:* ${participants.map(p => `@${p.split('@')[0]}`).join(', ')}` +
+      `\n🏷️ *Grup:* ${groupName}\n🆔 ${id}`;
+
+    await sock.sendMessage(OWNER_NUM, {
+      text: teks,
+      mentions: [actor, ...participants]
+    });
+  } catch (err) {
+    console.log('❌ Gagal kirim laporan promote/demote:', err);
+  }
+});
+
 }
 
 // 🛠 Global error
