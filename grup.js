@@ -527,51 +527,34 @@ if (text.startsWith('.tagall')) {
 
   const OWNER_NUM = '6282333014459@s.whatsapp.net';
 
-// 👑 Promote
-if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-  await sock.groupParticipantsUpdate(from, target, 'promote');
+// Deteksi promote/demote baik dari bot maupun manual
+sock.ev.on('group-participants.update', async (update) => {
+  const { id, participants, action, actor } = update;
 
-  // Ambil info grup & pelaku
-  const groupMetadata = await sock.groupMetadata(from);
-  const groupName = groupMetadata.subject;
-  const pelaku = sender; // pengirim pesan
+  if (action !== 'promote' && action !== 'demote') return;
 
-  // Kirim ke grup
-  await sock.sendMessage(from, {
-    text: `🎉 *Promosi Berhasil!*\nSelamat kepada:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nKamu sekarang adalah *Admin Grup*! 🎖️`,
-    mentions: target
-  });
+  try {
+    const groupMetadata = await sock.groupMetadata(id);
+    const groupName = groupMetadata.subject;
 
-  // Kirim laporan ke owner
-  await sock.sendMessage(OWNER_NUM, {
-    text: `🔔 *LAPORAN PROMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
-    mentions: [pelaku, ...target],
-  });
-}
+    // Format teks
+    let teks = '';
+    if (action === 'promote') {
+      teks = `📈 *[LAPORAN PROMOTE]*\n👤 *Pelaku:* @${actor.split('@')[0]}\n🎯 *Target:* ${participants.map(j => `@${j.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${id}`;
+    } else {
+      teks = `📉 *[LAPORAN DEMOTE]*\n👤 *Pelaku:* @${actor.split('@')[0]}\n🎯 *Target:* ${participants.map(j => `@${j.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${id}`;
+    }
 
-// 🧹 Demote
-if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
-  await sock.groupParticipantsUpdate(from, target, 'demote');
+    // Kirim laporan ke owner
+    await sock.sendMessage(OWNER_NUM, {
+      text: teks,
+      mentions: [actor, ...participants]
+    });
 
-  const groupMetadata = await sock.groupMetadata(from);
-  const groupName = groupMetadata.subject;
-  const pelaku = sender;
-
-  // Kirim ke grup
-  await sock.sendMessage(from, {
-    text: `⚠️ *Turunkan Jabatan!*\nYang tadinya admin sekarang jadi rakyat biasa:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nJangan sedih ya, tetap semangat! 😅`,
-    mentions: target
-  });
-
-  // Kirim laporan ke owner
-  await sock.sendMessage(OWNER_NUM, {
-    text: `📢 *LAPORAN DEMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
-    mentions: [pelaku, ...target],
-  });
-}
-
+  } catch (err) {
+    console.log('❌ Gagal kirim laporan promote/demote:', err);
+  }
+});
 
  // 🔓 .open
 if (text.startsWith('.open')) {
