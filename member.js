@@ -5,6 +5,7 @@ const fetch = require('node-fetch');
 const Jimp = require('jimp');
 const axios = require('axios'); // ← Tambah ini
 const removebgApiKey = 'Bbu9ZjZcsJAnpif94ma6sqZN'; // ← API Key 
+const ffmpeg = require('fluent-ffmpeg');
 
 const limitFile = './limit.json'
 if (!fs.existsSync(limitFile)) fs.writeJsonSync(limitFile, {})
@@ -147,55 +148,76 @@ if (text.startsWith('.tiktok ')) {
 //   }
 // }
 
- if (text === '.hd') {
-  // // 💥 Batasi 2x per hari untuk member biasa
-  // if (!isAdmin && !isOwner) {
-  //   if (!cekLimit(from, sender, 'hd')) {
-  //     return sock.sendMessage(from, {
-  //       text: '⚠️ Batas penggunaan *.hd* sudah habis hari ini (maks 2x).\nCoba lagi besok ya!'
-  //     }, { quoted: msg });
-  //   }
-  // }
-
+if (text === '.hd') {
   const context = msg.message?.extendedTextMessage?.contextInfo;
   const quotedMsg = context?.quotedMessage;
 
-  if (!quotedMsg || !quotedMsg.imageMessage) {
+  if (!quotedMsg || (!quotedMsg.imageMessage && !quotedMsg.videoMessage)) {
     return sock.sendMessage(from, {
-      text: '❌ Reply gambar lalu ketik *.hd* untuk membuat versi HD-nya.'
+      text: '❌ Reply gambar *atau video* lalu ketik *.hd* untuk membuat versi HD-nya.'
     }, { quoted: msg });
   }
 
   try {
+    const type = quotedMsg.imageMessage ? 'image' : 'video';
+    const mediaMessage = quotedMsg.imageMessage || quotedMsg.videoMessage;
+
     const buffer = await downloadMediaMessage(
-      { message: { imageMessage: quotedMsg.imageMessage } },
+      { message: { [`${type}Message`]: mediaMessage } },
       'buffer',
       {},
       { logger: console, reuploadRequest: sock.updateMediaMessage }
     );
 
-    const temp = `./hd-${Date.now()}.jpg`;
-    fs.writeFileSync(temp, buffer);
+    const tempName = `./hd-${Date.now()}`;
+    const inputFile = `${tempName}.${type === 'image' ? 'jpg' : 'mp4'}`;
+    const outputFile = `${tempName}-hd.${type === 'image' ? 'jpg' : 'mp4'}`;
 
-    const image = await Jimp.read(temp);
-    image
-      .contrast(0.2)
-      .brightness(0.5)
-      .normalize()
-      .quality(90);
-    await image.writeAsync(temp);
+    fs.writeFileSync(inputFile, buffer);
 
-    const hasil = fs.readFileSync(temp);
-    await sock.sendMessage(from, {
-      image: hasil,
-      caption: '✅ Success'
-    }, { quoted: msg });
+    if (type === 'image') {
+      const Jimp = require('jimp');
+      const image = await Jimp.read(inputFile);
+      image
+        .contrast(0.2)
+        .brightness(0.5)
+        .normalize()
+        .quality(90);
+      await image.writeAsync(outputFile);
 
-    fs.unlinkSync(temp);
+      const hasil = fs.readFileSync(outputFile);
+      await sock.sendMessage(from, {
+        image: hasil,
+        caption: '✅ Gambar HD berhasil dibuat!'
+      }, { quoted: msg });
+
+    } else {
+      const ffmpeg = require('fluent-ffmpeg');
+      await new Promise((resolve, reject) => {
+        ffmpeg(inputFile)
+          .videoCodec('libx264')
+          .size('?x720') // Upscale to 720p
+          .outputOptions('-preset veryfast')
+          .on('end', resolve)
+          .on('error', reject)
+          .save(outputFile);
+      });
+
+      const hasil = fs.readFileSync(outputFile);
+      await sock.sendMessage(from, {
+        video: hasil,
+        caption: '✅ Video HD berhasil dibuat!'
+      }, { quoted: msg });
+    }
+
+    // Hapus file sementara
+    fs.unlinkSync(inputFile);
+    fs.unlinkSync(outputFile);
+
   } catch (err) {
     console.error('❌ HD Error:', err);
     await sock.sendMessage(from, {
-      text: '⚠️ Gagal memproses gambar. Coba reply ulang gambarnya.'
+      text: '⚠️ Gagal memproses media. Coba reply ulang.'
     }, { quoted: msg });
   }
 }
