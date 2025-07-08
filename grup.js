@@ -5,6 +5,8 @@ const Jimp = require('jimp');
 const path = require('path');
 const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
+const groupCache = {}; // cache untuk metadata grup
+
 
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
@@ -61,61 +63,46 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
-const groupMetaCache = global.groupMetaCache || (global.groupMetaCache = {});
+  let metadata;
+const cacheTime = 3000; // cache 3 detik aja biar gak berat
 
-// 🔧 Fungsi untuk ambil metadata grup
-async function getGroupMetadata(from, sock) {
-  const now = Date.now();
-
-  if (groupMetaCache[from] && (now - groupMetaCache[from].timestamp < 2000)) {
-    return groupMetaCache[from].data;
-  }
-
+if (groupCache[from] && (Date.now() - groupCache[from].timestamp < cacheTime)) {
+  metadata = groupCache[from].data;
+} else {
   try {
-    const metadata = await sock.groupMetadata(from);
-    groupMetaCache[from] = {
+    metadata = await sock.groupMetadata(from);
+    groupCache[from] = {
       data: metadata,
-      timestamp: now
+      timestamp: Date.now()
     };
-    return metadata;
   } catch (err) {
     console.error('❌ ERROR Metadata:', err.message);
-    return null;
+    return;
   }
 }
 
-// 🔽 Fungsi utama untuk dijalankan saat message masuk
-module.exports = async (sock, msg, from, sender) => {
-  if (!from.endsWith('@g.us')) return; // Hanya jalan di grup
+ const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
 
-  const metadata = await getGroupMetadata(from, sock);
-  if (!metadata) return;
+const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+const isGroupOwner = sender === groupOwner;
+const isBotOwner = sender === OWNER_BOT;
+const isOwner = isBotOwner || isGroupOwner;
 
-  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-  const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
-  const isGroupOwner = sender === groupOwner;
-  const isBotOwner = sender === OWNER_BOT;
-  const isOwner = isBotOwner || isGroupOwner;
+const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
-  const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-  const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
-
-  // Baca dan update database
-  const db = fs.readJsonSync(dbFile);
-  db[from] = db[from] || {};
-  db[from].nama = metadata.subject;
-  db[from].dnd = db[from].dnd || false;
-  const fitur = db[from];
-
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
-}
+const db = fs.readJsonSync(dbFile);
+db[from] = db[from] || {};
+db[from].nama = metadata.subject;
+const fitur = db[from];
+db[from].dnd = db[from].dnd || false;
+fs.writeJsonSync(dbFile, db, { spaces: 2 });
 
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
 
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
-  await new Promise(r => setTimeout(r, 1000)); // delay 1 detik
   await sock.sendMessage(from, { delete: msg.key });
 
   const strikeDB = fs.readJsonSync(strikeFile);
@@ -124,7 +111,6 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   strikeDB[from][sender] += 1;
 
   if (strikeDB[from][sender] >= 5) {
-    await new Promise(resolve => setTimeout(resolve, 2000)) // 2 detik
     await sock.groupParticipantsUpdate(from, [sender], 'remove');
     delete strikeDB[from][sender];
   }
@@ -585,9 +571,8 @@ if (text.startsWith('.open')) {
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam.replace('.', ':')}*` })
   }
 
-  const metadata = await sock.groupMetadata(from)
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
+// const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+// const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
 
   if (!isBotAdmin) {
     return sock.sendMessage(from, { text: '❌ Bot bukan admin, tidak bisa membuka grup.' })
@@ -614,9 +599,8 @@ if (text.startsWith('.close')) {
     return sock.sendMessage(from, { text: `⏰ Grup akan ditutup otomatis jam *${jam.replace('.', ':')}*` })
   }
 
-  const metadata = await sock.groupMetadata(from)
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
+// const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+// const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin)
 
 
   if (!isBotAdmin) {
