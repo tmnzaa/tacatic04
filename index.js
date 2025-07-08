@@ -194,14 +194,14 @@ sock.ev.on('group-participants.update', async (update) => {
   }
 })
 
-  schedule.scheduleJob('* * * * *', async () => {
+schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
-  const jam = now.toTimeString().slice(0, 5).replace(':', '.')
+  const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
   const db = fs.readJsonSync(dbFile)
 
   for (const id in db) {
     const fitur = db[id]
-    if (!fitur || !fitur.expired || new Date(fitur.expired) < now) continue
+    if (!fitur) continue
 
     try {
       const metadata = await sock.groupMetadata(id)
@@ -214,18 +214,18 @@ sock.ev.on('group-participants.update', async (update) => {
         continue
       }
 
-      if (fitur.openTime === jam) {
+      // ⏰ Open group
+      if (fitur.openTime && fitur.openTime === jam) {
         await sock.groupSettingUpdate(id, 'not_announcement')
         await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
-        delete fitur.openTime
-        // console.log(`✅ Grup ${id} dibuka otomatis jam ${jam}`)
+        console.log(`✅ Grup ${id} dibuka jam ${jam}`)
       }
 
-      if (fitur.closeTime === jam) {
+      // 🔒 Close group
+      if (fitur.closeTime && fitur.closeTime === jam) {
         await sock.groupSettingUpdate(id, 'announcement')
         await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
-        delete fitur.closeTime
-        // console.log(`🔒 Grup ${id} ditutup otomatis jam ${jam}`)
+        console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
       }
 
     } catch (err) {
