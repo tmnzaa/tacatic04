@@ -194,13 +194,18 @@ if (text === '.hd') {
     } else {
       const ffmpeg = require('fluent-ffmpeg');
       await new Promise((resolve, reject) => {
-        ffmpeg(inputFile)
-          .videoCodec('libx264')
-          .size('?x720') // Upscale to 720p
-          .outputOptions('-preset veryfast')
-          .on('end', resolve)
-          .on('error', reject)
-          .save(outputFile);
+       ffmpeg(inputFile)
+  .videoCodec('libx264')
+  .size('?x720') // Upscale ke 720p
+  .outputOptions([
+    '-preset ultrafast', // lebih cepat proses
+    '-crf 28',            // lebih tinggi = lebih kecil size (22–28)
+    '-b:v 500k',          // bitrate video
+    '-movflags +faststart' // percepat load awal video
+  ])
+  .on('end', resolve)
+  .on('error', reject)
+  .save(outputFile);
       });
 
       const hasil = fs.readFileSync(outputFile);
