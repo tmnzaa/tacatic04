@@ -527,22 +527,47 @@ if (text.startsWith('.tagall')) {
 
   // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
-  await sock.groupParticipantsUpdate(from, target, 'promote')
-  return sock.sendMessage(from, {
+  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+  await sock.groupParticipantsUpdate(from, target, 'promote');
+
+  // Ambil info grup & pelaku
+  const groupMetadata = await sock.groupMetadata(from);
+  const groupName = groupMetadata.subject;
+  const pelaku = sender; // pengirim pesan
+
+  // Kirim ke grup
+  await sock.sendMessage(from, {
     text: `🎉 *Promosi Berhasil!*\nSelamat kepada:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nKamu sekarang adalah *Admin Grup*! 🎖️`,
     mentions: target
-  })
+  });
+
+  // Kirim laporan ke owner
+  await sock.sendMessage(OWNER_NUM, {
+    text: `🔔 *LAPORAN PROMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
+    mentions: [pelaku, ...target],
+  });
 }
 
 // 🧹 Demote
 if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
-  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid
-  await sock.groupParticipantsUpdate(from, target, 'demote')
-  return sock.sendMessage(from, {
+  const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
+  await sock.groupParticipantsUpdate(from, target, 'demote');
+
+  const groupMetadata = await sock.groupMetadata(from);
+  const groupName = groupMetadata.subject;
+  const pelaku = sender;
+
+  // Kirim ke grup
+  await sock.sendMessage(from, {
     text: `⚠️ *Turunkan Jabatan!*\nYang tadinya admin sekarang jadi rakyat biasa:\n${target.map(jid => `• @${jid.split('@')[0]}`).join('\n')}\n\nJangan sedih ya, tetap semangat! 😅`,
     mentions: target
-  })
+  });
+
+  // Kirim laporan ke owner
+  await sock.sendMessage(OWNER_NUM, {
+    text: `📢 *LAPORAN DEMOTE*\n👤 *Pelaku:* @${pelaku.split('@')[0]}\n🎯 *Target:* ${target.map(jid => `@${jid.split('@')[0]}`).join(', ')}\n🏷️ *Grup:* ${groupName}\n🆔 ${from}`,
+    mentions: [pelaku, ...target],
+  });
 }
 
  // 🔓 .open
