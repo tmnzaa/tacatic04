@@ -525,7 +525,9 @@ if (text.startsWith('.tagall')) {
 }
 
 
-  // 👑 Promote
+  const OWNER_NUM = '6282333014459@s.whatsapp.net';
+
+// 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
   const target = msg.message.extendedTextMessage.contextInfo.mentionedJid;
   await sock.groupParticipantsUpdate(from, target, 'promote');
@@ -569,6 +571,7 @@ if (text.startsWith('.demote') && msg.message?.extendedTextMessage?.contextInfo?
     mentions: [pelaku, ...target],
   });
 }
+
 
  // 🔓 .open
 if (text.startsWith('.open')) {
