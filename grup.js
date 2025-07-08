@@ -97,7 +97,7 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   strikeDB[from][sender] = strikeDB[from][sender] || 0;
   strikeDB[from][sender] += 1;
 
-  if (strikeDB[from][sender] >= 7) {
+  if (strikeDB[from][sender] >= 10) {
     await sock.groupParticipantsUpdate(from, [sender], 'remove');
     delete strikeDB[from][sender];
   }
@@ -259,7 +259,7 @@ if (isBotAktif && !isAdmin && !isOwner) {
       strikeDB[from][sender] += 1
       fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
 
-      if (strikeDB[from][sender] >= 7) {
+      if (strikeDB[from][sender] >= 10) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
         fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
