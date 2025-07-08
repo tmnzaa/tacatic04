@@ -61,46 +61,55 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  const groupMetaCache = global.groupMetaCache || (global.groupMetaCache = {})
+const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
+const groupMetaCache = global.groupMetaCache || (global.groupMetaCache = {});
 
+// 🔧 Fungsi untuk ambil metadata grup
 async function getGroupMetadata(from, sock) {
-  const now = Date.now()
+  const now = Date.now();
 
-  // Cache hanya 2 detik
   if (groupMetaCache[from] && (now - groupMetaCache[from].timestamp < 2000)) {
-    return groupMetaCache[from].data
+    return groupMetaCache[from].data;
   }
 
   try {
-    const metadata = await sock.groupMetadata(from)
+    const metadata = await sock.groupMetadata(from);
     groupMetaCache[from] = {
       data: metadata,
       timestamp: now
-    }
-    return metadata
+    };
+    return metadata;
   } catch (err) {
-    console.error('❌ ERROR Metadata:', err.message)
-    return null
+    console.error('❌ ERROR Metadata:', err.message);
+    return null;
   }
 }
 
- const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
+// 🔽 Fungsi utama untuk dijalankan saat message masuk
+module.exports = async (sock, msg, from, sender) => {
+  if (!from.endsWith('@g.us')) return; // Hanya jalan di grup
 
-const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
-const isGroupOwner = sender === groupOwner;
-const isBotOwner = sender === OWNER_BOT;
-const isOwner = isBotOwner || isGroupOwner;
+  const metadata = await getGroupMetadata(from, sock);
+  if (!metadata) return;
 
-const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
-const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
-const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
+  const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
+  const isGroupOwner = sender === groupOwner;
+  const isBotOwner = sender === OWNER_BOT;
+  const isOwner = isBotOwner || isGroupOwner;
 
-const db = fs.readJsonSync(dbFile);
-db[from] = db[from] || {};
-db[from].nama = metadata.subject;
-const fitur = db[from];
-db[from].dnd = db[from].dnd || false;
-fs.writeJsonSync(dbFile, db, { spaces: 2 });
+  const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
+  const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
+
+  // Baca dan update database
+  const db = fs.readJsonSync(dbFile);
+  db[from] = db[from] || {};
+  db[from].nama = metadata.subject;
+  db[from].dnd = db[from].dnd || false;
+  const fitur = db[from];
+
+  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+}
 
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
