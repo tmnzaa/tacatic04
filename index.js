@@ -154,13 +154,13 @@ sock.ev.on('group-participants.update', async (update) => {
       const name = metadata.participants.find(p => p.id === jid)?.notify || 'Member Baru'
       const groupName = metadata.subject
       const tagUser = `@${jid.split('@')[0]}`
-      const imagePath = './status.jpg' // 1 gambar untuk welcome dan leave
+      const imagePath = './status.jpg'
 
       // 🟢 WELCOME
       if (update.action === 'add' && fitur.welcome) {
         const teks = `*${name}* (${tagUser}) selamat datang di grup *${groupName}*!`
         await sock.sendMessage(update.id, {
-          image: { path: imagePath },
+          image: fs.readFileSync(imagePath),
           caption: teks,
           mentions: [jid]
         })
@@ -170,7 +170,7 @@ sock.ev.on('group-participants.update', async (update) => {
       if (update.action === 'remove' && fitur.leave) {
         const teks = `*${name}* (${tagUser}) telah keluar dari grup *${groupName}*.`
         await sock.sendMessage(update.id, {
-          image: { path: imagePath },
+          image: fs.readFileSync(imagePath),
           caption: teks,
           mentions: [jid]
         })
@@ -179,7 +179,7 @@ sock.ev.on('group-participants.update', async (update) => {
   } catch (err) {
     console.error('❌ Error welcome/leave:', err)
   }
-})  
+}) 
 
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
