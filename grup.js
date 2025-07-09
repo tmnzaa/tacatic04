@@ -160,7 +160,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
 }
 
 const fiturBolehMember = ['.menu', '.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.bratv2', '.hdv2',];
-  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif'];
+  const fiturHanyaAdmin = ['.antilink1', '.antilink2', '.antipromosi', '.antitoxic', '.welcome', '.leave', '.polling', '.tagall', '.kick', '.promote', '.demote', '.open', '.close', '.cekaktif', '.hapus'];
 
   const cmdUtama = text.trim().split(' ')[0].toLowerCase()
   const fullCmd = text.trim().toLowerCase()
@@ -172,17 +172,17 @@ if (isBotAktif && !isBotAdmin) {
   }, { quoted: msg });
 }
 
-  const allowedCommands = [
+ const allowedCommands = [
   '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
   '.antilink1 on', '.antilink1 off', '.antilink2 on', '.antilink2 off',
   '.antipromosi on', '.antipromosi off', '.antitoxic on', '.antitoxic off',
-  '.antipolling on', '.antipolling off', // ✅ tambahkan ini
+  '.antipolling on', '.antipolling off',
   '.welcome on', '.welcome off', '.open', '.close', '.tagall', '.kick',
-  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.hdv2', '.removebg',  '.bratv2',
-  '.setdesc','.leave on', '.leave off', '.polling on', '.polling off',
-   '.afk', '.dnd on', '.dnd off',  // <<-- pastikan disini ya
+  '.promote', '.demote', '.cekaktif', '.stiker', '.addbrat', '.hd', '.hdv2', '.removebg', '.bratv2',
+  '.setdesc', '.leave on', '.leave off', '.polling on', '.polling off',
+  '.afk', '.dnd on', '.dnd off',
+  '.hapus' // ✅ tambahkan ini di bagian akhir atau urut abjad
 ];
-
   if (isCommand && !allowedCommands.some(cmd => fullCmd.startsWith(cmd))) return
   const isCmdValid = allowedCommands.some(cmd => text.toLowerCase().startsWith(cmd));
 
@@ -334,13 +334,14 @@ if (text === '.menu') {
 • 👢 _.kick_  → Tendang member (admin only)
 
 🛠️ *FITUR MANAJEMEN GRUP*:
-• 👑 _.promote_  → Jadikan member jadi admin
-• 🧹 _.demote_  → Turunin admin
-• 🔓 _.open_ / _.open 20.00_  → Buka grup / jadwal buka
-• 🔒 _.close_ / _.close 22.00_  → Tutup grup / jadwal tutup
-• 📄 _.setdesc_  → Ubah deskripsi grup
-• 💡 _.cekaktif_      → Cek fitur aktif
-• 📴 _.dnd on/off_   → Bot tidak akan merespon perintah dari member biasa
+• 👑 _.promote_ → Jadikan member jadi admin
+• 🧹 _.demote_ → Turunin admin
+• 🔓 _.open_ / _.open 20.00_ → Buka grup / jadwal buka
+• 🔒 _.close_ / _.close 22.00_ → Tutup grup / jadwal tutup
+• 📄 _.setdesc_ → Ubah deskripsi grup
+• 🧽 _.hapus_ → Hapus pesan member
+• 💡 _.cekaktif_ → Cek fitur aktif
+• 📴 _.dnd on/off_ → Bot tidak akan merespon perintah dari member biasa
 
 📊 *FITUR LAINNYA*:
 • 🖼️ _.stiker_        → Buat stiker dari gambar
@@ -700,6 +701,46 @@ if (text.startsWith('.setdesc')) {
     }, { quoted: msg });
   }
 }
+
+if (text === '.hapus') {
+  if (!isGroup) return; // Hanya untuk grup
+
+  if (!isAdmin && !isOwner) {
+    return sock.sendMessage(from, {
+      text: '❌ Hanya *Admin* atau *Owner* yang bisa menghapus pesan.',
+    }, { quoted: msg });
+  }
+
+  const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
+
+  if (!contextInfo || !contextInfo.stanzaId || !contextInfo.participant) {
+    return sock.sendMessage(from, {
+      text: '⚠️ Kamu harus *reply* pesan yang ingin dihapus.',
+    }, { quoted: msg });
+  }
+
+  try {
+    await sock.sendMessage(from, {
+      delete: {
+        remoteJid: from,
+        fromMe: false,
+        id: contextInfo.stanzaId,
+        participant: contextInfo.participant
+      }
+    });
+
+    await sock.sendMessage(from, {
+      text: '✅ Pesan berhasil dihapus oleh admin.',
+    }, { quoted: msg });
+
+  } catch (err) {
+    console.error('❌ Gagal hapus pesan:', err);
+    return sock.sendMessage(from, {
+      text: '⚠️ Gagal menghapus pesan. Mungkin bot bukan admin atau pesan sudah kedaluwarsa.',
+    }, { quoted: msg });
+  }
+}
+
 
 
 // if (text === '.hd') {
