@@ -151,7 +151,7 @@ sock.ev.on('group-participants.update', async (update) => {
     const metadata = await sock.groupMetadata(update.id)
 
     for (const jid of update.participants) {
-     const name = await sock.getName(jid) || 'Member Baru'
+  const name = metadata.participants.find(p => p.id === jid)?.notify || `@${jid.split('@')[0]}`
       const groupName = metadata.subject
       const tagUser = `@${jid.split('@')[0]}`
       const imagePath = './status.jpg'
