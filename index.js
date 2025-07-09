@@ -142,7 +142,6 @@ sock.ev.on('messages.upsert', async ({ messages }) => {
   }
 })
 
-  // 👋 WELCOME & LEAVE Feature: PP user + Custom teks + WhatsApp-style
 sock.ev.on('group-participants.update', async (update) => {
   const db = fs.readJsonSync(dbFile)
   const fitur = db[update.id]
@@ -152,26 +151,14 @@ sock.ev.on('group-participants.update', async (update) => {
     const metadata = await sock.groupMetadata(update.id)
 
     for (const jid of update.participants) {
-      const name = metadata.participants.find(p => p.id === jid)?.notify || 'Teman baru'
+      const name = metadata.participants.find(p => p.id === jid)?.notify || 'Member Baru'
       const groupName = metadata.subject
-
-      // ✅ Gunakan fallback PP dari imgur (lebih stabil daripada i.ibb.co)
-      const fallbackPP = 'https://i.imgur.com/s6dqg4m.jpg'
-      let pp
-      try {
-        pp = await sock.profilePictureUrl(jid, 'image')
-      } catch (e) {
-        pp = fallbackPP
-      }
+      const tagUser = `@${jid.split('@')[0]}`
+      const pp = 'https://i.imgur.com/s6dqg4m.jpg'
 
       // 🟢 WELCOME
       if (update.action === 'add' && fitur.welcome) {
-        let teks = fitur.welcomeText || `hello @name, selamat datang di *@grup*!`
-        teks = teks
-          .replace(/@user/g, `@${jid.split('@')[0]}`)
-          .replace(/@name/g, name)
-          .replace(/@grup/g, groupName)
-
+        const teks = `*${name}* (*${tagUser}*) selamat datang di grup *${groupName}*!`
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
@@ -181,7 +168,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
       // 🔴 LEAVE
       if (update.action === 'remove' && fitur.leave) {
-        const teks = `@${jid.split('@')[0]} yahh ko keluar si :) *${groupName}*.`
+        const teks = `*${name}* (*${tagUser}*) telah keluar dari grup *${groupName}*.`
         await sock.sendMessage(update.id, {
           image: { url: pp },
           caption: teks,
