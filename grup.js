@@ -703,20 +703,27 @@ if (text.startsWith('.setdesc')) {
 }
 
 if (text === '.hapus') {
-  if (!isGroup) return; // Hanya untuk grup
+  const isGroup = from.endsWith('@g.us')
+  const metadata = isGroup ? await sock.groupMetadata(from) : {}
+  const participants = isGroup ? metadata.participants : []
+  const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
+  const isBotAdmin = participants.find(p => p.id === botNumber)?.admin
+  const isAdmin = participants.find(p => p.id === sender)?.admin
+
+  if (!isGroup) return
 
   if (!isAdmin && !isOwner) {
     return sock.sendMessage(from, {
       text: '❌ Hanya *Admin* atau *Owner* yang bisa menghapus pesan.',
-    }, { quoted: msg });
+    }, { quoted: msg })
   }
 
-  const contextInfo = msg.message?.extendedTextMessage?.contextInfo;
+  const contextInfo = msg.message?.extendedTextMessage?.contextInfo
 
   if (!contextInfo || !contextInfo.stanzaId || !contextInfo.participant) {
     return sock.sendMessage(from, {
       text: '⚠️ Kamu harus *reply* pesan yang ingin dihapus.',
-    }, { quoted: msg });
+    }, { quoted: msg })
   }
 
   try {
@@ -727,20 +734,19 @@ if (text === '.hapus') {
         id: contextInfo.stanzaId,
         participant: contextInfo.participant
       }
-    });
+    })
 
     await sock.sendMessage(from, {
       text: '✅ Pesan berhasil dihapus oleh admin.',
-    }, { quoted: msg });
+    }, { quoted: msg })
 
   } catch (err) {
-    console.error('❌ Gagal hapus pesan:', err);
+    console.error('❌ Gagal hapus pesan:', err)
     return sock.sendMessage(from, {
       text: '⚠️ Gagal menghapus pesan. Mungkin bot bukan admin atau pesan sudah kedaluwarsa.',
-    }, { quoted: msg });
+    }, { quoted: msg })
   }
 }
-
 
 
 // if (text === '.hd') {
