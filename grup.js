@@ -61,12 +61,18 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
     return;
   }
 
-  let metadata
+  global.groupCache = global.groupCache || {}
+let metadata = global.groupCache[from]
+
+if (!metadata || Date.now() - metadata._cachedAt > 15000) {
   try {
     metadata = await sock.groupMetadata(from)
+    metadata._cachedAt = Date.now()
+    global.groupCache[from] = metadata
   } catch (err) {
-    return console.error('❌ ERROR Metadata:', err.message)
+    return // jangan spam console
   }
+}
 
  const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
 
