@@ -714,7 +714,7 @@ if (text === '.hapus') {
 
   if (!isAdmin && !isOwner) {
     return sock.sendMessage(from, {
-      text: '❌ Hanya *Admin* atau *Owner* yang bisa menghapus pesan.',
+      text: '❌ Hanya *Admin* yang bisa menghapus pesan.',
     }, { quoted: msg })
   }
 
@@ -737,7 +737,7 @@ if (text === '.hapus') {
     })
 
     await sock.sendMessage(from, {
-      text: '✅ Pesan berhasil dihapus oleh admin.',
+      text: '✅ Pesan berhasil dihapus.',
     }, { quoted: msg })
 
   } catch (err) {
