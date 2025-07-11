@@ -214,26 +214,30 @@ schedule.scheduleJob('* * * * *', async () => {
       }
 
       // ✅ Buka grup
-      if (fitur.openTime && fitur.openTime === jam) {
-        await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
-          console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `✅ Grup dibuka otomatis jam *${jam}*`
-        }).catch(() => { })
-        console.log(`✅ Grup ${id} dibuka jam ${jam}`)
-      }
+if (fitur.openTime && fitur.openTime === jam) {
+  await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
+    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `✅ Grup dibuka otomatis jam *${jam}*`
+  }).catch(() => { })
 
-      // 🔒 Tutup grup
-      if (fitur.closeTime && fitur.closeTime === jam) {
-        await sock.groupSettingUpdate(id, 'announcement').catch(e => {
-          console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `🔒 Grup ditutup otomatis jam *${jam}*`
-        }).catch(() => { })
-        console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
-      }
+  console.log(`✅ Grup ${id} dibuka jam ${jam}`)
+  delete fitur.openTime // ⬅️ Tambahkan ini
+}
+
+// 🔒 Tutup grup
+if (fitur.closeTime && fitur.closeTime === jam) {
+  await sock.groupSettingUpdate(id, 'announcement').catch(e => {
+    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `🔒 Grup ditutup otomatis jam *${jam}*`
+  }).catch(() => { })
+
+  console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
+  delete fitur.closeTime // ⬅️ Tambahkan ini
+}
 
     } catch (err) {
       console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
