@@ -13,12 +13,12 @@ module.exports = async (sock, msg) => {
   const db = fs.readJsonSync(path)
   db[from] = db[from] || {}
 
-  // 💌 Pesan sambutan pertama kali
+ // 💌 Pesan sambutan pertama kali
 if (!db[from].perkenalan) {
   db[from].perkenalan = true
   fs.writeJsonSync(path, db, { spaces: 2 })
   return sock.sendMessage(from, {
-    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
+    text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_ – Liat semua kekuatan botku!\n• 💸 _.sewa_ – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌\n• 🤖 _.maujadibot_ – Ingin jadi bot juga?`
   })
 }
 
@@ -28,6 +28,42 @@ if (!db[from].perkenalan) {
       text: `📋 *MENU UTAMA - TACATIC BOT 04*\n\n🌟 Aku bisa bantu kamu jagain grup lohh~\nPilih aja yang kamu mau:\n\n• 🎮 _.fitur_  – Liat semua kekuatan botku!\n• 💸 _.sewa_   – Info sewa (murce!)\n• 🙋‍♂️ _.owner_ – Chat abang owner botku 💌`
     })
   }
+
+  // 💎 Info Jadi Bot Sendiri (Versi Premium dengan Harga Baru)
+if (text.toLowerCase() === '.maujadibot') {
+  return sock.sendMessage(from, {
+    text: `💎 *MAU JADI BOT SENDIRI?*
+
+Kamu bisa punya *Bot WhatsApp Profesional* seperti *Tacatic 04*, dengan fitur lengkap dan tampil keren! Cocok buat jagain grup pribadi, komunitas, bahkan bisa kamu sewakan lagi untuk cuan! 💸
+
+🚀 *FITUR YANG AKAN KAMU DAPATKAN:*
+• Auto jaga grup 24 jam (anti spam, antilink, welcome, dll)
+• Full Source Code premium
+• Custom nama bot dan watermark pribadi
+• Panduan lengkap setup langsung di HP (via Termux)
+• Bisa di-clone & aktifkan sendiri
+• Gratis bantuan pemasangan sampai bot nyala!
+
+⚠️ *SYARAT JADI BOT SENDIRI:*
+• WAJIB punya **2 nomor WhatsApp**:
+  1. Nomor untuk login bot
+  2. Nomor owner untuk kontrol perintah
+(Bot tidak disarankan dijalankan dengan hanya 1 nomor.)
+
+📱 *PERANGKAT WAJIB:*  
+Script ini *hanya bisa dijalankan lewat aplikasi Termux* di Android.
+
+💰 *HARGA SCRIPT PREMIUM:*
+• 25K = *Basic Version* – Full Source Code TANPA bisa rename  
+• 50K = *Premium Version* – Full Source Code + Rename Bot + Panduan Lengkap Termux + Support bantu pasang
+
+📜 *Lihat daftar fitur lengkap?*
+Ketik: *.fitur*
+
+📞 Serius ingin jadi bot sendiri dan punya sistem kayak ini?
+Langsung ketik *.owner* untuk tanya-tanya atau order sekarang juga!`
+  })
+}
 
   // 🛡️ List fitur jaga grup + tambahan lainnya
 if (text === '.fitur') {
