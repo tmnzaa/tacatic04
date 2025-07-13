@@ -483,24 +483,30 @@ for (let f of fiturList) {
   }
 }
 
-  // 👮 .tagall kirim teks atau reply pesan sambil mention semua
-if (text.startsWith('.tagall')) {
-  const isi = text.split('.tagall')[1]?.trim()
+  // 👮 .tagall - Kirim ulang isi pesan yang di-reply + mention semua
+if (text === '.tagall' && m.quoted && m.quoted.message) {
   const list = metadata.participants.map(p => p.id)
 
-  // Jika sambil reply, kirim ulang pesan yg di-reply
-  if (m.quoted) {
-    const pesanReply = m.quoted.text || '[Pesan tidak bisa ditampilkan]'
-    return sock.sendMessage(from, {
-      text: pesanReply,
-      mentions: list,
-      quoted: m.quoted
-    })
+  let isiPesan = ''
+  const quotedMsg = m.quoted.message
+
+  // Ambil isi dari berbagai tipe pesan
+  if (quotedMsg.conversation) {
+    isiPesan = quotedMsg.conversation
+  } else if (quotedMsg.extendedTextMessage) {
+    isiPesan = quotedMsg.extendedTextMessage.text
+  } else if (quotedMsg.imageMessage?.caption) {
+    isiPesan = quotedMsg.imageMessage.caption
+  } else if (quotedMsg.videoMessage?.caption) {
+    isiPesan = quotedMsg.videoMessage.caption
+  } else if (quotedMsg.buttonsMessage?.contentText) {
+    isiPesan = quotedMsg.buttonsMessage.contentText
+  } else {
+    isiPesan = '[Pesan tidak bisa ditampilkan]'
   }
 
-  // Jika tidak reply, kirim teks biasa
   return sock.sendMessage(from, {
-    text: isi || '', // jika tidak isi, kirim kosong
+    text: isiPesan,
     mentions: list
   })
 }
