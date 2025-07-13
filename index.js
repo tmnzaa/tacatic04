@@ -1,13 +1,3 @@
-console.log('\n🤖 Bot ini dibuat oleh Owner Tacatic 04\n');
-
-// Cek apakah watermark masih ada
-const fs = require('fs');
-const isi = fs.readFileSync(__filename, 'utf-8');
-if (!isi.includes('Owner Tacatic 04')) {
-  console.log('❌ Anda telah menghapus watermark! Bot dimatikan otomatis.');
-  process.exit();
-}
-
 const {
   default: makeWASocket,
   useMultiFileAuthState,
