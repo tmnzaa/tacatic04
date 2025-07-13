@@ -483,13 +483,24 @@ for (let f of fiturList) {
   }
 }
 
-  // 👮 .tagall tanpa tampil mention (silent mention)
+  // 👮 .tagall kirim teks atau reply pesan sambil mention semua
 if (text.startsWith('.tagall')) {
   const isi = text.split('.tagall')[1]?.trim()
   const list = metadata.participants.map(p => p.id)
 
+  // Jika sambil reply, kirim ulang pesan yg di-reply
+  if (m.quoted) {
+    const pesanReply = m.quoted.text || '[Pesan tidak bisa ditampilkan]'
+    return sock.sendMessage(from, {
+      text: pesanReply,
+      mentions: list,
+      quoted: m.quoted
+    })
+  }
+
+  // Jika tidak reply, kirim teks biasa
   return sock.sendMessage(from, {
-    text: isi || '', // kirim pesan kosong jika tidak ada teks (unicode blank)
+    text: isi || '', // jika tidak isi, kirim kosong
     mentions: list
   })
 }
