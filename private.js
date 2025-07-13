@@ -65,8 +65,8 @@ Jadi, kamu nggak beli “kode asal comot”, tapi beli sistem profesional 🤝
 ---
 
 💰 *HARGA SCRIPT PREMIUM:*
-• 25K = *Basic Version* – Full Source Code TANPA bisa rename  
-• 50K = *Premium Version* – Full Source Code + Rename Bot + Panduan Lengkap Termux + Support bantu pasang
+• 35K = *Basic Version* – Full Source Code TANPA bisa rename  
+• 55K = *Premium Version* – Full Source Code + Rename Bot + Panduan Lengkap Termux + Support bantu pasang
 
 📜 *Lihat daftar fitur lengkap?*
 Ketik: *.fitur*
