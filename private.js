@@ -38,7 +38,7 @@ Kamu bisa punya *Bot WhatsApp Profesional* seperti *Tacatic 04*, dengan fitur le
 
 🚀 *FITUR YANG AKAN KAMU DAPATKAN:*
 • Auto jaga grup 24 jam (anti spam, antilink, welcome, dll)
-• Full Source Code premium
+• Full Source Code premium (bukan hasil comot YouTube)
 • Custom nama bot dan watermark pribadi
 • Panduan lengkap setup langsung di HP (via Termux)
 • Bisa di-clone & aktifkan sendiri
@@ -52,6 +52,17 @@ Kamu bisa punya *Bot WhatsApp Profesional* seperti *Tacatic 04*, dengan fitur le
 
 📱 *PERANGKAT WAJIB:*  
 Script ini *hanya bisa dijalankan lewat aplikasi Termux* di Android.
+
+---
+
+❗ *KENAPA SCRIPT INI HARUS BERBAYAR?*
+• Dibuat manual dari nol, bukan copas YouTube
+• Kode bersih, sudah diuji langsung di banyak grup aktif
+• Support dan update diberikan langsung oleh pembuat
+• Fitur stabil dan bisa kamu kembangkan sendiri
+Jadi, kamu nggak beli “kode asal comot”, tapi beli sistem profesional 🤝
+
+---
 
 💰 *HARGA SCRIPT PREMIUM:*
 • 25K = *Basic Version* – Full Source Code TANPA bisa rename  
