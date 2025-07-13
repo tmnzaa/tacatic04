@@ -488,35 +488,37 @@ for (let f of fiturList) {
     const isi = text.split('.tagall')[1]?.trim()
     const list = metadata.participants.map(p => p.id)
 
-    // kalau ada reply
-    if (msg.quoted && msg.quoted.message) {
-      let isiPesan = ''
-      const q = msg.quoted.message
+    // 👮 .tagall tanpa tampil mention (silent mention)
+  if (text.startsWith('.tagall')) {
+    const isi = text.split('.tagall')[1]?.trim()
+    const list = metadata.participants.map(p => p.id)
 
-      if (q.conversation) {
-        isiPesan = q.conversation
-      } else if (q.extendedTextMessage) {
-        isiPesan = q.extendedTextMessage.text
-      } else if (q.imageMessage?.caption) {
-        isiPesan = q.imageMessage.caption
-      } else if (q.videoMessage?.caption) {
-        isiPesan = q.videoMessage.caption
+    // Coba ambil isi pesan yang di-reply
+    let isiPesan = isi || ''
+
+    if (msg.quoted) {
+      const quoted = await msg.getQuotedObj() // WAJIB pakai ini
+      const qMsg = quoted.message
+
+      if (qMsg?.conversation) {
+        isiPesan = qMsg.conversation
+      } else if (qMsg?.extendedTextMessage?.text) {
+        isiPesan = qMsg.extendedTextMessage.text
+      } else if (qMsg?.imageMessage?.caption) {
+        isiPesan = qMsg.imageMessage.caption
+      } else if (qMsg?.videoMessage?.caption) {
+        isiPesan = qMsg.videoMessage.caption
       } else {
         isiPesan = '[Pesan tidak bisa ditampilkan]'
       }
-
-      return sock.sendMessage(from, {
-        text: isiPesan,
-        mentions: list
-      })
     }
 
-    // kalau gak reply
     return sock.sendMessage(from, {
-      text: isi || '',
+      text: isiPesan,
       mentions: list
     })
   }
+}
 
   if (text.startsWith('.kick')) {
   if (!isAdmin && !isOwner) {
