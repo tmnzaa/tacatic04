@@ -483,30 +483,37 @@ for (let f of fiturList) {
   }
 }
 
-  // 👮 .tagall - Kirim ulang isi pesan yang di-reply + mention semua
-if (text === '.tagall' && m.quoted && m.quoted.message) {
+  if (text.startsWith('.tagall')) {
   const list = metadata.participants.map(p => p.id)
+  const isi = text.split('.tagall')[1]?.trim()
 
-  let isiPesan = ''
-  const quotedMsg = m.quoted.message
+  // Kalau reply ke pesan
+  if (m.quoted && m.quoted.message) {
+    let isiPesan = ''
+    const q = m.quoted.message
 
-  // Ambil isi dari berbagai tipe pesan
-  if (quotedMsg.conversation) {
-    isiPesan = quotedMsg.conversation
-  } else if (quotedMsg.extendedTextMessage) {
-    isiPesan = quotedMsg.extendedTextMessage.text
-  } else if (quotedMsg.imageMessage?.caption) {
-    isiPesan = quotedMsg.imageMessage.caption
-  } else if (quotedMsg.videoMessage?.caption) {
-    isiPesan = quotedMsg.videoMessage.caption
-  } else if (quotedMsg.buttonsMessage?.contentText) {
-    isiPesan = quotedMsg.buttonsMessage.contentText
-  } else {
-    isiPesan = '[Pesan tidak bisa ditampilkan]'
+    if (q.conversation) {
+      isiPesan = q.conversation
+    } else if (q.extendedTextMessage) {
+      isiPesan = q.extendedTextMessage.text
+    } else if (q.imageMessage?.caption) {
+      isiPesan = q.imageMessage.caption
+    } else if (q.videoMessage?.caption) {
+      isiPesan = q.videoMessage.caption
+    } else {
+      isiPesan = '[Pesan tidak bisa ditampilkan]'
+    }
+
+    return sock.sendMessage(from, {
+      text: isiPesan,
+      mentions: list,
+      // penting: pastikan tidak pakai quoted di sini karena kita REPOST isi pesan, bukan reply lagi
+    })
   }
 
+  // Kalau tidak reply, kirim teks yang diketik
   return sock.sendMessage(from, {
-    text: isiPesan,
+    text: isi || '',
     mentions: list
   })
 }
