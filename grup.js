@@ -7,6 +7,7 @@ const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
+global.strikeCache = fs.readJsonSync(strikeFile); // ⏱️ baca sekali saja saat pertama
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 
 const tambahHari = (jumlah) => {
@@ -90,7 +91,7 @@ db[from] = db[from] || {};
 db[from].nama = metadata.subject;
 const fitur = db[from];
 db[from].dnd = db[from].dnd || false;
-fs.writeJsonSync(dbFile, db, { spaces: 2 });
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
 const now = new Date();
 const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) > now);
@@ -98,7 +99,7 @@ const isBotAktif = fitur.permanen || (fitur.expired && new Date(fitur.expired) >
 if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
   await sock.sendMessage(from, { delete: msg.key });
 
-  const strikeDB = fs.readJsonSync(strikeFile);
+  const strikeDB = global.strikeCache;
   strikeDB[from] = strikeDB[from] || {};
   strikeDB[from][sender] = strikeDB[from][sender] || 0;
   strikeDB[from][sender] += 1;
@@ -108,7 +109,8 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
     delete strikeDB[from][sender];
   }
 
-  fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
 
@@ -152,7 +154,7 @@ if (['.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper'].includes(text)
     fitur.expired = null;
   }
 
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   return sock.sendMessage(from, {
     text: `✅ *Tacatic Bot 04* berhasil diaktifkan!\n🆔 Grup ID: *${from}*\n📛 Nama Grup: *${fitur.nama || 'Tidak tersedia'}*\n📅 Masa aktif: *${fitur.permanen ? 'PERMANEN' : fitur.expired}*`
@@ -220,7 +222,6 @@ if (isBotAktif && !isBotAdmin) {
 }
 
 // Ambil isi teks dari pesan utama
-// Ambil isi teks dari pesan utama
 text = msg.message?.conversation ||
   msg.message?.extendedTextMessage?.text ||
   msg.message?.imageMessage?.caption ||
@@ -245,39 +246,36 @@ if (quotedMsg) {
 // Gabungkan isi text dan reply untuk analisis
 const combinedText = `${text}\n${replyText}`;
 
-
 // Cek deteksi terhadap link, polling dengan link, promo dan toxic
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(combinedText);
 const isPollingWithLink = isPolling && linkRegex.test(combinedText);
 const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|bokep( viral)?|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|suntik sosmed|suntik akun|jual akun sosmed|jual jasa bug|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep)/i.test(combinedText);
-const isToxic = kataKasar.some(k => combinedText.toLowerCase().includes(k));
+const toxicRegex = new RegExp(kataKasar.join('|'), 'i');
+const isToxic = toxicRegex.test(combinedText);
 
 
 // ⛔ Prioritaskan filter sebelum semua pengecekan command
 if (isBotAktif && !isAdmin && !isOwner) {
   try {
-    const strikeDB = fs.readJsonSync(strikeFile)
+   const strikeDB = global.strikeCache;
     strikeDB[from] = strikeDB[from] || {}
     strikeDB[from][sender] = strikeDB[from][sender] || 0
 
     const tambahStrike = async () => {
       strikeDB[from][sender] += 1
-      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+    fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+global.strikeCache = strikeDB; // update cache biar tetap sinkron
 
       if (strikeDB[from][sender] >= 20) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
-        fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 })
+     fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+global.strikeCache = strikeDB; // update cache biar tetap sinkron
       }
     }
 
    const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
-
-  //  console.log('📥 Pesan Diterima:', text)
-// console.log('• isLink:', isLink)
-// console.log('• isAfkLink:', isAfkLink)
-// console.log('• isPollingWithLink:', isPollingWithLink)
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && (isLink || isPollingWithLink)) {
@@ -293,7 +291,8 @@ if (isBotAktif && !isAdmin && !isOwner) {
       await sock.sendMessage(from, { delete: msg.key });
       await sock.groupParticipantsUpdate(from, [sender], 'remove');
       delete strikeDB[from][sender];
-      fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+    fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+global.strikeCache = strikeDB; // update cache biar tetap sinkron
       return;
     }
 
@@ -418,7 +417,7 @@ if (text === '.dnd on' || text === '.dnd off') {
 
   const onOff = text.endsWith('on');
   fitur['dnd'] = onOff;
-  fs.writeJsonSync(dbFile, db, { spaces: 2 });
+fs.writeJsonSync(dbFile, db, { spaces: 2 })
 
   return sock.sendMessage(from, {
     text: `✅ Mode *Do Not Disturb* telah *${onOff ? 'diaktifkan' : 'dimatikan'}*.`
@@ -456,7 +455,7 @@ for (let f of fiturList) {
     }
 
     fitur[f] = true
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    fs.writeJson(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, {
       text: `✅ Fitur *${f}* berhasil diaktifkan!`
     }, { quoted: msg })
@@ -476,7 +475,7 @@ for (let f of fiturList) {
     }
 
     fitur[f] = false
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    fs.writeJson(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, {
       text: `❌ Fitur *${f}* berhasil dimatikan.`
     }, { quoted: msg })
@@ -611,7 +610,7 @@ if (text.startsWith('.open')) {
 
   if (jam && /^\d{2}\.\d{2}$/.test(jam)) {
     db[from].openTime = jam
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+   fs.writeJson(dbFile, db, { spaces: 2 })
     return sock.sendMessage(from, { text: `⏰ Grup akan dibuka otomatis jam *${jam.replace('.', ':')}*` })
   }
 
@@ -680,24 +679,6 @@ const isBotAdmin = metadata.participants.find(p => p.id === botNumber && p.admin
     text: `📊 *CEK STATUS FITUR GRUP*\n\n📛 Grup: *${fitur.nama || 'Tidak diketahui'}*\n📅 Aktif sampai: *${masaAktif}*\n\n🟢 *Fitur Aktif:*\n${aktif || '-'}\n\n🔴 *Fitur Nonaktif:*\n${mati || '-'}`,
   }, { quoted: msg });
 }
-
-
-// if (text.startsWith('.setwelcome')) {
-//   if (!isAdmin && !isOwner) {
-//     return sock.sendMessage(from, { text: '⚠️ Hanya admin yang bisa mengatur sambutan.' }, { quoted: msg });
-//   }
-
-//   const isi = text.split('.setwelcome')[1]?.trim();
-//   if (!isi) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Format salah.\nContoh: *.setwelcome Selamat datang @name di @grup!*'
-//     }, { quoted: msg });
-//   }
-
-//   fitur.welcomeText = isi;
-//   fs.writeJsonSync(dbFile, db, { spaces: 2 });
-//   return sock.sendMessage(from, { text: '✅ Teks sambutan berhasil disimpan!' }, { quoted: msg });
-// }
 
 if (text.startsWith('.setdesc')) {
   if (!isAdmin && !isOwner) {
@@ -771,68 +752,7 @@ if (text === '.hapus') {
   }
 }
 
-
-// if (text === '.hd') {
-//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
-
-//   if (!mediaMessage) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Kirim atau reply gambar dengan perintah *.hd*'
-//     }, { quoted: msg });
-//   }
-
-//   try {
-//     const buffer = await downloadMediaMessage(
-//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-//       'buffer',
-//       {},
-//       { logger: console, reuploadRequest: sock.updateMediaMessage }
-//     );
-
-//     const filename = `./hd-${Date.now()}.jpg`;
-//     fs.writeFileSync(filename, buffer);
-
-//     const image = await Jimp.read(filename);
-//     image
-//       .contrast(0.20)       // Tambah kontras
-//       .brightness(0.5)      // Tambah terang
-//       .normalize()          // Normalisasi warna
-//       .posterize(180)       // Sedikit tajamkan warna
-//       .quality(90);         // Kualitas tinggi
-
-//     await image.writeAsync(filename);
-
-//     const result = fs.readFileSync(filename);
-//     await sock.sendMessage(from, {
-//       image: result,
-//       caption: '📸 Sudah aku-HD-kan! Lebih tajam dan cerah ✨'
-//     }, { quoted: msg });
-
-//     fs.unlinkSync(filename);
-//   } catch (err) {
-//     console.error('❌ HD error:', err);
-//     await sock.sendMessage(from, {
-//       text: '⚠️ Gagal membuat versi HD foto.'
-//     }, { quoted: msg });
-//   }
-// }
-
-//   // 🚫 Batasi command hanya yang tersedia di bot
-// const allowedCommands = [
-//   '.menu', '.statusbot', '.aktifbot3k', '.aktifbot5k', '.aktifbot7k', '.aktifbotper',
-//   '.antilink1 on', '.antilink1 off',
-//   '.antilink2 on', '.antilink2 off',
-//   '.antipromosi on', '.antipromosi off',
-//   '.antitoxic on', '.antitoxic off',
-//   '.welcome on', '.welcome off',
-//   '.open', '.close', '.tagall', '.kick', '.promote', '.demote', '.stiker', '.addbrat',
-// ]
-
-// Jalankan command valid
 if (isCommand && isCmdValid) {
-    // await sock.sendPresenceUpdate('composing', from) // ⌨️ Bot mengetik    
-  // lanjut proses handler command sesuai daftar yang dikenali (sudah ada di bawah)
 }
 
 // ❗ ABAIKAN command tak dikenal, TAPI tetap jalankan filter antilink/antitoxic/promosi
@@ -859,163 +779,4 @@ if (isCommand && !isCmdValid) {
   }
 }
 
-// // 🎭 Auto Reaction Emoji
-// if (isBotAktif && !isCommand) {
-//   const lowerText = text.toLowerCase()
-
-//   // Daftar kata dan emoji yang ingin direaksikan
-//   const reactions = [
-//     { words: ['.menu'], emoji: '💤' },
-//     { words: ['.an', 'lol', 'ngakak'], emoji: '' },
-//     { words: ['pagi', 'good morning'], emoji: '' },
-//     { words: ['malam', 'good night'], emoji: '' },
-//     { words: ['keren', 'mantap', 'hebat'], emoji: '' },
-//   ]
-
-//   for (const { words, emoji } of reactions) {
-//     if (words.some(word => lowerText.includes(word))) {
-//       await sock.sendMessage(from, {
-//         react: {
-//           text: emoji,
-//           key: msg.key
-//         }
-//       })
-//       break // berhenti setelah satu emoji dikirim
-//     }
-//   }
-// }
-
-// // === .stiker ===
-// if (text === '.stiker') {
-//   const quoted = msg?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-//   const mediaMessage = quoted?.imageMessage || msg?.message?.imageMessage;
-
-//   if (!mediaMessage) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Kirim atau reply gambar dengan perintah *.stiker*'
-//     }, { quoted: msg });
-//   }
-
-//   try {
-//     const buffer = await downloadMediaMessage(
-//       { message: quoted ? { imageMessage: quoted.imageMessage } : msg.message },
-//       'buffer',
-//       {},
-//       { logger: console, reuploadRequest: sock.updateMediaMessage }
-//     );
-
-//     const filename = `./${Date.now()}`;
-//     const inputPath = `${filename}.jpg`;
-//     const outputPath = `${filename}.webp`;
-
-//     fs.writeFileSync(inputPath, buffer);
-
-//     // Resize dengan kualitas tinggi & center 512x512
-//     await new Promise((resolve, reject) => {
-//       const cmd = `convert "${inputPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${outputPath}"`;
-//       exec(cmd, (err) => {
-//         if (err) return reject(err);
-//         resolve();
-//       });
-//     });
-
-//     const stickerBuffer = fs.readFileSync(outputPath);
-
-//     await sock.sendMessage(from, {
-//       sticker: stickerBuffer,
-//       mimetype: 'image/webp'
-//     }, { quoted: msg });
-
-//     fs.unlinkSync(inputPath);
-//     fs.unlinkSync(outputPath);
-//   } catch (err) {
-//     console.error('❌ stiker error:', err);
-//     await sock.sendMessage(from, {
-//       text: '⚠️ Gagal membuat stiker!'
-//     }, { quoted: msg });
-//   }
-// }
-
-// // === .addbrat ===
-// if (text.startsWith('.addbrat ')) {
-//   const teks = text.split('.addbrat ')[1].trim();
-//   if (!teks) {
-//     return sock.sendMessage(from, {
-//       text: '❌ Masukkan teks!\nContoh: *.addbrat semangat ya*'
-//     }, { quoted: msg });
-//   }
-
-//   try {
-//     const filename = Date.now();
-//     const pngPath = `./${filename}.png`;
-//     const webpPath = `./${filename}.webp`;
-
-//     // Font besar dan kecil
-//     const font = await Jimp.loadFont(Jimp.FONT_SANS_64_BLACK); // Lebih besar, lebih tajam
-//     const fontSmall = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-//     const image = new Jimp(512, 512, 0xFFFFFFFF); // putih, bisa diganti transparan: 0x00000000
-
-//     // Fungsi pembungkus gaya anomali (acak baris, jarak kata jauh)
-//     const wrapAnomaliStyle = (text) => {
-//       const words = text.trim().split(' ');
-//       const lines = [];
-//       let line = [];
-
-//       for (let i = 0; i < words.length; i++) {
-//         line.push(words[i]);
-
-//         // Ganti baris setiap 2 kata (atau 1 jika ingin lebih acak)
-//         if (line.length === 2 || i === words.length - 1) {
-//           lines.push(line.join('     ')); // spasi antar kata
-//           line = [];
-//         }
-//       }
-//       return lines.join('\n');
-//     };
-
-//     const wrappedText = wrapAnomaliStyle(teks);
-
-//     // Cetak teks di tengah
-//     image.print(
-//       font,
-//       0,
-//       0,
-//       {
-//         text: wrappedText,
-//         alignmentX: Jimp.HORIZONTAL_ALIGN_CENTER,
-//         alignmentY: Jimp.VERTICAL_ALIGN_MIDDLE
-//       },
-//       512,
-//       512
-//     );
-
-//     image.quality(100);
-//     await image.writeAsync(pngPath);
-
-//     // Konversi PNG ke WebP
-//     await new Promise((resolve, reject) => {
-//       const cmd = `convert "${pngPath}" -resize 512x512^ -gravity center -extent 512x512 -quality 100 "${webpPath}"`;
-//       exec(cmd, (err) => {
-//         if (err) return reject(err);
-//         resolve();
-//       });
-//     });
-
-//     const buffer = fs.readFileSync(webpPath);
-
-//     await sock.sendMessage(from, {
-//       sticker: buffer,
-//       mimetype: 'image/webp'
-//     }, { quoted: msg });
-
-//     // Hapus file sementara
-//     fs.unlinkSync(pngPath);
-//     fs.unlinkSync(webpPath);
-//   } catch (err) {
-//     console.error('❌ addbrat error:', err);
-//     await sock.sendMessage(from, {
-//       text: '⚠️ Gagal membuat stiker!'
-//     }, { quoted: msg });
-//   }
-// }
 }
