@@ -154,7 +154,7 @@ sock.ev.on('group-participants.update', async (update) => {
   const name = metadata.participants.find(p => p.id === jid)?.notify || `@${jid.split('@')[0]}`
       const groupName = metadata.subject
       const tagUser = `@${jid.split('@')[0]}`
-      const imagePath = './status.jpg'
+      const imagePath = './ronaldo.jpg'
 
       // 🟢 WELCOME
       if (update.action === 'add' && fitur.welcome) {
