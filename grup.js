@@ -7,7 +7,9 @@ const { exec } = require('child_process');
 const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
+if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 global.strikeCache = fs.readJsonSync(strikeFile); // ⏱️ baca sekali saja saat pertama
+global.lastLinkTime = global.lastLinkTime || {}
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 
 const tambahHari = (jumlah) => {
@@ -16,7 +18,14 @@ const tambahHari = (jumlah) => {
   return date.toISOString().split('T')[0];
 };
 
-const kataKasar = ['jancok','anjing','babi','kontol','brengsek','bangsat','goblok','tai','bokep','suntik','bug jasa']
+const kataKasar = [
+  'jancok', 'anjing', 'babi', 'kontol', 'memek', 'pantek', 'brengsek', 'bangsat', 'goblok', 'tolol', 'tai',
+  'monyet', 'ngentot', 'kampret', 'sinting', 'idiot', 'fuck', 'shit', 'asu', 'pukimak',
+  'bokep', 'porno', 'sex', 'sange', 'bug jasa', 'jasa bug', 'suntik', 'suntik akun', 'suntik sosmed',
+  'jual akun', 'jual jasa', 'jual bokep', 'jual video bokep', 'slot', 'casino', 'judi', 'judol', 'chip',
+  'unchek', 'apk mod', 'apk premium', 'sell apk', 'jual akun sosmed', 'suntik tiktok', 'suntik ig',
+  'suntik instagram'
+];
 
 module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
@@ -250,7 +259,7 @@ const combinedText = `${text}\n${replyText}`;
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(combinedText);
 const isPollingWithLink = isPolling && linkRegex.test(combinedText);
-const isPromo = /(slot|casino|chip|jud[iy]|unchek|judol|bokep( viral)?|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|suntik sosmed|suntik akun|jual akun sosmed|jual jasa bug|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep)/i.test(combinedText);
+const isPromo = /(slot|casino|chip|jud[iy]|judol|bokep( viral)?|porno|sex|sange|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|jasa suntik|suntik akun|suntik sosmed|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep|sewa( wa| whatsapp| bot)?|jasa sewa( nomor)?( wa| whatsapp)?|sewa nomor( wa| whatsapp)?|nokos|unchek)/i.test(combinedText);
 const toxicRegex = new RegExp(kataKasar.join('|'), 'i');
 const isToxic = toxicRegex.test(combinedText);
 
@@ -279,15 +288,24 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
     if (fitur.antilink1 && (isLink || isPollingWithLink)) {
-      // console.log('📛 Deteksi link atau polling mencurigakan!');
-      await sock.sendMessage(from, { delete: msg.key });
-      await tambahStrike();
-      return;
-    }
+  const now = Date.now();
+  const last = global.lastLinkTime[sender] || 0;
+
+  // Jangan proses kalau pesan ini datang terlalu cepat setelah link sebelumnya
+  if (now - last < 1500) {
+    await sock.sendMessage(from, { delete: msg.key });
+    return;
+  }
+
+  global.lastLinkTime[sender] = now; // Simpan waktu kirim link terakhir
+
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+  return;
+}
 
     // 🚫 AntiLink 2: Hapus pesan + langsung tendang
     if (fitur.antilink2 && (isLink || isPollingWithLink)) {
-      // console.log('📛 Deteksi link atau polling mencurigakan! Tendang langsung!');
       await sock.sendMessage(from, { delete: msg.key });
       await sock.groupParticipantsUpdate(from, [sender], 'remove');
       delete strikeDB[from][sender];
@@ -552,7 +570,6 @@ for (let f of fiturList) {
     }, { quoted: msg })
   }
 }
-
 
   const OWNER_NUM = '6282333014459@s.whatsapp.net';
 
