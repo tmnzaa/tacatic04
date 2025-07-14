@@ -222,7 +222,8 @@ if (isBotAktif && !isBotAdmin) {
   }
 
   if (isCommand) {
-  if (db[from].dnd) {
+  // Jika DND aktif, tapi command .afk, jangan blok
+  if (db[from].dnd && !text.startsWith('.afk')) {
     if (!isAdmin && !isOwner) {
       await sock.sendMessage(from, {
         text: '⚠️ Mode *Do Not Disturb* sedang aktif.\nBot tidak akan merespon command dari member biasa.'
@@ -230,7 +231,6 @@ if (isBotAktif && !isBotAdmin) {
       return;
     }
   }
-  // lanjut proses command lainnya...
 }
 
 // Ambil isi teks dari pesan utama
@@ -411,19 +411,34 @@ Contoh: _.bratv2 haloo gais_
 if (isBotAktif && isAfk) {
   const alasan = text.split('.afk')[1]?.trim() || 'AFK';
 
-  if ((isLink || isPollingWithLink) && !isAdmin && !isOwner) {
+    if ((isLink || isPollingWithLink) && !isAdmin && !isOwner) {
+    const strikeDB = global.strikeCache;
+    strikeDB[from] = strikeDB[from] || {};
+    strikeDB[from][sender] = strikeDB[from][sender] || 0;
+    strikeDB[from][sender] += 1;
+
+    // Hapus & tambah strike
     await sock.sendMessage(from, {
       text: '⚠️ Tidak boleh menyisipkan *link* atau *polling* saat AFK!',
     }, { quoted: msg });
     await sock.sendMessage(from, { delete: msg.key });
+
+    if (strikeDB[from][sender] >= 20) {
+      await sock.groupParticipantsUpdate(from, [sender], 'remove');
+      delete strikeDB[from][sender];
+    }
+
+    fs.writeJsonSync(strikeFile, strikeDB, { spaces: 2 });
+    global.strikeCache = strikeDB;
+
     return;
   }
 
   // Balas ke grup bahwa user AFK
   await sock.sendMessage(from, {
-    text: `🛌 @${sender.split('@')[0]} sekarang sedang *AFK*.\n📝 Alasan: ${alasan}`,
-    mentions: [sender]
-  }, { quoted: msg });
+  text: `📢 @${sender.split('@')[0]} sedang *AFK* untuk sementara waktu.\n📝 Alasan: ${alasan || 'Tidak disebutkan'}\nMohon tidak mengganggu dulu ya 🙏`,
+  mentions: [sender]
+}, { quoted: msg });
 
   return;
 }
