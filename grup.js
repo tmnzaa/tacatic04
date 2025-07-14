@@ -21,7 +21,7 @@ const tambahHari = (jumlah) => {
 const kataKasar = [
   'jancok', 'anjing', 'babi', 'kontol', 'memek', 'pantek', 'brengsek', 'bangsat', 'goblok', 'tolol', 'tai',
   'monyet', 'ngentot', 'kampret', 'sinting', 'idiot', 'fuck', 'shit', 'asu', 'pukimak',
-  'bokep', 'porno', 'sex', 'sange',
+  'bokep', 'porno', 'sex', 'sange', 'okep',
   'bug jasa', 'jasa bug', 'suntik', 'suntik sosmed',
   'jual bokep', 'jual video bokep',
   'slot', 'casino', 'judi', 'judol', 'chip',
@@ -262,7 +262,7 @@ const combinedText = `${text}\n${replyText}`;
 const linkRegex = /(https?:\/\/[^\s]+|www\.[^\s]+|chat\.whatsapp\.com\/[A-Za-z0-9]+)/i;
 const isLink = linkRegex.test(combinedText);
 const isPollingWithLink = isPolling && linkRegex.test(combinedText);
-const isPromo = /(slot|casino|chip|jud[iy]|judol|bokep( viral)?|porno|sex|sange|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|jasa suntik|suntik|suntik sosmed|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep|sewa( wa| whatsapp| bot)?|jasa sewa( nomor)?( wa| whatsapp)?|sewa nomor( wa| whatsapp)?|nokos|unchek)/i.test(combinedText);
+const isPromo = /(slot|casino|chip|jud[iy]|judol|bokep( viral)?|porno|sex|sange|sell apk( mod)?|apk( premium| mod)?|jasa bug|bug jasa|jasa suntik|suntik|suntik sosmed|suntik (tiktok|ig|instagram)|jual bokep|jual video bokep|nokos|unchek|okep|bocil|viral)/i.test(combinedText);
 const toxicRegex = new RegExp(kataKasar.join('|'), 'i');
 const isToxic = toxicRegex.test(combinedText);
 
