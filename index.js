@@ -199,7 +199,14 @@ sock.ev.on('group-participants.update', async (update) => {
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
-  let db = dbCache // ✅ pakai cache biar cepat
+  let db = {}
+
+  try {
+    db = fs.readJsonSync(dbFile)
+  } catch (e) {
+    console.error('❌ Gagal baca dbFile:', e)
+    return
+  }
 
   for (const id in db) {
     const fitur = db[id]
@@ -221,43 +228,47 @@ schedule.scheduleJob('* * * * *', async () => {
         continue
       }
 
-      // ✅ Buka grup otomatis
-      if (fitur.openTime && fitur.openTime === jam) {
-        await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
-          console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `✅ Grup dibuka otomatis jam *${jam}*`
-        }).catch(() => { })
+      // ✅ Buka grup
+if (fitur.openTime && fitur.openTime === jam) {
+  await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
+    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `✅ Grup dibuka otomatis jam *${jam}*`
+  }).catch(() => { })
 
-        console.log(`✅ Grup ${id} dibuka jam ${jam}`)
-        delete fitur.openTime
-      }
+  console.log(`✅ Grup ${id} dibuka jam ${jam}`)
+  delete fitur.openTime // ⬅️ Tambahkan ini
+}
 
-      // 🔒 Tutup grup otomatis
-      if (fitur.closeTime && fitur.closeTime === jam) {
-        await sock.groupSettingUpdate(id, 'announcement').catch(e => {
-          console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
-        })
-        await sock.sendMessage(id, {
-          text: `🔒 Grup ditutup otomatis jam *${jam}*`
-        }).catch(() => { })
+// 🔒 Tutup grup
+if (fitur.closeTime && fitur.closeTime === jam) {
+  await sock.groupSettingUpdate(id, 'announcement').catch(e => {
+    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `🔒 Grup ditutup otomatis jam *${jam}*`
+  }).catch(() => { })
 
-        console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
-        delete fitur.closeTime
-      }
+  console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
+  delete fitur.closeTime // ⬅️ Tambahkan ini
+}
 
     } catch (err) {
       console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
+      // Jangan kirim ke grup, cukup log ke konsol  
     }
   }
 
-  // ✅ Simpan perubahan DB cache ke file
+  // Simpan perubahan DB
   try {
-    saveDB()
+    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+    fs.copyFileSync(dbFile, backupFile)
   } catch (e) {
     console.error('❌ Gagal simpan file DB:', e.message || e)
   }
+
+  
 })
 }
 
