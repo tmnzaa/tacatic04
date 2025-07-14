@@ -184,89 +184,77 @@ sock.ev.on('group-participants.update', async (update) => {
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
-
-  if (!sock?.user?.id) {
-    console.warn('⚠️ Bot belum login. Skip jadwal grup.')
-    return
-  }
-
   let db = {}
+
   try {
     db = fs.readJsonSync(dbFile)
   } catch (e) {
-    console.error('❌ Gagal baca file grup.json:', e)
+    console.error('❌ Gagal baca dbFile:', e)
     return
   }
 
-  const grupIDs = Object.keys(db)
-  let totalUpdate = 0
-
-  for (const id of grupIDs) {
+  for (const id in db) {
     const fitur = db[id]
     if (!fitur) continue
 
     try {
-      // ⏱ Tambahkan delay antar request
-      await new Promise(res => setTimeout(res, 150)) // 150ms
-
       const metadata = await sock.groupMetadata(id).catch(e => {
-        const time = new Date().toLocaleTimeString()
-        console.warn(`⚠️ [${time}] Gagal ambil metadata grup ${id}:`, e?.message || e)
+        console.warn(`⚠️ Gagal ambil metadata grup ${id}: ${e.message || e}`)
         return null
       })
-
       if (!metadata) continue
 
-      const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net'
-      const botParticipant = metadata.participants.find(p => p.id === botNumber)
+      const botNumber = sock.user?.id?.split(':')[0] + '@s.whatsapp.net'
+      const botParticipant = metadata.participants?.find(p => p.id === botNumber)
       const isBotAdmin = botParticipant?.admin === 'admin' || botParticipant?.admin === 'superadmin'
 
       if (!isBotAdmin) {
-        console.log(`❌ Bot bukan admin di grup ${id}. Skip.`)
+        console.log(`❌ Bot bukan admin di grup ${id}, skip.`)
         continue
       }
 
-      // Buka Grup Otomatis
-      if (fitur.openTime && fitur.openTime === jam) {
-        try {
-          await sock.groupSettingUpdate(id, 'not_announcement')
-          await sock.sendMessage(id, { text: `✅ Grup dibuka otomatis jam *${jam}*` })
-          console.log(`✅ Grup ${id} dibuka.`)
-          delete fitur.openTime
-          totalUpdate++
-        } catch (err) {
-          console.warn(`⚠️ Gagal buka grup ${id}:`, err.message || err)
-        }
-      }
+      // ✅ Buka grup
+if (fitur.openTime && fitur.openTime === jam) {
+  await sock.groupSettingUpdate(id, 'not_announcement').catch(e => {
+    console.warn(`⚠️ Gagal buka grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `✅ Grup dibuka otomatis jam *${jam}*`
+  }).catch(() => { })
 
-      // Tutup Grup Otomatis
-      if (fitur.closeTime && fitur.closeTime === jam) {
-        try {
-          await sock.groupSettingUpdate(id, 'announcement')
-          await sock.sendMessage(id, { text: `🔒 Grup ditutup otomatis jam *${jam}*` })
-          console.log(`🔒 Grup ${id} ditutup.`)
-          delete fitur.closeTime
-          totalUpdate++
-        } catch (err) {
-          console.warn(`⚠️ Gagal tutup grup ${id}:`, err.message || err)
-        }
-      }
+  console.log(`✅ Grup ${id} dibuka jam ${jam}`)
+  delete fitur.openTime // ⬅️ Tambahkan ini
+}
+
+// 🔒 Tutup grup
+if (fitur.closeTime && fitur.closeTime === jam) {
+  await sock.groupSettingUpdate(id, 'announcement').catch(e => {
+    console.warn(`⚠️ Gagal tutup grup ${id}: ${e.message || e}`)
+  })
+  await sock.sendMessage(id, {
+    text: `🔒 Grup ditutup otomatis jam *${jam}*`
+  }).catch(() => { })
+
+  console.log(`🔒 Grup ${id} ditutup jam ${jam}`)
+  delete fitur.closeTime // ⬅️ Tambahkan ini
+}
 
     } catch (err) {
-      console.error(`❌ Error update grup ${id}:`, err.message || err)
+      console.error(`❌ Gagal update setting grup ${id}:`, err.message || err)
+      // Jangan kirim ke grup, cukup log ke konsol
     }
   }
 
-  // Simpan DB setelah semua grup dicek
+  // Simpan perubahan DB
   try {
     fs.writeJsonSync(dbFile, db, { spaces: 2 })
     fs.copyFileSync(dbFile, backupFile)
-    console.log(`✅ Jadwal grup selesai. Total update: ${totalUpdate} grup.`)
   } catch (e) {
-    console.error('❌ Gagal simpan DB:', e.message || e)
+    console.error('❌ Gagal simpan file DB:', e.message || e)
   }
-})
 
+  
+})
 }
 
 // 🛠 Global error
