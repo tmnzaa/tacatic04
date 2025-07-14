@@ -55,7 +55,7 @@ Script ini *hanya bisa dijalankan lewat aplikasi Termux* di Android.
 
 ---
 
-❗ *KENAPA SCRIPT INI HARUS BERBAYAR?*
+❗ *KENAPA SCRIPT INI BERBAYAR DAN MAHAL?*
 • Dibuat manual dari nol, bukan copas YouTube
 • Kode bersih, sudah diuji langsung di banyak grup aktif
 • Support dan update diberikan langsung oleh pembuat
