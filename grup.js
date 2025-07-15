@@ -87,7 +87,7 @@ if (!metadata || Date.now() - metadata._cachedAt > 15000) {
   }
 }
 
- const OWNER_BOT = '6282333014459@s.whatsapp.net'; // Nomor kamu
+ const OWNER_BOT = '6285179690350@s.whatsapp.net'; // Nomor kamu
 
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
@@ -589,7 +589,7 @@ for (let f of fiturList) {
   }
 }
 
-  const OWNER_NUM = '6282333014459@s.whatsapp.net';
+  const OWNER_NUM = '6285179690350@s.whatsapp.net';
 
 // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
