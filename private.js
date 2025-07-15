@@ -3,7 +3,7 @@ const path = './data_user.json'
 if (!fs.existsSync(path)) fs.writeJsonSync(path, {})
 
 // 🎩 Nomor Owner Bot
-const OWNER_NUM = '62895379065009'
+const OWNER_NUM = ['62895379065009', '6285179690350']
 
 module.exports = async (sock, msg) => {
   const from = msg.key.remoteJid
@@ -190,27 +190,28 @@ if (text.toLowerCase() === '.qris') {
   }
 }
 
-  // 👤 Kirim Kontak Owner
+ // 👤 Kirim Kontak Owner
 if (text === '.owner') {
-  const vcard = `
+  // Loop kirim vCard untuk semua owner
+  for (const nomor of OWNER_NUM) {
+    const vcard = `
 BEGIN:VCARD
 VERSION:3.0
-FN:Caa Owner Official
-ORG:TACATIC BOT 04;
-TEL;type=CELL;type=VOICE;waid=${OWNER_NUM}:${OWNER_NUM}
+FN:Owner Tacatic 04
+ORG:TACATIC BOT;
+TEL;type=CELL;type=VOICE;waid=${nomor}:${nomor}
 END:VCARD`;
 
-  // Kirim kontak dulu
-  await sock.sendMessage(from, {
-    contacts: {
-      displayName: "Caa Owner Official",
-      contacts: [{ vcard }]
-    }
-  });
+    await sock.sendMessage(from, {
+      contacts: {
+        displayName: "Owner Tacatic 04",
+        contacts: [{ vcard }]
+      }
+    });
+  }
 
-  // Lalu kirim teks info
   return sock.sendMessage(from, {
-    text: `📱 Berikut kontak *Caa Owner Official* (Pemilik Tacatic 04)\n\nSilakan chat jika ada pertanyaan ya~`,
+    text: `📱 Berikut kontak *Owner Tacatic 04*\n\nSilakan chat kalau kamu butuh bantuan, sewa, atau ingin jadi bot juga ya~`,
     quoted: msg
   });
 }
@@ -218,7 +219,11 @@ END:VCARD`;
   // 🔍 Cek grup aktif - hanya untuk OWNER
 if (text === '.cekgrup') {
   const sender = (msg.key.participant || from || '').split('@')[0]
-  if (sender !== OWNER_NUM) return sock.sendMessage(from, { text: '❌ Fitur khusus Owner Bot.' })
+
+  // ✅ Perbaikan: pakai includes karena OWNER_NUM adalah array
+  if (!OWNER_NUM.includes(sender)) {
+    return sock.sendMessage(from, { text: '❌ Fitur khusus Owner Bot.' });
+  }
 
   const grupPath = './grup.json'
   if (!fs.existsSync(grupPath)) fs.writeJsonSync(grupPath, {})
