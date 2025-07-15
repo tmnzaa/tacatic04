@@ -262,7 +262,7 @@ if (fitur.closeTime && fitur.closeTime === jam) {
 
   // Simpan perubahan DB
   try {
-    fs.writeJsonSync(dbFile, db, { spaces: 2 })
+   await fs.writeJson(dbFile, db, { spaces: 2 })
     fs.copyFileSync(dbFile, backupFile)
   } catch (e) {
     console.error('❌ Gagal simpan file DB:', e.message || e)
