@@ -413,9 +413,6 @@ Contoh: _.addbrat Selamat ulang tahun_
 → Buat stiker teks elegan 
 Contoh: _.bratv2 haloo gais_
 
-• 📋 _.menu_  
-→ Lihat daftar fitur yang tersedia
-
 ✨ Nikmati fitur seru dari *Tacatic Bot 04*!`,
     }, { quoted: msg });
   }
@@ -447,9 +444,8 @@ if (isBotAktif && isAfk) {
     return;
   }
 
-  // Balas ke grup bahwa user AFK
-  await sock.sendMessage(from, {
-  text: `📢 @${sender.split('@')[0]} sedang *AFK* untuk sementara waktu.\n📝 Alasan: ${alasan || 'Tidak disebutkan'}\nMohon tidak mengganggu dulu ya 🙏`,
+ await sock.sendMessage(from, {
+  text: `🌙 *AFK MODE ON*\n\n📛 User: @${sender.split('@')[0]}\n📝 Alasan: ${alasan || 'Rahasia dong!'}\n💤 Status: Tidak aktif sementara\n\n📵 Jangan diganggu dulu ya, kasihan 😴`,
   mentions: [sender]
 }, { quoted: msg });
 
