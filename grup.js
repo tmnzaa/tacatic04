@@ -9,8 +9,7 @@ const { downloadMediaMessage } = require('@whiskeysockets/baileys');
 if (!fs.existsSync(dbFile)) fs.writeJsonSync(dbFile, {});
 if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
 global.strikeCache = fs.readJsonSync(strikeFile); // ⏱️ baca sekali saja saat pertama
-global.lastLinkTime = global.lastLinkTime || {}
-if (!fs.existsSync(strikeFile)) fs.writeJsonSync(strikeFile, {});
+if (!global.lastLinkTime) global.lastLinkTime = {}
 
 const tambahHari = (jumlah) => {
   const date = new Date();
@@ -77,7 +76,7 @@ const allowedForAll =['.stiker', '.addbrat', '.removebg', '.hd', '.tiktok', '.br
   global.groupCache = global.groupCache || {}
 let metadata = global.groupCache[from]
 
-if (!metadata || Date.now() - metadata._cachedAt > 15000) {
+if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   try {
     metadata = await sock.groupMetadata(from)
     metadata._cachedAt = Date.now()
@@ -87,7 +86,7 @@ if (!metadata || Date.now() - metadata._cachedAt > 15000) {
   }
 }
 
- const OWNER_BOT = '6285179690350@s.whatsapp.net'; // Nomor kamu
+ const OWNER_BOT = '62895379065009@s.whatsapp.net'; // Nomor kamu
 
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
@@ -98,7 +97,8 @@ const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p =>
 const botNumber = sock.user.id.split(':')[0] + '@s.whatsapp.net';
 const isPolling = JSON.stringify(msg.message || {}).includes('pollCreationMessage');
 
-const db = fs.readJsonSync(dbFile);
+const db = global.dbCache || fs.readJsonSync(dbFile);
+global.dbCache = db;
 db[from] = db[from] || {};
 db[from].nama = metadata.subject;
 const fitur = db[from];
@@ -121,7 +121,7 @@ if (fitur.antipolling && isPolling && isBotAktif && !isAdmin && !isOwner) {
     delete strikeDB[from][sender];
   }
 
-fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
 global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
@@ -276,13 +276,13 @@ if (isBotAktif && !isAdmin && !isOwner) {
 
     const tambahStrike = async () => {
       strikeDB[from][sender] += 1
-    fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+ await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
 global.strikeCache = strikeDB; // update cache biar tetap sinkron
 
       if (strikeDB[from][sender] >= 20) {
         await sock.groupParticipantsUpdate(from, [sender], 'remove')
         delete strikeDB[from][sender]
-     fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
+ await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
 global.strikeCache = strikeDB; // update cache biar tetap sinkron
       }
     }
@@ -290,9 +290,9 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
    const isAfkLink = text.toLowerCase().includes('.afk') && (isLink || isPollingWithLink)
 
     // 🚫 AntiLink 1: Hapus pesan + tambah strike
-    if (fitur.antilink1 && (isLink || isPollingWithLink)) {
+if (fitur.antilink1 && (isLink || isPollingWithLink)) {
   const now = Date.now();
-  const last = global.lastLinkTime[sender] || 0;
+  const last = global.lastLinkTime?.[sender] || 0;
 
   // Jangan proses kalau pesan ini datang terlalu cepat setelah link sebelumnya
   if (now - last < 1500) {
@@ -307,27 +307,31 @@ global.strikeCache = strikeDB; // update cache biar tetap sinkron
   return;
 }
 
-    // 🚫 AntiLink 2: Hapus pesan + langsung tendang
-    if (fitur.antilink2 && (isLink || isPollingWithLink)) {
-      await sock.sendMessage(from, { delete: msg.key });
-      await sock.groupParticipantsUpdate(from, [sender], 'remove');
-      delete strikeDB[from][sender];
-    fs.writeJson(strikeFile, strikeDB, { spaces: 2 });
-global.strikeCache = strikeDB; // update cache biar tetap sinkron
-      return;
-    }
+// 🚫 AntiLink 2: Hapus pesan + langsung tendang
+if (fitur.antilink2 && (isLink || isPollingWithLink)) {
+  await sock.sendMessage(from, { delete: msg.key });
+  await sock.groupParticipantsUpdate(from, [sender], 'remove');
 
-    // 🚫 Anti Promosi
-    if (fitur.antipromosi && isPromo) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
+  // Hapus data strike jika ada
+  if (strikeDB[from]?.[sender]) {
+    delete strikeDB[from][sender];
+   await fs.writeJson(strikeFile, strikeDB, { spaces: 2 })
+    global.strikeCache = strikeDB; // update cache
+  }
+  return;
+}
 
-    // 🚫 Anti Toxic
-    if (fitur.antitoxic && isToxic) {
-      await sock.sendMessage(from, { delete: msg.key })
-      await tambahStrike()
-    }
+// 🚫 Anti Promosi
+if (fitur.antipromosi && isPromo) {
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+}
+
+// 🚫 Anti Toxic
+if (fitur.antitoxic && isToxic) {
+  await sock.sendMessage(from, { delete: msg.key });
+  await tambahStrike();
+}
 
   } catch (err) {
     console.error('❌ Filter error:', err)
@@ -589,7 +593,7 @@ for (let f of fiturList) {
   }
 }
 
-  const OWNER_NUM = '6285179690350@s.whatsapp.net';
+  const OWNER_NUM = '62895379065009@s.whatsapp.net';
 
 // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
