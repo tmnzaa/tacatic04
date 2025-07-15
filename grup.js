@@ -95,11 +95,14 @@ if (!metadata || Date.now() - metadata._cachedAt > 300000) {
   }
 }
 
- const OWNER_BOT = '62895379065009@s.whatsapp.net'; // Nomor kamu
+ const OWNER_BOT = [
+  '62895379065009@s.whatsapp.net',
+  '6285179690350@s.whatsapp.net' // ← ganti dengan nomor owner ke-2
+];
 
 const groupOwner = metadata.owner || metadata.participants.find(p => p.admin === 'superadmin')?.id;
 const isGroupOwner = sender === groupOwner;
-const isBotOwner = sender === OWNER_BOT;
+const isBotOwner = OWNER_BOT.includes(sender);
 const isOwner = isBotOwner || isGroupOwner;
 
 const isAdmin = ['admin', 'superadmin'].includes(metadata.participants.find(p => p.id === sender)?.admin);
@@ -598,7 +601,7 @@ for (let f of fiturList) {
   }
 }
 
-  const OWNER_NUM = '62895379065009@s.whatsapp.net';
+const OWNER_NUM = OWNER_BOT[0]; // atau broadcast ke semua OWNER_BOT kalau mau
 
 // 👑 Promote
 if (text.startsWith('.promote') && msg.message?.extendedTextMessage?.contextInfo?.mentionedJid) {
@@ -794,9 +797,6 @@ if (text === '.hapus') {
       text: '⚠️ Gagal menghapus pesan. Mungkin bot bukan admin atau pesan sudah kedaluwarsa.',
     }, { quoted: msg })
   }
-}
-
-if (isCommand && isCmdValid) {
 }
 
 // ❗ ABAIKAN command tak dikenal, TAPI tetap jalankan filter antilink/antitoxic/promosi
