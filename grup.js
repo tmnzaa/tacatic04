@@ -18,14 +18,23 @@ const tambahHari = (jumlah) => {
 };
 
 const kataKasar = [
-  'jancok', 'anjing', 'babi', 'kontol', 'memek', 'pantek', 'brengsek', 'bangsat', 'goblok', 'tolol', 'tai',
-  'monyet', 'ngentot', 'kampret', 'sinting', 'idiot', 'fuck', 'shit', 'asu', 'pukimak',
-  'bokep', 'porno', 'sex', 'sange', 'okep',
-  'bug jasa', 'jasa bug', 'suntik', 'suntik sosmed',
-  'jual bokep', 'jual video bokep',
-  'slot', 'casino', 'judi', 'judol', 'chip',
-  'unchek', 'apk mod', 'apk premium', 'sell apk',
-  'suntik tiktok', 'suntik ig', 'suntik instagram'
+  // Kata kasar umum (Indonesia)
+  'jancok', 'anjing', 'babi', 'kontol', 'memek', 'pantek',
+  'brengsek', 'bangsat', 'goblok', 'tolol', 'tai',
+  'monyet', 'ngentot', 'kampret', 'sinting', 'idiot',
+  'asu', 'bangke', 'keparat', 'pecun', 'bencong', 'jablay',
+
+  // Bahasa Inggris & universal
+  'fuck', 'shit', 'bitch', 'asshole', 'dick', 'bastard', 'fucker',
+
+  // 18+ / pornografi
+  'bokep', 'porno', 'sex', 'sange', 'okep', 'colmek', 'masturbasi',
+  'ngocok', 'peju', 'sperma', 'vagina', 'pantat', 'payudara', 'boobs',
+  'bugil', 'mesum', 'nude', 'pornhub', 'xnxx', 'tiktok 18', 'jav',
+
+  // Variasi ejaan (untuk akali sensor)
+  'mem3k', 'k0ntol', 'p4ntek', 's3x', 's4nge', 'g0bl0k', 'b4bi',
+  'm3mek', 'puk1mak', 'anj1ng', 't0lol', 'bangs4t', 'idi0t'
 ];
 
 
