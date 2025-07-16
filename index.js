@@ -12,37 +12,20 @@ const axios = require('axios')
 
 // === File Database ===
 const dbFile = './grup.json'
-const backupFile = './backup_grup.json'
-
-// Pemulihan otomatis saat file hilang/rusak
 let db = {}
+
 if (!fs.existsSync(dbFile)) {
-  console.warn('⚠️ grup.json tidak ditemukan. Coba pulihkan dari backup...')
-  if (fs.existsSync(backupFile)) {
-    fs.copyFileSync(backupFile, dbFile)
-    db = fs.readJsonSync(dbFile)
-    console.log('✅ grup.json dipulihkan dari backup.')
-  } else {
-    console.warn('❌ Tidak ada backup. Membuat file kosong.')
-    fs.writeJsonSync(dbFile, {})
-    db = {}
-  }
-} else {
-  try {
-    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-    db = raw === '' ? {} : JSON.parse(raw)
-  } catch (err) {
-    console.error('❌ grup.json rusak! Pulihkan dari backup jika ada...')
-    if (fs.existsSync(backupFile)) {
-      fs.copyFileSync(backupFile, dbFile)
-      const rawBackup = fs.readFileSync(backupFile, 'utf-8').trim()
-      db = rawBackup === '' ? {} : JSON.parse(rawBackup)
-      console.log('✅ grup.json dipulihkan dari backup.')
-    } else {
-      console.error('❌ Tidak ada backup. Grup dimulai kosong.')
-      db = {}
-    }
-  }
+  console.error('❌ File grup.json tidak ditemukan! Harap buat file kosong terlebih dahulu.')
+  process.exit(1)
+}
+
+try {
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  db = raw === '' ? {} : JSON.parse(raw)
+} catch (err) {
+  console.error('❌ File grup.json rusak atau tidak bisa dibaca!')
+  console.error('⛔ Harap perbaiki manual file tersebut.')
+  process.exit(1)
 }
 
 let qrShown = false
@@ -59,7 +42,6 @@ try {
 // Simpan DB ke file
 function saveDB() {
   fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
-  fs.copyFileSync(dbFile, backupFile)
 }
 
 async function startBot() {
@@ -245,11 +227,10 @@ if (fitur.closeTime && fitur.closeTime === jam) {
 
   // Simpan perubahan DB
   try {
-    await fs.writeJson(dbFile, db, { spaces: 2 })
-    fs.copyFileSync(dbFile, backupFile)
-  } catch (e) {
-    console.error('❌ Gagal simpan file DB:', e.message || e)
-  }
+  await fs.writeJson(dbFile, db, { spaces: 2 })
+} catch (e) {
+  console.error('❌ Gagal simpan file DB:', e.message || e)
+}
 })
 }
 
