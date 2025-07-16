@@ -45,26 +45,6 @@ if (!fs.existsSync(dbFile)) {
 
 let qrShown = false
 
-function resetFiturSaatRestart() {
-  if (!fs.existsSync(dbFile)) return
- let db = dbCache
-  let totalReset = 0
-  for (const id in db) {
-    const fitur = db[id]
-    fitur.antilink1 = false
-    fitur.antilink2 = false
-    fitur.antipromosi = false
-    fitur.antitoxic = false
-    fitur.welcome = false
-    fitur.leave = false
-    fitur.antipolling = false
-    totalReset++
-  }
-fs.writeJsonSync(dbFile, db, { spaces: 2 })
-fs.copyFileSync(dbFile, backupFile) // backup otomatis
-  console.log(`♻️ Semua fitur dimatikan di ${totalReset} grup karena restart.`)
-}
-
 // === Cache DB agar tidak delay ===
 let dbCache = {}
 try {
@@ -99,7 +79,6 @@ async function startBot() {
 
     if (connection === 'open') {
       console.log('✅ Bot berhasil terhubung ke WhatsApp!')
-      // resetFiturSaatRestart()
     }
 
     if (connection === 'close') {
