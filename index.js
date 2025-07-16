@@ -182,9 +182,10 @@ schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
   const jam = now.toTimeString().slice(0, 5).replace(':', '.').padStart(5, '0')
   let db = {}
-
+  
   try {
-    db = fs.readJsonSync(dbFile)
+    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+    db = raw === '' ? {} : JSON.parse(raw)
   } catch (e) {
     console.error('❌ Gagal baca dbFile:', e)
     return
@@ -244,13 +245,11 @@ if (fitur.closeTime && fitur.closeTime === jam) {
 
   // Simpan perubahan DB
   try {
-   await fs.writeJson(dbFile, db, { spaces: 2 })
+    await fs.writeJson(dbFile, db, { spaces: 2 })
     fs.copyFileSync(dbFile, backupFile)
   } catch (e) {
     console.error('❌ Gagal simpan file DB:', e.message || e)
   }
-
-  
 })
 }
 
