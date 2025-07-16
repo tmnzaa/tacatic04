@@ -29,12 +29,14 @@ if (!fs.existsSync(dbFile)) {
   }
 } else {
   try {
-    db = fs.readJsonSync(dbFile)
+    const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+    db = raw === '' ? {} : JSON.parse(raw)
   } catch (err) {
     console.error('❌ grup.json rusak! Pulihkan dari backup jika ada...')
     if (fs.existsSync(backupFile)) {
       fs.copyFileSync(backupFile, dbFile)
-      db = fs.readJsonSync(dbFile)
+      const rawBackup = fs.readFileSync(backupFile, 'utf-8').trim()
+      db = rawBackup === '' ? {} : JSON.parse(rawBackup)
       console.log('✅ grup.json dipulihkan dari backup.')
     } else {
       console.error('❌ Tidak ada backup. Grup dimulai kosong.')
@@ -48,7 +50,8 @@ let qrShown = false
 // === Cache DB agar tidak delay ===
 let dbCache = {}
 try {
-  dbCache = fs.readJsonSync(dbFile)
+  const raw = fs.readFileSync(dbFile, 'utf-8').trim()
+  dbCache = raw === '' ? {} : JSON.parse(raw)
 } catch (e) {
   dbCache = {}
 }
