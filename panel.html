@@ -10,6 +10,7 @@
     body {
       background-color: #0f0f0f;
     }
+
     #terminal {
       background: #1a1a1a;
       height: 300px;
@@ -22,6 +23,7 @@
       color: #00ff88;
       border: 1px solid #444;
     }
+
     .terminal-bar {
       background: #111;
       padding: 0.5rem 1rem;
@@ -30,6 +32,7 @@
       border: 1px solid #444;
       border-bottom: none;
     }
+
     .dot {
       height: 10px;
       width: 10px;
@@ -38,56 +41,65 @@
       display: inline-block;
       margin-right: 5px;
     }
+
     .dot.yellow {
       background-color: #ffbd2e;
     }
+
     .dot.green {
       background-color: #27c93f;
+    }
+
+    .spinner {
+      border: 2px solid white;
+      border-top-color: transparent;
+      border-radius: 50%;
+      width: 1rem;
+      height: 1rem;
+      display: inline-block;
+      margin-right: 0.5rem;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
 <body class="text-white flex flex-col items-center min-h-screen py-10 px-4">
 
-  <div id="auth-section" class="w-full max-w-sm">
-    <h1 class="text-2xl font-bold text-center text-green-400 mb-6">🔐 Login / Daftar</h1>
-    <form id="auth-form" class="flex flex-col gap-3">
-      <input type="text" id="username" placeholder="Username" class="px-4 py-2 rounded bg-gray-800 border border-gray-600 text-white" required />
-      <input type="password" id="password" placeholder="Password" class="px-4 py-2 rounded bg-gray-800 border border-gray-600 text-white" required />
-      <div class="flex justify-between">
-        <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded">Login</button>
-        <button type="button" id="register" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Register</button>
-      </div>
-      <p id="auth-msg" class="text-sm text-center text-red-400"></p>
-    </form>
+  <h1 class="text-3xl font-bold text-green-400 mb-6 drop-shadow-lg">🧠 Panel Bot WhatsApp</h1>
+
+  <div class="flex flex-wrap gap-4 mb-4 justify-center">
+    <button id="start" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-lg font-semibold flex items-center justify-center">
+      <span class="spinner hidden" id="spinner-start"></span>✅ Mulai Bot
+    </button>
+    <button id="stop" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg text-lg font-semibold flex items-center justify-center">
+      <span class="spinner hidden" id="spinner-stop"></span>⛔ Stop Bot
+    </button>
   </div>
 
-  <div id="panel-section" class="hidden w-full flex flex-col items-center">
-    <h1 class="text-3xl font-bold text-green-400 mb-6 drop-shadow-lg">🧠 Panel Bot WhatsApp</h1>
-
-    <div class="flex flex-wrap gap-4 mb-4 justify-center">
-      <button id="start" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg text-lg font-semibold">✅ Mulai Bot</button>
-      <button id="stop" class="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-lg text-lg font-semibold">⛔ Stop Bot</button>
-    </div>
-
-    <div id="status" class="mb-6 px-6 py-3 rounded-md text-center text-sm bg-gray-800 border border-gray-600 w-full max-w-md">
-      Status: 🔴 Bot belum dijalankan
-    </div>
-
-    <div class="w-full max-w-3xl mb-10">
-      <div class="terminal-bar">
-        <span class="dot"></span>
-        <span class="dot yellow"></span>
-        <span class="dot green"></span>
-      </div>
-      <div id="terminal"></div>
-    </div>
-
-    <footer class="text-gray-400 text-xs mt-10">Panel by Tam | WhatsApp Bot Management</footer>
+  <div id="status" class="mb-6 px-6 py-3 rounded-md text-center text-sm bg-gray-800 border border-gray-600 w-full max-w-md">
+    Status: 🔴 Bot belum dijalankan
   </div>
+
+  <!-- Terminal Output -->
+  <div class="w-full max-w-3xl mb-10">
+    <div class="terminal-bar">
+      <span class="dot"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+    </div>
+    <div id="terminal"></div>
+  </div>
+
+  <footer class="text-gray-400 text-xs mt-10">Panel by Tam | WhatsApp Bot Management</footer>
 
   <script>
     const terminal = document.getElementById('terminal');
     const status = document.getElementById('status');
+    const spinnerStart = document.getElementById('spinner-start');
+    const spinnerStop = document.getElementById('spinner-stop');
 
     function appendToTerminal(line) {
       const timestamp = new Date().toLocaleTimeString();
@@ -95,7 +107,17 @@
       terminal.scrollTop = terminal.scrollHeight;
     }
 
+    function toggleLoading(button, show) {
+      const spinner = button === 'start' ? spinnerStart : spinnerStop;
+      if (show) {
+        spinner.classList.remove('hidden');
+      } else {
+        spinner.classList.add('hidden');
+      }
+    }
+
     async function update(endpoint) {
+      toggleLoading(endpoint === '/start' ? 'start' : 'stop', true);
       try {
         const res = await fetch(endpoint, { method: 'POST' });
         const text = await res.text();
@@ -112,53 +134,43 @@
         appendToTerminal(text);
       } catch (err) {
         appendToTerminal('⚠️ Gagal terhubung ke server.');
+      } finally {
+        toggleLoading(endpoint === '/start' ? 'start' : 'stop', false);
       }
     }
 
     document.getElementById('start').addEventListener('click', () => update('/start'));
     document.getElementById('stop').addEventListener('click', () => update('/stop'));
 
-    // Auth logic
-    document.getElementById('auth-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+    // Auto-refresh status bot
+    setInterval(async () => {
+      try {
+        const res = await fetch('/status');
+        const text = await res.text();
+        status.innerText = 'Status: ' + text;
+        if (text.includes('aktif')) {
+          status.classList.remove('bg-red-900');
+          status.classList.add('bg-green-800');
+        } else {
+          status.classList.remove('bg-green-800');
+          status.classList.add('bg-red-900');
+        }
+      } catch {
+        status.innerText = 'Status: ⚠️ Gagal cek status bot.';
+      }
+    }, 5000);
 
-      const res = await fetch('/login', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, password })
-      });
-
-      const text = await res.text();
-      if (text === 'success') {
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('panel-section').classList.remove('hidden');
-      } else {
-        document.getElementById('auth-msg').innerText = text;
+    // Shortcut Ctrl + L to clear terminal
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key.toLowerCase() === 'l') {
+        terminal.innerText = '';
       }
     });
 
-    document.getElementById('register').addEventListener('click', async () => {
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
-
-      const res = await fetch('/register', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, password })
-      });
-
-      const text = await res.text();
-      document.getElementById('auth-msg').innerText = text;
-    });
-
-    const socket = io();
-
-// Tangkap log dari server
-socket.on('terminal', (data) => {
-  appendToTerminal(data);
-});
+     const socket = io();
+  socket.on('terminal', (data) => {
+    appendToTerminal(data);
+  });
   </script>
 </body>
 </html>
