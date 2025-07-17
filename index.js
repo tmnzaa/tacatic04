@@ -12,7 +12,7 @@ const axios = require('axios')
 
 // === File Database ===
 const dbFile = './grup.json'
-let db = {}
+let dbCache = {}
 
 if (!fs.existsSync(dbFile)) {
   console.error('❌ File grup.json tidak ditemukan! Harap buat file kosong terlebih dahulu.')
@@ -21,27 +21,26 @@ if (!fs.existsSync(dbFile)) {
 
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
-  db = raw === '' ? {} : JSON.parse(raw)
+  dbCache = raw === '' ? {} : JSON.parse(raw)
 } catch (err) {
   console.error('❌ File grup.json rusak atau tidak bisa dibaca!')
   console.error('⛔ Harap perbaiki manual file tersebut.')
   process.exit(1)
 }
 
+// Simpan DB ke file
+function saveDB() {
+  fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
+}
+
 let qrShown = false
 
 // === Cache DB agar tidak delay ===
-let dbCache = {}
 try {
   const raw = fs.readFileSync(dbFile, 'utf-8').trim()
   dbCache = raw === '' ? {} : JSON.parse(raw)
 } catch (e) {
   dbCache = {}
-}
-
-// Simpan DB ke file
-function saveDB() {
-  fs.writeJsonSync(dbFile, dbCache, { spaces: 2 })
 }
 
 async function startBot() {
@@ -122,15 +121,14 @@ let db = dbCache
 })
 
 sock.ev.on('group-participants.update', async (update) => {
- let db = dbCache
-  const fitur = db[update.id]
+  const fitur = dbCache[update.id]
   if (!fitur) return
 
   try {
     const metadata = await sock.groupMetadata(update.id)
 
     for (const jid of update.participants) {
-  const name = metadata.participants.find(p => p.id === jid)?.notify || `@${jid.split('@')[0]}`
+      const name = metadata.participants.find(p => p.id === jid)?.notify || `@${jid.split('@')[0]}`
       const groupName = metadata.subject
       const tagUser = `@${jid.split('@')[0]}`
       const imagePath = './ronaldo.jpg'
@@ -147,7 +145,7 @@ sock.ev.on('group-participants.update', async (update) => {
 
       // 🔴 LEAVE
       if (update.action === 'remove' && fitur.leave) {
-        const teks = `*${name}* (${tagUser}) telah keluar dari grup *${groupName}*.`
+        const teks = `*${name}* (${tagUser}) telah keluar dari grup *${groupName}*.`  
         await sock.sendMessage(update.id, {
           image: fs.readFileSync(imagePath),
           caption: teks,
@@ -158,7 +156,7 @@ sock.ev.on('group-participants.update', async (update) => {
   } catch (err) {
     console.error('❌ Error welcome/leave:', err)
   }
-}) 
+})
 
 schedule.scheduleJob('* * * * *', async () => {
   const now = new Date()
